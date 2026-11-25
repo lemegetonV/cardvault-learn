@@ -148,9 +148,9 @@ export const tracks = [
         title: 'Testing the money',
         blurb: 'Tables of cases, arithmetic worked out by hand, and requests that repeat or race.',
         lessons: [
-          ['suite-tables-of-cases', 'Tables of cases', false],
-          ['suite-money-maths', 'Money worked out by hand', false],
-          ['suite-retries-and-races', 'Retries and races', false],
+          ['suite-tables-of-cases', 'Tables of cases', true],
+          ['suite-money-maths', 'Money worked out by hand', true],
+          ['suite-retries-and-races', 'Retries and races', true],
         ],
       },
       {

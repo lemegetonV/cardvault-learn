@@ -263,3 +263,84 @@ export function sleepVsPoll() {
   b += text(X(1), 202, 'on a slow day it keeps asking, up to its timeout', 't-sm t-muted', 'start');
   return svg(860, 262, 'A fixed three-second sleep wastes two seconds when the work finishes in one, and fails when the work takes 3.6 seconds. Polling every quarter second notices the work finished at one second and continues at once; on a slow day it keeps asking until its timeout.', b);
 }
+
+/** One parametrized function, one test per row. */
+export function paramRows() {
+  const rows = [
+    ['lost', 'LOST card', 'CARD_LOST'],
+    ['closed', 'CLOSED card', 'CARD_CLOSED'],
+    ['expired', 'expiry 2020-01', 'CARD_EXPIRED'],
+    ['over-available', '500.01 on 500.00', 'INSUFFICIENT_FUNDS'],
+  ];
+  let b = '';
+  b += text(20, 24, 'a table of cases', 't-md', 'start');
+  rows.forEach(([id, cond, code], i) => {
+    const y = 38 + i * 44;
+    b += `<rect class="box-plain" x="20" y="${y}" width="290" height="34" rx="6"/>`;
+    b += text(32, y + 22, cond, 't-sm', 'start');
+    b += mono(298, y + 22, code, { size: 11, anchor: 'end', ink: false });
+  });
+  b += box(360, 92, 180, 64, 'one test function', { kind: 'plain', sub: '@parametrize', cls: 't-md' });
+  b += arrow([[310, 124], [360, 124]], 'ln', 'ah');
+  b += text(600, 24, 'what pytest runs and reports', 't-md', 'start');
+  rows.forEach(([id], i) => {
+    const y = 38 + i * 44;
+    b += `<rect class="box-bank" x="600" y="${y}" width="350" height="34" rx="6"/>`;
+    b += mono(614, y + 22, `test_card_purchase_is_declined[${id}]`, { size: 11.5, anchor: 'start' });
+    b += arrow([[540, 124], [570, 124], [570, y + 17], [600, y + 17]], 'ln-faint', 'ah');
+  });
+  return svg(970, 220, 'A table of four cases feeds one test function marked with parametrize. pytest runs it once per row and reports each run by name, such as test_card_purchase_is_declined[lost].', b);
+}
+
+/** A purchase's money, worked by hand, step by step. */
+export function moneySteps() {
+  const steps = [
+    ['approve 10.00', [['hold', 10]], 'limit − 10.00'],
+    ['reverse 3.00', [['hold', 7], ['back', 3]], 'limit − 7.00'],
+    ['settle 7.00', [['spent', 7], ['back', 3]], 'limit − 7.00'],
+    ['refund 2.00', [['spent', 5], ['back', 5]], 'limit − 5.00'],
+  ];
+  const cls = { hold: 'bar-hold', spent: 'bar-spent', back: 'bar-avail' };
+  const px = 34; // per 1.00
+  let b = '';
+  steps.forEach(([label, segs, avail], i) => {
+    const y = 20 + i * 52;
+    b += text(20, y + 21, label, 't-md', 'start');
+    let x = 170;
+    b += `<rect class="bar-bg" x="170" y="${y + 4}" width="${10 * px}" height="26" rx="4"/>`;
+    for (const [k, v] of segs) {
+      b += `<rect class="${cls[k]}" x="${x}" y="${y + 4}" width="${v * px}" height="26" rx="3"/>`;
+      x += v * px;
+    }
+    b += text(170 + 10 * px + 24, y + 22, 'available =', 't-sm t-muted', 'start');
+    b += mono(170 + 10 * px + 104, y + 22, avail, { size: 13, anchor: 'start' });
+  });
+  const ly = 20 + steps.length * 52 + 14;
+  const key = [['bar-hold', 'held'], ['bar-spent', 'charged'], ['bar-avail', 'given back']];
+  key.forEach(([c, t], i) => {
+    const x = 170 + i * 130;
+    b += `<rect class="${c}" x="${x}" y="${ly - 11}" width="16" height="14" rx="3"/>`;
+    b += text(x + 24, ly, t, 't-sm t-muted', 'start');
+  });
+  return svg(760, ly + 14, 'One 10.00 purchase, step by step. Approved: 10.00 held. Reverse 3.00: 7.00 held, 3.00 given back. Settle 7.00: 7.00 charged. Refund 2.00: 5.00 charged, 5.00 given back. Available is the limit minus what is held and charged.', b);
+}
+
+/** Twenty purchases at once against room for ten. */
+export function raceResult() {
+  let b = '';
+  b += text(20, 24, '20 × 10.00 at the same moment', 't-md', 'start');
+  for (let i = 0; i < 20; i++) {
+    const y = 40 + (i % 10) * 18, x = 20 + Math.floor(i / 10) * 60;
+    b += `<rect class="box-plain" x="${x}" y="${y}" width="48" height="12" rx="3"/>`;
+  }
+  b += arrow([[140, 130], [210, 130]], 'ln', 'ah');
+  b += box(210, 92, 200, 76, 'one card', { kind: 'bank', sub: 'available 100.00', cls: 't-md' });
+  b += arrow([[410, 112], [480, 82]], 'ln', 'ah');
+  b += arrow([[410, 148], [480, 178]], 'ln', 'ah');
+  b += box(480, 56, 210, 46, '10 approved', { kind: 'bank', cls: 't-md' });
+  b += box(480, 158, 210, 46, '10 declined', { kind: 'stop', sub: 'INSUFFICIENT_FUNDS', cls: 't-md' });
+  b += text(720, 84, 'then: available is exactly 0', 't-sm', 'start');
+  b += text(720, 186, 'a broken lock shows as', 't-sm t-muted', 'start');
+  b += text(720, 202, 'more than 10 approved', 't-sm t-muted', 'start');
+  return svg(900, 230, 'Twenty purchases of 10.00 arrive at the same moment at a card with 100.00 available. Exactly ten must be approved and ten declined with INSUFFICIENT_FUNDS, leaving exactly 0 available. More than ten approvals would mean two requests read the same balance.', b);
+}
