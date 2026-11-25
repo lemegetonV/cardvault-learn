@@ -1,0 +1,16 @@
+# systemd unit for the stage test runner. Install on the VM:
+#   sudo cp runner/cardvault-runner.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now cardvault-runner
+[Unit]
+Description=CardVault API suite runner (stage, password-protected by Caddy)
+After=network-online.target docker.service
+
+[Service]
+User=ubuntu
+WorkingDirectory=/opt/cardvault/tests/api
+Environment=PATH=/home/ubuntu/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/usr/bin/python3 runner/serve.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

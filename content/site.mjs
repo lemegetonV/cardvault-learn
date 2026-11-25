@@ -4,9 +4,13 @@ export const site = {
   name: 'CardVault Learn',
   description: 'Learn how CardVault works: a simulated bank wallet built to be tested.',
   cardvaultCommit: 'fa94037',
+  // The API test suite (tests/api) that the second track describes.
+  suiteCommit: 'b9eb9d0',
   cardvaultRepo: 'https://github.com/lemegetonV/cardvault',
   stageApp: 'https://cardvault.140-245-206-220.sslip.io',
   stageDocs: 'https://docs.140-245-206-220.sslip.io',
+  // Runs one test on stage and streams pytest's output (password-protected, the owner's tool).
+  stageRunner: 'https://run.140-245-206-220.sslip.io',
 };
 
 // A lesson with `ready: false` shows in the contents as "soon" and is not built yet.
@@ -108,19 +112,93 @@ export const tracks = [
       },
     ],
   },
-  { id: 'api-suite', title: 'The API test suite', blurb: 'Building the pytest suite for CardVault, step by step.', later: true, modules: [] },
+  {
+    id: 'api-suite',
+    title: 'The API test suite',
+    blurb: 'How CardVault’s pytest suite is built, one idea at a time, and why each piece exists.',
+    modules: [
+      {
+        title: 'Before the first test',
+        blurb: 'What an outside-in API suite is for, the tools it is made of, and how it knows where to point.',
+        lessons: [
+          ['suite-what-and-why', 'What the suite is for', true],
+          ['suite-tools', 'The tools and who does what', true],
+          ['suite-settings', 'Settings and environments', true],
+        ],
+      },
+      {
+        title: 'The first tests',
+        blurb: 'From one health check to clients, models and fixtures that every later test reuses.',
+        lessons: [
+          ['suite-first-test', 'The first test', true],
+          ['suite-clients', 'Clients and credentials', true],
+          ['suite-checks', 'Checking a response, and where the expectation comes from', true],
+          ['suite-fixtures', 'Fixtures', true],
+        ],
+      },
+      {
+        title: 'Data, time and isolation',
+        blurb: 'Fresh data for every test, running in parallel safely, moving the clock and waiting without sleeping.',
+        lessons: [
+          ['suite-fresh-customers', 'A fresh customer for every test', true],
+          ['suite-parallel-serial', 'Parallel and serial tests', true],
+          ['suite-moving-time', 'Moving the clock', true],
+          ['suite-waiting', 'Waiting without sleeping', true],
+        ],
+      },
+      {
+        title: 'Testing the money',
+        blurb: 'Tables of cases, arithmetic worked out by hand, and requests that repeat or race.',
+        lessons: [
+          ['suite-tables-of-cases', 'Tables of cases', true],
+          ['suite-money-maths', 'Money worked out by hand', true],
+          ['suite-retries-and-races', 'Retries and races', true],
+        ],
+      },
+      {
+        title: 'Testing the wallet',
+        blurb: 'Rules with boundaries, a flow that finishes later, an operator that misbehaves on purpose, and reconciliation.',
+        lessons: [
+          ['suite-eligibility', 'Rules and their boundaries', true],
+          ['suite-async-flows', 'A flow that finishes later', true],
+          ['suite-playing-the-operator', 'Playing the operator', true],
+          ['suite-reconciliation', 'Testing reconciliation', true],
+        ],
+      },
+      {
+        title: 'Beyond the response',
+        blurb: 'Events, the database, security rules and whole customer journeys.',
+        lessons: [
+          ['suite-reading-events', 'Reading events', true],
+          ['suite-messy-delivery', 'Messy delivery on purpose', true],
+          ['suite-database', 'Looking in the database', true],
+          ['suite-security', 'Who may call what', true],
+          ['suite-journeys', 'Customer journeys', true],
+        ],
+      },
+      {
+        title: 'Running it for real',
+        blurb: 'Evidence when a test fails, the CI pipeline, and running against stage.',
+        lessons: [
+          ['suite-evidence', 'Evidence when a test fails', true],
+          ['suite-ci', 'The suite in CI', true],
+          ['suite-stage', 'Running against stage', true],
+        ],
+      },
+    ],
+  },
   { id: 'ui-suite', title: 'The UI test suite', blurb: 'Building the Playwright suite for CardVault, step by step.', later: true, modules: [] },
 ];
 
 /** Flat list of every lesson with its position. */
 export function allLessons() {
   const out = [];
-  let n = 0;
   for (const t of tracks) {
+    let n = 0; // lessons are numbered within their track
     t.modules.forEach((m, mi) => {
       for (const [id, title, ready] of m.lessons) {
         n += 1;
-        out.push({ id, title, ready: !!ready, n, module: m.title, moduleNo: mi + 1, track: t.id });
+        out.push({ id, title, ready: !!ready, n, module: m.title, moduleNo: mi + 1, track: t.id, trackTitle: t.title });
       }
     });
   }

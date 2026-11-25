@@ -1,0 +1,95 @@
+name: api-tests
+
+# The pytest API suite (tests/api) against a full CardVault stack started in the runner.
+on:
+  push:
+    branches: [main, test/api]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: api-tests-${{ github.event.pull_request.number || github.ref }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: tests/api
+    steps:
+      - uses: actions/checkout@v5
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: tests/api/uv.lock
+      - run: uv sync --frozen
+      - run: uv run ruff check --output-format github .
+      - run: uv run ruff format --check .
+
+  api-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Start stack
+        uses: ./.github/actions/start-stack
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+          cache-dependency-glob: tests/api/uv.lock
+
+      - name: Install the suite
+        working-directory: tests/api
+        run: uv sync --frozen
+
+      - name: Run the suite in parallel
+        working-directory: tests/api
+        env:
+          TEST_ENV: local
+        run: >
+          uv run pytest -n auto
+          --alluredir allure-results
+          --junitxml reports/junit-parallel.xml
+
+      - name: Run the serial tests (shared clock, faults) on their own
+        if: success() || failure()
+        working-directory: tests/api
+        env:
+          TEST_ENV: local
+        run: >
+          uv run pytest -m serial
+          --alluredir allure-results
+          --junitxml reports/junit-serial.xml
+
+      - name: Build the Allure report
+        if: always()
+        working-directory: tests/api
+        run: npx --yes allure@3.33.0 generate allure-results -o allure-report
+
+      - name: Collect logs
+        if: always()
+        run: |
+          mkdir -p artifacts
+          docker compose -f docker-compose.yml -f docker-compose.ci.yml logs --no-color --timestamps > artifacts/compose-logs.txt 2>&1 || true
+
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: api-tests-evidence
+          path: |
+            tests/api/allure-report/
+            tests/api/reports/
+            artifacts/
+          retention-days: 14
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.yml -f docker-compose.ci.yml down -v

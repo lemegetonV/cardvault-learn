@@ -33,6 +33,7 @@ The build stops with a list of problems if a lesson links to a lesson id that do
 | `src/styles.css`, `src/site.js` | The design and the little JavaScript the pages need |
 | `data/openapi/`, `data/events/` | OpenAPI documents and event schemas exported from CardVault |
 | `tools/export-data.sh` | Refreshes `data/` from a running local CardVault stack |
+| `tools/export-suite.sh` | Copies the API suite (`tests/api`, `api-tests.yml`) at a commit into `data/suite/`, for the explorer at `/suite/` |
 
 ## Adding a lesson
 

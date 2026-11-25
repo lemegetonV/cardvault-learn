@@ -4,12 +4,14 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { page, rail } from './src/layout.mjs';
-import { esc } from './src/components.mjs';
+import { esc, quotes } from './src/components.mjs';
 import { site, allLessons, lessonUrl } from './content/site.mjs';
 import { homePage } from './content/pages/home.mjs';
 import { mapPage } from './content/pages/map.mjs';
 import { apisPage, apiPage } from './content/pages/apis.mjs';
 import { eventsPage } from './content/pages/events.mjs';
+import { suitePages, suitePaths } from './content/pages/suite.mjs';
+import { suiteFile } from './src/components.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const dist = path.join(root, 'dist');
@@ -46,6 +48,7 @@ const ready = lessons.filter((l) => l.ready && (!process.env.DRAFT || existsSync
 for (const [i, l] of ready.entries()) {
   const file = path.join(root, 'content/lessons', `${l.id}.mjs`);
   if (!existsSync(file)) { problems.push(`missing lesson file for ${l.id}`); continue; }
+  quotes.lesson = l.id;
   const mod = (await import(pathToFileURL(file).href)).default;
   const prev = ready[i - 1], next = ready[i + 1];
   const pager = `<nav class="pager" aria-label="Lessons">`
@@ -56,7 +59,7 @@ for (const [i, l] of ready.entries()) {
 <aside class="rail" aria-label="Lessons">${rail(l.id)}</aside>
 <article class="article">
 <details class="rail-mobile"><summary>All lessons</summary><nav class="rail">${rail(l.id)}</nav></details>
-<p class="eyebrow"><span class="chip">Lesson ${String(l.n).padStart(2, '0')}</span><span>Module ${l.moduleNo} · ${esc(l.module)}</span></p>
+<p class="eyebrow"><span class="chip">Lesson ${String(l.n).padStart(2, '0')}</span><span>${l.track === 'understand' ? '' : `${esc(l.trackTitle)} · `}Module ${l.moduleNo} · ${esc(l.module)}</span></p>
 <h1>${esc(l.title)}</h1>
 <p class="lede">${mod.lede}</p>
 <div class="meta-row"><span>About ${mod.minutes} minutes</span><span>${esc(mod.youWill)}</span></div>
@@ -72,6 +75,10 @@ await out('map', mapPage());
 await out('apis', apisPage());
 for (const p of apiPage()) await out(`apis/${p.slug}`, p.html);
 await out('events', await eventsPage(root));
+for (const p of suitePages()) await out(p.route, p.html);
+problems.push(...quotes.problems);
+// The explorer shows whole files, so none of them may mention seeded bugs.
+for (const p of suitePaths()) if (/bug/i.test(suiteFile(p))) problems.push(`data/suite/${p}: mentions bugs`);
 
 // 404 page
 await writeFile(path.join(dist, '404.html'), page({ title: 'Page not found · CardVault Learn', body: `<div class="frame"><div class="page-head"><h1>That page does not exist</h1><p class="lede">It may be a lesson that is not written yet. <a href="/">Go to the start</a>.</p></div></div>` }));
@@ -85,3 +92,9 @@ function softenLinks(id, html, lessons) {
     return `<span class="later" title="A later lesson, not written yet">${label}<small>soon</small></span>`;
   });
 }
+
+if (problems.length) {
+  console.error(`${problems.length} problem(s):\n- ${problems.join('\n- ')}`);
+  process.exit(1);
+}
+console.log(`Built ${ready.length} lessons and ${quotes.files.length} suite excerpts into dist/.`);

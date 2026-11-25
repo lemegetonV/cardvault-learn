@@ -9,6 +9,7 @@ const navItems = [
   ['map', '/map/', 'Service map'],
   ['apis', '/apis/', 'APIs'],
   ['events', '/events/', 'Events'],
+  ['suite', '/suite/', 'Test suite'],
 ];
 
 export function page({ title, description = site.description, active = '', body, head = '', scripts = '' }) {
@@ -38,7 +39,7 @@ ${head}
 ${body}
 </main>
 <footer class="site-footer"><div class="inner">
-<span>Describes CardVault at commit <a href="${site.cardvaultRepo}/commit/${site.cardvaultCommit}">${site.cardvaultCommit}</a>.</span>
+<span>Describes CardVault at commit <a href="${site.cardvaultRepo}/commit/${site.cardvaultCommit}">${site.cardvaultCommit}</a>${site.suiteCommit ? `, and its API test suite at <a href="${site.cardvaultRepo}/commit/${site.suiteCommit}">${site.suiteCommit}</a>` : ''}.</span>
 <span>Live stage: <a href="${site.stageApp}">app</a> · <a href="${site.stageDocs}">API docs</a></span>
 <span>Every bank, card and person here is fictional.</span>
 </div></footer>
@@ -49,9 +50,9 @@ ${scripts}
 `;
 }
 
-/** The contents rail: every lesson of the first track, current one highlighted. */
+/** The contents rail: every lesson of the current lesson's track, current one highlighted. */
 export function rail(currentId) {
-  const t = tracks[0];
+  const t = tracks.find((x) => x.modules.some((m) => m.lessons.some(([id]) => id === currentId))) || tracks[0];
   let n = 0;
   const mods = t.modules.map((m, mi) => {
     const items = m.lessons.map(([id, title, ready]) => {
