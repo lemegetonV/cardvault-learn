@@ -138,10 +138,10 @@ export const tracks = [
         title: 'Data, time and isolation',
         blurb: 'Fresh data for every test, running in parallel safely, moving the clock and waiting without sleeping.',
         lessons: [
-          ['suite-fresh-customers', 'A fresh customer for every test', false],
-          ['suite-parallel-serial', 'Parallel and serial tests', false],
-          ['suite-moving-time', 'Moving the clock', false],
-          ['suite-waiting', 'Waiting without sleeping', false],
+          ['suite-fresh-customers', 'A fresh customer for every test', true],
+          ['suite-parallel-serial', 'Parallel and serial tests', true],
+          ['suite-moving-time', 'Moving the clock', true],
+          ['suite-waiting', 'Waiting without sleeping', true],
         ],
       },
       {
