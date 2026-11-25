@@ -1,86 +1,54 @@
-import { figure, keyIdea, testerEye, terms, check, recap } from '../../src/components.mjs';
-import { actors } from '../diagrams/basics.mjs';
+import { figure, interview, keyIdea, table } from '../../src/components.mjs';
+import { business } from '../diagrams/app.mjs';
 
 export default {
-  minutes: 8,
-  lede: 'When you pay online with a digital wallet, a bank somewhere decides in a fraction of a second whether to let the payment through. CardVault is a pretend version of that bank, built so you can learn how it works and then test it.',
-  youWill: 'You will meet the four parties in the story and the four seeded customers.',
+  minutes: 6,
+  lede: 'CardVault is the online banking app of a made-up bank, CardVault Bank. Customers use it to look after their cards, keep cards in a checkout wallet for paying online, and check what they spent.',
+  youWill: 'You will be able to describe the product and its four main features in two minutes.',
   body: `
-<h2>A payment you never see</h2>
-<p>Picture alice, a customer of a bank. She is buying headphones on a shop’s website. At the checkout she picks her digital wallet, taps <strong>Pay</strong>, and a moment later the shop says the order is confirmed.</p>
-<p>That tap starts a short conversation between several companies. The shop asks the card network to charge alice. The network asks alice’s bank whether the charge is allowed. The bank checks her card, says yes, and puts the money aside. Days later the charge is settled for good.</p>
-<p>CardVault plays <strong>the bank’s side</strong> of that conversation. Everything the bank must get right lives inside it: who alice is, which cards she has, which of them may be used in the wallet, and whether a purchase is approved.</p>
+<h2>The product in one paragraph</h2>
+<p>Think of the app your own bank gives you for your cards. You sign in, you see each card with its balance, and you can report one lost. CardVault does that, and adds one more thing: a <strong>checkout wallet</strong>. A checkout wallet keeps your cards ready at online checkouts, so you pay with one tap instead of typing a card number. CardVault Bank decides which of its cards may go into that wallet, and it approves or declines every purchase made with them.</p>
 
-<h2>The story in one picture</h2>
-${figure({ svg: actors(), caption: 'Four parties. The bank in the middle is CardVault itself. The wallet operator and the card network are outside companies, played here by mocks.' })}
-<p>Read the picture from left to right.</p>
+<h2>What a customer can do</h2>
+<div class="features">
+<div class="feature"><h3>Cards</h3><p>See every card, what is available to spend, and report a card lost, reissue it or close it.</p></div>
+<div class="feature"><h3>Checkout wallet</h3><p>Add a card to the wallet, remove it, or opt out of the wallet completely. Cards that may not join say why.</p></div>
+<div class="feature"><h3>Transactions</h3><p>A list of wallet purchases with filters, a detail page for each one, a CSV export, and a way to dispute a charge.</p></div>
+<div class="feature"><h3>Profile</h3><p>Email and phone number, each of which must be verified before cards can join the wallet.</p></div>
+</div>
+<p>You will see each of these screens in <a href="/learn/screen-tour/">A tour of the screens</a>.</p>
+
+<h2>Who is involved</h2>
+${figure({ svg: business(), caption: 'CardVault Bank sits in the middle and is what you test. The wallet company and the card network are other companies the bank works with.' })}
+<p>A bank never works alone, and two outside companies matter here.</p>
 <ul>
-<li><strong>The customer</strong> uses the bank’s web app to see cards, manage the wallet and check purchases.</li>
-<li><strong>CardVault Bank</strong> is a set of small services that work together: one for logins, one for cards, one for the wallet, and so on. You will meet each one in <a href="/learn/the-system-map/">The system map</a>.</li>
-<li><strong>The wallet operator</strong> is the company that runs the digital wallet. The bank asks it to add, pause or remove cards, and it confirms each change a little later.</li>
-<li><strong>The card network</strong> carries purchases from shops to banks. When alice pays, the network asks the bank: approve this, or not?</li>
+<li><strong>The wallet company</strong> runs the checkout wallet itself. When a customer adds a card, the bank asks the wallet company to put it in, and the wallet company confirms a little later.</li>
+<li><strong>The card network</strong> sits between shops and banks. When the customer pays at a shop, the network asks the bank whether to approve the purchase. Days later it tells the bank the final amount, which is called <strong>settling</strong> the purchase.</li>
 </ul>
+<p>In our test environment both companies are <strong>simulators</strong>: small programs that act like the real companies. That is normal in real projects too, because you cannot run tests against another company’s live system.</p>
 
-${keyIdea(`<p>Only the bank is <strong>under test</strong>. The wallet operator and the card network are <strong>mocks</strong>: simple stand-ins that behave like the real companies and that tests can control. A test can tell the operator mock to answer slowly, answer twice, or not answer at all, and then check that the bank copes.</p>`)}
+${keyIdea('<p>Only the bank is the system under test. When a test finds a problem, it is a problem in CardVault Bank, not in the simulators around it.</p>')}
 
-<h2>Why build a pretend bank?</h2>
-<p>To learn test automation you need something worth testing. A to-do app is too simple: it has no money, no outside partners and nothing that can go wrong between two systems. A real bank is impossible: you cannot reset it, move its clock or ask its partners to misbehave.</p>
-<p>CardVault sits between the two. It is an <strong>application under test</strong>: an app that exists so tests can be written against it. That shapes how it is built.</p>
-<ul>
-<li><strong>It behaves like the real thing.</strong> Logins with tokens that expire, money that is held and settled, messages between services, signed calls to partners, and failures that need handling.</li>
-<li><strong>It can be controlled.</strong> Tests can reset it to a known state, move its clock forward, and switch on faults such as a slow response.</li>
-<li><strong>It starts the same every time.</strong> The same customers, cards and purchases are loaded on every reset, so a test knows exactly what to expect.</li>
-<li><strong>Everything is fictional.</strong> The bank, the operator, the network, the people and the card numbers are all made up.</li>
-</ul>
-
-<h2>Meet the customers</h2>
-<p>Every reset loads the same four customers. Each one is set up to show a different situation, so you can reach it without building it yourself first.</p>
-${terms([
-  ['alice', 'The busy one. Four cards: two in the wallet, one unused for 120 days, and one prepaid. About 55 wallet purchases in every possible state.'],
-  ['bob', 'One card in the wallet, and one card reported lost, so its place in the wallet is paused.'],
-  ['charlie', 'Has opted out of the wallet altogether, so his eligible card is not in it.'],
-  ['dana', 'Has not verified her phone number, so none of her cards may join the wallet.'],
-])}
-${testerEye(`<p>When a later lesson describes a rule, ask which customer already shows it. “Unused for 120 days” is alice’s third card. “Phone not verified” is dana. The seed data is the starting point for most of your tests, so it pays to know it well.</p>`)}
-
-<h2>Two places it runs</h2>
-<p>You can run CardVault on your own computer, where it behaves exactly as designed. There is also a hosted copy on a stage server, which deliberately has some known bugs switched on, so you have real defects to find. <a href="/learn/running-cardvault/">Running CardVault yourself</a> covers both.</p>
-
-<h2>Words from this lesson</h2>
-${terms([
-  ['Application under test', 'An app built or deployed so that tests can be written and run against it.'],
-  ['Mock', 'A stand-in for an outside system. It behaves like the real one and can be told to misbehave.'],
-  ['Wallet operator', 'The outside company that runs the digital wallet the bank’s cards join.'],
-  ['Card network', 'The outside company that carries purchases from shops to the bank that issued the card.'],
-  ['Seed data', 'The fixed customers, cards and purchases loaded every time CardVault is reset.'],
+<h2>The demo customers</h2>
+<p>The app comes with four demo customers. They all share the password <code>CardVault-Demo-1</code>, and each one shows a different situation, which makes them useful starting points for tests.</p>
+${table(['Customer', 'What is special about them'], [
+  ['alice', 'The main demo account: four cards, two of them in the wallet, and a long list of purchases.'],
+  ['bob', 'One card in the wallet and one card reported lost.'],
+  ['charlie', 'Has opted out of the wallet.'],
+  ['dana', 'Has not verified her phone number, so her cards may not join the wallet.'],
 ])}
 
-<h2>Check yourself</h2>
-${check({
-  q: 'A test wants to see what CardVault does when the wallet operator never confirms a change. Where does the test make that happen?',
-  options: ['It changes CardVault’s code before the run', 'It tells the wallet operator mock to drop its confirmation', 'It waits until the real operator has an outage', 'It cannot be tested'],
-  answer: 1,
-  why: '<p>The operator is a mock, so tests can control it. Changing the code under test would mean you are no longer testing the real app, and waiting for a real outage is neither possible nor repeatable.</p>',
-})}
-${check({
-  q: 'Which of these is under test: the bank’s services, the wallet operator, or the card network?',
-  options: ['All three', 'Only the bank’s services', 'Only the wallet operator and the card network', 'Only the card network'],
-  answer: 1,
-  why: '<p>The bank is the system under test. The other two are mocks that play outside companies, so a bug in them would not be a bug in the product.</p>',
-})}
-${check({
-  q: 'You need a customer whose cards cannot join the wallet because a contact detail is not verified. Who do you start from?',
-  options: ['alice', 'bob', 'charlie', 'dana'],
-  answer: 3,
-  why: '<p>dana has not verified her phone number, which makes every one of her cards ineligible. charlie is also outside the wallet, but for a different reason: he opted out.</p>',
-})}
+<h2>Where it runs</h2>
+<p>CardVault runs in Docker on your own computer, and a copy runs on a stage server on the internet. The local copy behaves exactly as designed. The stage copy has some known defects switched on on purpose, so that your tests have real bugs to find there.</p>
 
-<h2>Recap</h2>
-${recap([
-  'CardVault plays one bank’s side of a digital wallet: logins, cards, the wallet, purchase decisions.',
-  'The wallet operator and the card network are mocks: outside companies that tests can control.',
-  'It is an application under test: realistic, controllable and identical after every reset.',
-  'Four seed customers each show a different situation: alice, bob, charlie and dana.',
-])}
+${interview({
+  say: `<p>“The app I tested is the card and wallet app of a bank. Customers sign in, see their cards and balances, add cards to a checkout wallet for one-tap online payments, and review or dispute their wallet transactions.</p>
+<p>Behind the screens the bank works with two outside companies: the wallet company that runs the wallet, and the card network that sends purchases to the bank for approval. In test environments those two are simulated, so we can control what they send back.”</p>`,
+  qa: [
+    ['What was the application you tested?', '<p>Use the spoken answer above. Lead with the business purpose (cards, wallet, transactions), then the main features, then who else is involved. Keep the technical parts for when they ask.</p>'],
+    ['Why would a bank decide which cards can go in a wallet?', '<p>Risk. The bank only wants active, recently used credit and debit cards in the wallet, and only for customers whose email and phone are verified. A prepaid card, an expired card or an unverified customer is refused, and the app shows the reason.</p>'],
+    ['How did you test against outside companies you do not control?', '<p>Through simulators of the wallet company and the card network. They behave like the real companies, and tests can tell them how to respond, for example slowly or with an error, to check that the bank copes.</p>'],
+  ],
+})}
 `,
 };

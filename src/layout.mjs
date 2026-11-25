@@ -5,11 +5,8 @@ import { site, tracks, lessonUrl } from '../content/site.mjs';
 const brandMark = `<svg class="brand-mark" viewBox="0 0 30 20" aria-hidden="true"><rect x="0.75" y="0.75" width="28.5" height="18.5" rx="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="4.5" y="6" width="6.5" height="5" rx="1.2" fill="var(--event)"/><path d="M4.5 15h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`;
 
 const navItems = [
-  ['learn', '/', 'Learn'],
-  ['map', '/map/', 'Service map'],
-  ['apis', '/apis/', 'APIs'],
-  ['events', '/events/', 'Events'],
-  ['suite', '/suite/', 'Test suite'],
+  ['home', '/', 'Start'],
+  ...tracks.map((t) => [t.id, `/#${t.id}`, t.short]),
 ];
 
 export function page({ title, description = site.description, active = '', body, head = '', scripts = '' }) {
@@ -39,8 +36,7 @@ ${head}
 ${body}
 </main>
 <footer class="site-footer"><div class="inner">
-<span>Describes CardVault at commit <a href="${site.cardvaultRepo}/commit/${site.cardvaultCommit}">${site.cardvaultCommit}</a>${site.suiteCommit ? `, and its API test suite at <a href="${site.cardvaultRepo}/commit/${site.suiteCommit}">${site.suiteCommit}</a>` : ''}.</span>
-<span>Live stage: <a href="${site.stageApp}">app</a> · <a href="${site.stageDocs}">API docs</a></span>
+<span>Describes <a href="${site.cardvaultRepo}">CardVault</a> at commit <a href="${site.cardvaultRepo}/commit/${site.cardvaultCommit}">${site.cardvaultCommit}</a>.</span>
 <span>Every bank, card and person here is fictional.</span>
 </div></footer>
 <script src="/assets/site.js" defer></script>

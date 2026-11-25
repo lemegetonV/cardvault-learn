@@ -1,12 +1,12 @@
 # CardVault Learn
 
-A learning site that explains how [CardVault](https://github.com/lemegetonV/cardvault) works: what it does, how its services fit together, and how to test it. It is plain static HTML, built by a small Node script and served from a Cloudflare Worker at **https://cardvault-learn.x-bookmarks.workers.dev**.
+Interview prep built around [CardVault](https://github.com/lemegetonV/cardvault), a bank's card and wallet app. Plain static HTML, built by a small Node script and served from a Cloudflare Worker at **https://cardvault-learn.x-bookmarks.workers.dev**.
 
-The site grows in three tracks:
+Three tracks of short lessons:
 
-1. **Understand CardVault**: the architecture, in 9 modules. Modules 1 and 2 are written.
-2. **Test the API with pytest**: later.
-3. **Test the web app with Playwright**: later.
+1. **Know the app**: the product, its screens, its services and how to explain the architecture.
+2. **API testing with Python and pytest**: Python from zero, then a small, readable framework.
+3. **UI testing with TypeScript and Playwright**: TypeScript from zero, then a Playwright framework.
 
 ## Run it locally
 
@@ -27,13 +27,10 @@ The build stops with a list of problems if a lesson links to a lesson id that do
 | `content/site.mjs` | Site facts, the tracks, modules and lessons, and which lessons are ready |
 | `content/lessons/<id>.mjs` | One file per lesson: `minutes`, `lede`, `youWill` and `body` |
 | `content/diagrams/` | Hand-drawn SVG diagrams, as functions that return SVG strings |
-| `content/pages/` | The home page, service map, API explorer and event catalogue |
-| `content/services.mjs` | Facts about each service and mock, used by the map and API pages |
-| `src/components.mjs` | Building blocks: figures, callouts, code, tables, the step-through diagram, checks |
+| `content/images/` | Screenshots of the real app |
+| `content/pages/home.mjs` | The home page |
+| `src/components.mjs` | Building blocks: figures, screenshots, callouts, code, tables, the step-through diagram, the interview corner |
 | `src/styles.css`, `src/site.js` | The design and the little JavaScript the pages need |
-| `data/openapi/`, `data/events/` | OpenAPI documents and event schemas exported from CardVault |
-| `tools/export-data.sh` | Refreshes `data/` from a running local CardVault stack |
-| `tools/export-suite.sh` | Copies the API suite (`tests/api`, `api-tests.yml`) at a commit into `data/suite/`, for the explorer at `/suite/` |
 
 ## Adding a lesson
 

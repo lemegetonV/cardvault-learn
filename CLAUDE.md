@@ -1,6 +1,16 @@
 # CardVault Learn
 
-A learning site that teaches how CardVault (`lemegetonV/cardvault`) works, and later how to test it with pytest and Playwright. Static pages built by `build.mjs`, served from the Cloudflare Worker `cardvault-learn` (https://cardvault-learn.x-bookmarks.workers.dev). See `README.md` for commands and layout.
+A learning site that prepares the owner for QA/SDET interviews: know the CardVault app (`lemegetonV/cardvault`) like a product they worked on, then test it with Python + pytest (API) and TypeScript + Playwright (UI). Static pages built by `build.mjs`, served from the Cloudflare Worker `cardvault-learn` (https://cardvault-learn.x-bookmarks.workers.dev). See `README.md` for commands and layout.
+
+## The goal (the owner's words, 2026-11-25, binding; this replaced a first version they found dense and unusable)
+
+- **Interview prep for a beginner.** The owner has almost no Python, JavaScript or TypeScript experience. They must be able to (1) explain CardVault at a system-design level, (2) explain each test framework's files and why they exist, then the tests, (3) read the code, with the language taught in place.
+- **Product view only.** CardVault is presented as a real bank product with features. Do not teach how it was engineered internally (outbox, shared clock, crypto, locks, CI budgets) or the test machinery (seed internals, `/test/*` endpoints, clock control, fault injection, seeded bugs). One sentence that the test environment can be reset is enough.
+- **Short.** A lesson is a 10-minute read, roughly 600 to 900 words, built around one diagram, a few screenshots or one code file.
+- **Map before detail.** Each framework track starts with the folder tree and a one-line job per file, then what happens in a run, and only then the pieces.
+- **Beginner code.** Plain functions, simple classes, dictionaries, `assert`. If a line needs a paragraph to explain, rewrite the code.
+- **Interview corner.** Every lesson ends with `interview({ say, qa })`: a short spoken answer and two or three likely questions with model answers.
+- Pilot each track and get the owner's review before writing the rest.
 
 ## What this site is (the owner's words, binding)
 
@@ -15,9 +25,10 @@ A learning site that teaches how CardVault (`lemegetonV/cardvault`) works, and l
 - Open with what the subject is, the problem behind it, and how it connects to what the reader already knows. No summary box at the top.
 - Short paragraphs, clear subjects, familiar words, technical terms explained where they first appear. British spelling.
 - One idea per section. A diagram where a mechanism has moving parts; a step-through (`sequence`) where order matters.
-- Code only where it helps understanding, short, from the real CardVault source (say which file), and explained in prose underneath.
+- In the app track, no source code. In the test tracks, code comes from the new beginner suites and is explained line by line.
 - Callouts, used sparingly: **Key idea** (the one thing to remember), **Through a tester's eyes** (what this means for tests), **In a real bank** (how real systems differ).
-- Close with "Words from this lesson" (terms), "Check yourself" (2 to 3 self-contained questions that test reasoning, each with a "why"), and "Recap".
+- Close with the interview corner (`interview()` in `src/components.mjs`). No terms list, quiz or recap boxes unless a lesson clearly needs one.
+- Screenshots of the real app go in `content/images/` and use `shot()`. Take them from a local stack (bug-free), never from stage.
 - Every fact must match the CardVault source at the commit in `content/site.mjs` (`cardvaultCommit`). Read the code before describing it. If unsure, leave it out.
 - A link to a planned lesson that is not written yet renders as text marked "soon". Never link to unknown lesson ids.
 
@@ -29,11 +40,9 @@ A learning site that teaches how CardVault (`lemegetonV/cardvault`) works, and l
 
 ## Never put on the site
 
-- Anything about CardVault's **seeded bugs**: the answer key (`docs/private/`), `scripts/bugs.txt`, bug flag names, where bug code lives, or excerpts of files that mention them (for example `docker-compose.yml` and `app/shared/logging.py`). The build strips the `/test/bugs` endpoint from the OpenAPI copies and fails if a spec still mentions bugs. Saying that stage has known bugs switched on is fine.
+- Anything about CardVault's **seeded bugs**: the answer key (`docs/private/`), `scripts/bugs.txt`, bug flag names, where bug code lives, or excerpts of files that mention them (for example `docker-compose.yml` and `app/shared/logging.py`). Saying that stage has known bugs switched on is fine.
 - The password-protected tools URL, test keys, passwords other than the public seed password `CardVault-Demo-1`, or anything from `.env` files on the server.
 
-## Refreshing CardVault data
+## Refreshing CardVault facts
 
-Run CardVault locally (`make up`), then `tools/export-data.sh ../cardvault`, and update `cardvaultCommit` in `content/site.mjs`.
-
-For the API suite: `tools/export-suite.sh ../cardvault <commit>`, then set `suiteCommit` to the same commit. The build checks that every lesson excerpt titled with a suite path still matches that file, line by line, and fails if not. The explorer (`/suite/`) shows every copied file, so the export blanks the local keys and passwords in `envs/local.env`.
+Facts are pinned to `cardvaultCommit` in `content/site.mjs`. Run CardVault locally (`make up && make seed` in the cardvault repo), check the facts and retake screenshots, then update the commit.
