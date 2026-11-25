@@ -40,9 +40,9 @@ export const tracks = [
         title: 'Identity and trust',
         blurb: 'How customers log in, how machines prove who they are, and the cryptography underneath.',
         lessons: [
-          ['login-and-tokens', 'Customer login and tokens'],
-          ['machines-calling-machines', 'Machines that call machines'],
-          ['cryptography', 'The cryptography underneath (optional)'],
+          ['login-and-tokens', 'Customer login and tokens', true],
+          ['machines-calling-machines', 'Machines that call machines', true],
+          ['cryptography', 'The cryptography underneath (optional)', true],
         ],
       },
       {
