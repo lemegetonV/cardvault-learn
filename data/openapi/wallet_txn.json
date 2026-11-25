@@ -1,0 +1,1672 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "CardVault wallet-txn-service",
+    "description": "System of record for wallet transactions: built from the auth.decided and txn.cleared events of wallet purchases, with the customer's transaction list, a CSV export and disputes.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Liveness",
+        "description": "200 while the process is up.",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Readiness",
+        "description": "200 when the service's database (and Kafka, if it uses Kafka) answer.",
+        "operationId": "ready_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "503": {
+            "description": "A dependency is not reachable"
+          }
+        }
+      }
+    },
+    "/v1/wallet/transactions": {
+      "get": {
+        "tags": [
+          "transactions"
+        ],
+        "summary": "List my wallet transactions",
+        "description": "Newest first (ties broken by txn_id), 20 per page by default. `card_id` and `status` may repeat. `from` and `to` are inclusive. Only the caller's transactions.",
+        "operationId": "list_transactions_v1_wallet_transactions_get",
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "next_cursor from the previous page",
+              "title": "Cursor"
+            },
+            "description": "next_cursor from the previous page"
+          },
+          {
+            "name": "card_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Repeat for several cards",
+              "title": "Card Id"
+            },
+            "description": "Repeat for several cards"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "AUTHORIZED",
+                      "DECLINED",
+                      "SETTLED",
+                      "PARTIALLY_REVERSED",
+                      "REVERSED",
+                      "REFUNDED",
+                      "PARTIALLY_REFUNDED"
+                    ],
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Repeat for several statuses",
+              "title": "Status"
+            },
+            "description": "Repeat for several statuses"
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive lower bound: an ISO 8601 datetime with offset, or a date (start of that UTC day)",
+              "title": "From"
+            },
+            "description": "Inclusive lower bound: an ISO 8601 datetime with offset, or a date (start of that UTC day)"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive upper bound: an ISO 8601 datetime with offset, or a date (end of that UTC day)",
+              "title": "To"
+            },
+            "description": "Inclusive upper bound: an ISO 8601 datetime with offset, or a date (end of that UTC day)"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Page size, 1 to 100 (default 20)",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "Page size, 1 to 100 (default 20)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unreadable cursor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/v1/wallet/transactions/export": {
+      "get": {
+        "tags": [
+          "transactions"
+        ],
+        "summary": "Export my wallet transactions as CSV",
+        "description": "Same filters as the list (no paging; at most 10,000 rows, newest first). Columns: txn_id, occurred_at_utc, card_id, merchant_name, mcc, status, decline_code, amount, cleared_amount, reversed_amount, refunded_amount, currency, settled_at_utc. Amounts are dollars with 2 decimals, times are UTC (ISO 8601 with Z). A cell that starts with =, +, -, @, tab or CR is prefixed with ' so spreadsheets do not run it. Filename: wallet-transactions-<from>-<to>.csv, with \"all\" for an omitted bound.",
+        "operationId": "export_transactions_v1_wallet_transactions_export_get",
+        "parameters": [
+          {
+            "name": "card_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "uuid"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Repeat for several cards",
+              "title": "Card Id"
+            },
+            "description": "Repeat for several cards"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "array",
+                  "items": {
+                    "enum": [
+                      "AUTHORIZED",
+                      "DECLINED",
+                      "SETTLED",
+                      "PARTIALLY_REVERSED",
+                      "REVERSED",
+                      "REFUNDED",
+                      "PARTIALLY_REFUNDED"
+                    ],
+                    "type": "string"
+                  }
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Repeat for several statuses",
+              "title": "Status"
+            },
+            "description": "Repeat for several statuses"
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive lower bound: an ISO 8601 datetime with offset, or a date (start of that UTC day)",
+              "title": "From"
+            },
+            "description": "Inclusive lower bound: an ISO 8601 datetime with offset, or a date (start of that UTC day)"
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Inclusive upper bound: an ISO 8601 datetime with offset, or a date (end of that UTC day)",
+              "title": "To"
+            },
+            "description": "Inclusive upper bound: an ISO 8601 datetime with offset, or a date (end of that UTC day)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "text/csv": {}
+            }
+          },
+          "400": {
+            "description": "Unreadable cursor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/v1/wallet/transactions/{txn_id}": {
+      "get": {
+        "tags": [
+          "transactions"
+        ],
+        "summary": "Get one of my wallet transactions",
+        "description": "404 if it does not exist or belongs to another customer.",
+        "operationId": "get_transaction_v1_wallet_transactions__txn_id__get",
+        "parameters": [
+          {
+            "name": "txn_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The transaction's txn_id (UUID)",
+              "title": "Txn Id"
+            },
+            "description": "The transaction's txn_id (UUID)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TransactionView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unreadable cursor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/v1/wallet/disputes": {
+      "get": {
+        "tags": [
+          "transactions",
+          "disputes"
+        ],
+        "summary": "List my disputes",
+        "description": "Newest first. Receipt metadata only.",
+        "operationId": "list_disputes_v1_wallet_disputes_get",
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "next_cursor from the previous page",
+              "title": "Cursor"
+            },
+            "description": "next_cursor from the previous page"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "Page size, 1 to 100 (default 20)",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "Page size, 1 to 100 (default 20)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisputePage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unreadable cursor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/v1/wallet/disputes/{dispute_id}": {
+      "get": {
+        "tags": [
+          "transactions",
+          "disputes"
+        ],
+        "summary": "Get one of my disputes",
+        "description": "404 if it does not exist or belongs to another customer.",
+        "operationId": "get_dispute_v1_wallet_disputes__dispute_id__get",
+        "parameters": [
+          {
+            "name": "dispute_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The dispute's ID",
+              "title": "Dispute Id"
+            },
+            "description": "The dispute's ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisputeView"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Unreadable cursor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/v1/wallet/transactions/{txn_id}/disputes": {
+      "post": {
+        "tags": [
+          "disputes"
+        ],
+        "summary": "Dispute one of my transactions",
+        "description": "multipart/form-data: `reason` (UNRECOGNISED, DUPLICATE, WRONG_AMOUNT or NOT_RECEIVED), optional `note` (at most 500 characters) and optional `receipt` (PDF, PNG or JPEG, at most 5,242,880 bytes, type detected from the content). Only AUTHORIZED, SETTLED, PARTIALLY_REVERSED and PARTIALLY_REFUNDED transactions can be disputed (otherwise 422 TRANSACTION_NOT_DISPUTABLE), and only once while a dispute is OPEN (409 DISPUTE_ALREADY_OPEN). Accepts `Idempotency-Key`; the fingerprint is the fields and the receipt's SHA-256, so a retry of the same form replays the first answer.",
+        "operationId": "open_dispute_v1_wallet_transactions__txn_id__disputes_post",
+        "parameters": [
+          {
+            "name": "txn_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The transaction's txn_id (UUID)",
+              "title": "Txn Id"
+            },
+            "description": "The transaction's txn_id (UUID)"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_open_dispute_v1_wallet_transactions__txn_id__disputes_post"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DisputeView"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "400": {
+            "description": "Unreadable cursor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      }
+    },
+    "/test/reset": {
+      "post": {
+        "tags": [
+          "test-support"
+        ],
+        "summary": "Reset this service",
+        "description": "Truncates this service's tables, clears faults, idempotency keys and lockouts, and skips consumers to the end of their topics.",
+        "operationId": "reset_test_reset_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Reset Test Reset Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test/seed": {
+      "post": {
+        "tags": [
+          "test-support"
+        ],
+        "summary": "Load seed data",
+        "description": "Resets this service, then writes the deterministic seed data.",
+        "operationId": "seed_test_seed_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Seed Test Seed Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test/faults": {
+      "get": {
+        "tags": [
+          "test-support"
+        ],
+        "summary": "List active faults",
+        "operationId": "get_faults_test_faults_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Faults Test Faults Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "test-support"
+        ],
+        "summary": "Replace the active fault set",
+        "operationId": "set_faults_test_faults_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FaultsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Set Faults Test Faults Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test/clock": {
+      "get": {
+        "tags": [
+          "test-support"
+        ],
+        "summary": "Read the effective time",
+        "operationId": "get_clock_test_clock_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClockView"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "test-support"
+        ],
+        "summary": "Move the shared clock",
+        "description": "Writes the single shared offset row. Returns once this service sees the new time; other services follow within 1 second.",
+        "operationId": "set_clock_test_clock_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClockRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClockView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test/quiet": {
+      "get": {
+        "tags": [
+          "test-support"
+        ],
+        "summary": "Is anything in flight?",
+        "description": "Outbox depth and consumer lag. quiet=true when both are zero.",
+        "operationId": "quiet_test_quiet_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Quiet Test Quiet Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test/bugs": {
+      "get": {
+        "tags": [
+          "test-support"
+        ],
+        "summary": "Seeded-bug flags that are on in this service",
+        "operationId": "active_bugs_test_bugs_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Active Bugs Test Bugs Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test/transactions/{trace_id}": {
+      "get": {
+        "tags": [
+          "test-support"
+        ],
+        "summary": "Read a transaction by trace_id (test support)",
+        "description": "Any customer's transaction, with token_ref and the decision, for eventual-consistency checks after a simulated purchase.",
+        "operationId": "test_transaction_test_transactions__trace_id__get",
+        "parameters": [
+          {
+            "name": "trace_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 64,
+              "title": "Trace Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Test Transaction Test Transactions  Trace Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Body_open_dispute_v1_wallet_transactions__txn_id__disputes_post": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "enum": [
+              "UNRECOGNISED",
+              "DUPLICATE",
+              "WRONG_AMOUNT",
+              "NOT_RECEIVED"
+            ],
+            "title": "Reason",
+            "description": "Why the transaction is disputed"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note",
+            "description": "At most 500 characters"
+          },
+          "receipt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "contentMediaType": "application/octet-stream"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Receipt",
+            "description": "PDF, PNG or JPEG, up to 5 MB"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "Body_open_dispute_v1_wallet_transactions__txn_id__disputes_post"
+      },
+      "ClockRequest": {
+        "properties": {
+          "offset_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offset Seconds",
+            "description": "Set the offset from real time"
+          },
+          "advance_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Advance Seconds",
+            "description": "Move the clock by this much"
+          },
+          "now": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Now",
+            "description": "Set the effective time (timezone-aware)"
+          },
+          "reset": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reset",
+            "description": "true clears the offset (real time)"
+          }
+        },
+        "type": "object",
+        "title": "ClockRequest",
+        "description": "Exactly one of the fields. The offset applies to every service at once."
+      },
+      "ClockView": {
+        "properties": {
+          "now": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Now"
+          },
+          "real_now": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Real Now"
+          },
+          "offset_seconds": {
+            "type": "number",
+            "title": "Offset Seconds"
+          },
+          "service": {
+            "type": "string",
+            "title": "Service"
+          }
+        },
+        "type": "object",
+        "required": [
+          "now",
+          "real_now",
+          "offset_seconds",
+          "service"
+        ],
+        "title": "ClockView"
+      },
+      "DisputePage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/DisputeView"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "DisputePage"
+      },
+      "DisputeView": {
+        "properties": {
+          "dispute_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Dispute Id"
+          },
+          "txn_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Txn Id"
+          },
+          "reason": {
+            "type": "string",
+            "enum": [
+              "UNRECOGNISED",
+              "DUPLICATE",
+              "WRONG_AMOUNT",
+              "NOT_RECEIVED"
+            ],
+            "title": "Reason"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "status": {
+            "type": "string",
+            "const": "OPEN",
+            "title": "Status"
+          },
+          "receipt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReceiptMeta"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Metadata only; the file is never returned"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dispute_id",
+          "txn_id",
+          "reason",
+          "note",
+          "status",
+          "receipt",
+          "created_at"
+        ],
+        "title": "DisputeView"
+      },
+      "ErrorBody": {
+        "properties": {
+          "error_code": {
+            "type": "string",
+            "title": "Error Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "correlation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correlation Id"
+          },
+          "details": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          }
+        },
+        "type": "object",
+        "required": [
+          "error_code",
+          "message",
+          "correlation_id"
+        ],
+        "title": "ErrorBody",
+        "description": "The common error response body."
+      },
+      "FaultScope": {
+        "properties": {
+          "method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method",
+            "description": "HTTP method to match, e.g. POST"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path",
+            "description": "Exact path, or a prefix ending in *"
+          },
+          "topic": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Topic",
+            "description": "Kafka topic, for Kafka faults"
+          }
+        },
+        "type": "object",
+        "title": "FaultScope"
+      },
+      "FaultSpec": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "latency",
+              "error",
+              "timeout",
+              "kafka_publish_failure",
+              "consumer_pause",
+              "relay_pause"
+            ],
+            "title": "Type"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/FaultScope"
+          },
+          "fail_next": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fail Next",
+            "description": "Fire on the next N matches only"
+          },
+          "rate": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rate",
+            "description": "Probability of firing per match"
+          },
+          "seed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seed",
+            "description": "RNG seed for rate mode (deterministic runs)"
+          },
+          "latency_ms": {
+            "type": "integer",
+            "maximum": 120000.0,
+            "minimum": 0.0,
+            "title": "Latency Ms",
+            "default": 0
+          },
+          "status": {
+            "type": "integer",
+            "maximum": 599.0,
+            "minimum": 500.0,
+            "title": "Status",
+            "description": "Status for the error fault",
+            "default": 503
+          },
+          "timeout_ms": {
+            "type": "integer",
+            "maximum": 300000.0,
+            "minimum": 0.0,
+            "title": "Timeout Ms",
+            "default": 30000
+          }
+        },
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "title": "FaultSpec",
+        "description": "One fault. See the module docs for the meaning of each field."
+      },
+      "FaultsRequest": {
+        "properties": {
+          "faults": {
+            "items": {
+              "$ref": "#/components/schemas/FaultSpec"
+            },
+            "type": "array",
+            "title": "Faults"
+          }
+        },
+        "type": "object",
+        "title": "FaultsRequest",
+        "description": "Replaces the whole active fault set. ``{\"faults\": []}`` clears every fault."
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ReceiptMeta": {
+        "properties": {
+          "filename": {
+            "type": "string",
+            "title": "Filename"
+          },
+          "content_type": {
+            "type": "string",
+            "enum": [
+              "application/pdf",
+              "image/png",
+              "image/jpeg"
+            ],
+            "title": "Content Type",
+            "description": "Detected from the file's content, not its name"
+          },
+          "size": {
+            "type": "integer",
+            "title": "Size",
+            "description": "Bytes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "filename",
+          "content_type",
+          "size"
+        ],
+        "title": "ReceiptMeta"
+      },
+      "TransactionPage": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/TransactionView"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "next_cursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Next Cursor",
+            "description": "Pass as `cursor` for the next page; null at end"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "next_cursor"
+        ],
+        "title": "TransactionPage"
+      },
+      "TransactionView": {
+        "properties": {
+          "txn_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Txn Id"
+          },
+          "trace_id": {
+            "type": "string",
+            "title": "Trace Id",
+            "description": "The network's trace ID for the purchase"
+          },
+          "card_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Card Id"
+          },
+          "merchant_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Merchant Name",
+            "description": "Untrusted free text exactly as the merchant sent it. null only while the authorization event has not arrived yet."
+          },
+          "mcc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mcc"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "AUTHORIZED",
+              "DECLINED",
+              "SETTLED",
+              "PARTIALLY_REVERSED",
+              "REVERSED",
+              "REFUNDED",
+              "PARTIALLY_REFUNDED"
+            ],
+            "title": "Status",
+            "description": "Derived from the amounts; see ARCHITECTURE.md"
+          },
+          "decline_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decline Code"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount",
+            "description": "Authorized amount in cents"
+          },
+          "cleared_amount": {
+            "type": "integer",
+            "title": "Cleared Amount",
+            "description": "Settled amount in cents (0 until settled)"
+          },
+          "reversed_amount": {
+            "type": "integer",
+            "title": "Reversed Amount"
+          },
+          "refunded_amount": {
+            "type": "integer",
+            "title": "Refunded Amount"
+          },
+          "currency": {
+            "type": "string",
+            "title": "Currency"
+          },
+          "occurred_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Occurred At",
+            "description": "When the purchase was authorized (UTC)"
+          },
+          "settled_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Settled At"
+          },
+          "open_dispute_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Open Dispute Id",
+            "description": "The OPEN dispute, if there is one"
+          }
+        },
+        "type": "object",
+        "required": [
+          "txn_id",
+          "trace_id",
+          "card_id",
+          "merchant_name",
+          "mcc",
+          "status",
+          "decline_code",
+          "amount",
+          "cleared_amount",
+          "reversed_amount",
+          "refunded_amount",
+          "currency",
+          "occurred_at",
+          "settled_at",
+          "open_dispute_id"
+        ],
+        "title": "TransactionView"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

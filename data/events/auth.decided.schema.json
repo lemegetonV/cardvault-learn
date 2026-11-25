@@ -1,0 +1,148 @@
+{
+  "$defs": {
+    "AuthDecidedPayload": {
+      "additionalProperties": false,
+      "properties": {
+        "amount": {
+          "description": "Amount in integer minor units (cents)",
+          "title": "Amount",
+          "type": "integer"
+        },
+        "card_id": {
+          "format": "uuid",
+          "title": "Card Id",
+          "type": "string"
+        },
+        "currency": {
+          "const": "USD",
+          "title": "Currency",
+          "type": "string"
+        },
+        "customer_id": {
+          "format": "uuid",
+          "title": "Customer Id",
+          "type": "string"
+        },
+        "decided_at": {
+          "format": "date-time",
+          "title": "Decided At",
+          "type": "string"
+        },
+        "decision": {
+          "enum": [
+            "APPROVED",
+            "DECLINED"
+          ],
+          "title": "Decision",
+          "type": "string"
+        },
+        "decline_code": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Decline Code"
+        },
+        "mcc": {
+          "title": "Mcc",
+          "type": "string"
+        },
+        "merchant_name": {
+          "title": "Merchant Name",
+          "type": "string"
+        },
+        "token_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Token Ref"
+        },
+        "token_requestor": {
+          "enum": [
+            "WALLET",
+            "CARD"
+          ],
+          "title": "Token Requestor",
+          "type": "string"
+        },
+        "trace_id": {
+          "title": "Trace Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "trace_id",
+        "card_id",
+        "customer_id",
+        "token_ref",
+        "token_requestor",
+        "decision",
+        "decline_code",
+        "amount",
+        "currency",
+        "merchant_name",
+        "mcc",
+        "decided_at"
+      ],
+      "title": "AuthDecidedPayload",
+      "type": "object"
+    }
+  },
+  "$id": "https://cardvault.example/events/auth.decided.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "correlation_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Correlation Id"
+    },
+    "event_id": {
+      "format": "uuid",
+      "title": "Event Id",
+      "type": "string"
+    },
+    "event_type": {
+      "title": "Event Type",
+      "type": "string"
+    },
+    "occurred_at": {
+      "format": "date-time",
+      "title": "Occurred At",
+      "type": "string"
+    },
+    "payload": {
+      "$ref": "#/$defs/AuthDecidedPayload"
+    },
+    "version": {
+      "const": 1,
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "event_id",
+    "event_type",
+    "occurred_at",
+    "correlation_id",
+    "payload"
+  ],
+  "title": "auth.decided event",
+  "type": "object"
+}

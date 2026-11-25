@@ -1,0 +1,2107 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "CardVault enrollment-service",
+    "description": "Wallet enrolment system of record for CardVault Bank: card eligibility, enrolment with the wallet operator (pushed through the outbox, confirmed by signed callbacks), reactions to card and contact changes, and the customer's wallet choices (opt-out, opt-in, add and remove a card).",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Liveness",
+        "description": "200 while the process is up.",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ready": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "Readiness",
+        "description": "200 when the service's database (and Kafka, if it uses Kafka) answer.",
+        "operationId": "ready_ready_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "503": {
+            "description": "A dependency is not reachable"
+          }
+        }
+      }
+    },
+    "/v1/wallet": {
+      "get": {
+        "tags": [
+          "wallet"
+        ],
+        "summary": "View my wallet",
+        "description": "Every card of the customer with its wallet eligibility (and the first failing reason) and its enrolment status.",
+        "operationId": "get_wallet_v1_wallet_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Wallet"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/wallet/cards/{card_id}": {
+      "get": {
+        "tags": [
+          "wallet"
+        ],
+        "summary": "View one card in my wallet",
+        "description": "Eligibility and enrolment status of one card (useful for polling PENDING).",
+        "operationId": "get_wallet_card_v1_wallet_cards__card_id__get",
+        "parameters": [
+          {
+            "name": "card_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The card's ID (UUID)",
+              "title": "Card Id"
+            },
+            "description": "The card's ID (UUID)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletCard"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "No such card",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "wallet"
+        ],
+        "summary": "Add a card to my wallet",
+        "description": "Starts enrolment (202, status PENDING). A card already ENROLLED, PENDING or SUSPENDED returns 200 with its current state. An opted-out customer gets 409 WALLET_OPTED_OUT; an ineligible card gets 422 CARD_INELIGIBLE with the reason in details.reason. Clears an earlier removal of this card. Accepts `Idempotency-Key`: the same key returns the same response.",
+        "operationId": "add_card_v1_wallet_cards__card_id__post",
+        "parameters": [
+          {
+            "name": "card_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The card's ID (UUID)",
+              "title": "Card Id"
+            },
+            "description": "The card's ID (UUID)"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TermsBody"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletCard"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "No such card",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Already in the wallet",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletCard"
+                }
+              }
+            }
+          },
+          "409": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Conflict"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Unprocessable Entity"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "wallet"
+        ],
+        "summary": "Remove a card from my wallet",
+        "description": "The enrolment becomes REMOVED at once and the wallet operator is told. The eligibility sweep never re-adds this card; adding it again or opting in clears that. Repeating it returns 200 with the current state. Accepts `Idempotency-Key`: the same key returns the same response.",
+        "operationId": "remove_card_v1_wallet_cards__card_id__delete",
+        "parameters": [
+          {
+            "name": "card_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "The card's ID (UUID)",
+              "title": "Card Id"
+            },
+            "description": "The card's ID (UUID)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WalletCard"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "No such card",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/wallet/opt-out": {
+      "post": {
+        "tags": [
+          "wallet"
+        ],
+        "summary": "Opt out of the wallet",
+        "description": "Removes every card from the wallet at once (status REMOVED) and tells the wallet operator. Repeating it returns 200 with the current wallet. Accepts `Idempotency-Key`: the same key returns the same response.",
+        "operationId": "opt_out_v1_wallet_opt_out_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Wallet"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/wallet/opt-in": {
+      "post": {
+        "tags": [
+          "wallet"
+        ],
+        "summary": "Opt in to the wallet",
+        "description": "Accepts the given terms version, clears the opt-out and any per-card removals, and enrols every eligible card (each becomes PENDING, then ENROLLED when the wallet operator confirms). Accepts `Idempotency-Key`: the same key returns the same response.",
+        "operationId": "opt_in_v1_wallet_opt_in_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TermsBody"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Wallet"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/callbacks/operator": {
+      "post": {
+        "tags": [
+          "callbacks"
+        ],
+        "summary": "Wallet operator status callback",
+        "description": "HMAC-SHA256 over `{X-Timestamp}.{raw body}`, lowercase hex in X-Signature; X-Timestamp is Unix seconds within 5 minutes of the bank's clock. Deduplicated by event_id. A lower operator_version than the stored one is ignored as stale.",
+        "operationId": "operator_callback_v1_callbacks_operator_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CallbackAck"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing, wrong or expired signature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Unknown enrollment_id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Unprocessable Entity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/v1/reconciliation/runs": {
+      "post": {
+        "tags": [
+          "reconciliation"
+        ],
+        "summary": "Run reconciliation now",
+        "description": "Fetches the operator's enrolment file for `file_date` and compares it with the SOR. 201 with the run and its findings. If the file cannot be fetched the run is stored as FAILED and 502 OPERATOR_FILE_UNAVAILABLE is returned with its run_id. Tests key only.",
+        "operationId": "start_run_internal_v1_reconciliation_runs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/RunRequest"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "title": "Body"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Run"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Bad Gateway",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/v1/reconciliation/runs/{run_id}": {
+      "get": {
+        "tags": [
+          "reconciliation"
+        ],
+        "summary": "Get a reconciliation run and its findings",
+        "operationId": "get_run_internal_v1_reconciliation_runs__run_id__get",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "run_id from POST /runs",
+              "title": "Run Id"
+            },
+            "description": "run_id from POST /runs"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Run"
+                }
+              }
+            }
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Unauthorized"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorBody"
+                }
+              }
+            },
+            "description": "Not Found"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test/reset": {
+      "post": {
+        "tags": [
+          "test-support"
+        ],
+        "summary": "Reset this service",
+        "description": "Truncates this service's tables, clears faults, idempotency keys and lockouts, and skips consumers to the end of their topics.",
+        "operationId": "reset_test_reset_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Reset Test Reset Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test/seed": {
+      "post": {
+        "tags": [
+          "test-support"
+        ],
+        "summary": "Load seed data",
+        "description": "Resets this service, then writes the deterministic seed data.",
+        "operationId": "seed_test_seed_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Seed Test Seed Post"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test/faults": {
+      "get": {
+        "tags": [
+          "test-support"
+        ],
+        "summary": "List active faults",
+        "operationId": "get_faults_test_faults_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Get Faults Test Faults Get"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "test-support"
+        ],
+        "summary": "Replace the active fault set",
+        "operationId": "set_faults_test_faults_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FaultsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Set Faults Test Faults Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test/clock": {
+      "get": {
+        "tags": [
+          "test-support"
+        ],
+        "summary": "Read the effective time",
+        "operationId": "get_clock_test_clock_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClockView"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "test-support"
+        ],
+        "summary": "Move the shared clock",
+        "description": "Writes the single shared offset row. Returns once this service sees the new time; other services follow within 1 second.",
+        "operationId": "set_clock_test_clock_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ClockRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ClockView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test/quiet": {
+      "get": {
+        "tags": [
+          "test-support"
+        ],
+        "summary": "Is anything in flight?",
+        "description": "Outbox depth and consumer lag. quiet=true when both are zero.",
+        "operationId": "quiet_test_quiet_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Quiet Test Quiet Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test/bugs": {
+      "get": {
+        "tags": [
+          "test-support"
+        ],
+        "summary": "Seeded-bug flags that are on in this service",
+        "operationId": "active_bugs_test_bugs_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Active Bugs Test Bugs Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test/enrollments": {
+      "get": {
+        "tags": [
+          "test-support"
+        ],
+        "summary": "Enrolment rows, token_ref included (test support)",
+        "operationId": "list_enrollments_test_enrollments_get",
+        "parameters": [
+          {
+            "name": "customer_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Customer Id"
+            }
+          },
+          {
+            "name": "card_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Card Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EnrollmentRow"
+                  },
+                  "title": "Response List Enrollments Test Enrollments Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test/enrollments/{enrollment_id}/history": {
+      "get": {
+        "tags": [
+          "test-support"
+        ],
+        "summary": "Audit trail (test support)",
+        "operationId": "history_test_enrollments__enrollment_id__history_get",
+        "parameters": [
+          {
+            "name": "enrollment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Enrollment Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  },
+                  "title": "Response History Test Enrollments  Enrollment Id  History Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/test/customers": {
+      "post": {
+        "tags": [
+          "test-support"
+        ],
+        "summary": "Create a fresh customer with cards (test orchestrator)",
+        "description": "Creates the login (auth), profile (profile-service), cards (card-service) and, for cards with enrolled=true, a token at the network, a record at the wallet operator, an ENROLLED enrolment here and the token in card-service. Returns the credentials, customer_id, every card_id and every token_ref.",
+        "operationId": "create_customer_test_customers_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CustomerTemplate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreatedCustomer"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/internal/v1/sweep": {
+      "post": {
+        "tags": [
+          "internal"
+        ],
+        "summary": "Run the daily eligibility sweep now",
+        "description": "Checks every card: enrols cards that became eligible (FAILED ones at most once a day), removes enrolments that became ineligible, suspends or resumes as the card status requires. TEST_MODE only; needs the tests X-Service-Key.",
+        "operationId": "sweep_internal_v1_sweep_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SweepResult"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "CallbackAck": {
+        "properties": {
+          "result": {
+            "type": "string",
+            "enum": [
+              "APPLIED",
+              "DUPLICATE",
+              "STALE",
+              "SUPERSEDED",
+              "IGNORED_REMOVED",
+              "FAILURE_RECORDED"
+            ],
+            "title": "Result"
+          },
+          "enrollment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Enrollment Id"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status",
+            "description": "Enrolment status after the callback"
+          }
+        },
+        "type": "object",
+        "required": [
+          "result",
+          "enrollment_id"
+        ],
+        "title": "CallbackAck"
+      },
+      "ClockRequest": {
+        "properties": {
+          "offset_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Offset Seconds",
+            "description": "Set the offset from real time"
+          },
+          "advance_seconds": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Advance Seconds",
+            "description": "Move the clock by this much"
+          },
+          "now": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Now",
+            "description": "Set the effective time (timezone-aware)"
+          },
+          "reset": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reset",
+            "description": "true clears the offset (real time)"
+          }
+        },
+        "type": "object",
+        "title": "ClockRequest",
+        "description": "Exactly one of the fields. The offset applies to every service at once."
+      },
+      "ClockView": {
+        "properties": {
+          "now": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Now"
+          },
+          "real_now": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Real Now"
+          },
+          "offset_seconds": {
+            "type": "number",
+            "title": "Offset Seconds"
+          },
+          "service": {
+            "type": "string",
+            "title": "Service"
+          }
+        },
+        "type": "object",
+        "required": [
+          "now",
+          "real_now",
+          "offset_seconds",
+          "service"
+        ],
+        "title": "ClockView"
+      },
+      "CreatedCard": {
+        "properties": {
+          "card_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Card Id"
+          },
+          "product": {
+            "type": "string",
+            "title": "Product"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "last4": {
+            "type": "string",
+            "title": "Last4"
+          },
+          "enrollment_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enrollment Id"
+          },
+          "enrollment_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enrollment Status"
+          },
+          "token_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Token Ref"
+          }
+        },
+        "type": "object",
+        "required": [
+          "card_id",
+          "product",
+          "status",
+          "last4",
+          "enrollment_id",
+          "enrollment_status",
+          "token_ref"
+        ],
+        "title": "CreatedCard"
+      },
+      "CreatedCustomer": {
+        "properties": {
+          "username": {
+            "type": "string",
+            "title": "Username"
+          },
+          "password": {
+            "type": "string",
+            "title": "Password"
+          },
+          "customer_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Customer Id"
+          },
+          "cards": {
+            "items": {
+              "$ref": "#/components/schemas/CreatedCard"
+            },
+            "type": "array",
+            "title": "Cards"
+          }
+        },
+        "type": "object",
+        "required": [
+          "username",
+          "password",
+          "customer_id",
+          "cards"
+        ],
+        "title": "CreatedCustomer"
+      },
+      "CustomerTemplate": {
+        "properties": {
+          "username": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Username",
+            "description": "Generated when omitted"
+          },
+          "password": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Password",
+            "description": "Generated when omitted"
+          },
+          "email_verified": {
+            "type": "boolean",
+            "title": "Email Verified",
+            "default": true
+          },
+          "phone_verified": {
+            "type": "boolean",
+            "title": "Phone Verified",
+            "default": true
+          },
+          "opted_out": {
+            "type": "boolean",
+            "title": "Opted Out",
+            "default": false
+          },
+          "cards": {
+            "items": {
+              "$ref": "#/components/schemas/TemplateCard"
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Cards"
+          }
+        },
+        "type": "object",
+        "title": "CustomerTemplate"
+      },
+      "EnrollmentRow": {
+        "properties": {
+          "enrollment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Enrollment Id"
+          },
+          "card_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Card Id"
+          },
+          "customer_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Customer Id"
+          },
+          "operator_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operator Ref"
+          },
+          "token_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Token Ref"
+          },
+          "last4": {
+            "type": "string",
+            "title": "Last4"
+          },
+          "expiry": {
+            "type": "string",
+            "title": "Expiry"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version"
+          },
+          "operator_version": {
+            "type": "integer",
+            "title": "Operator Version"
+          },
+          "pending_action": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pending Action"
+          },
+          "status_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Reason"
+          },
+          "failure_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enrollment_id",
+          "card_id",
+          "customer_id",
+          "operator_ref",
+          "token_ref",
+          "last4",
+          "expiry",
+          "status",
+          "version",
+          "operator_version",
+          "pending_action",
+          "status_reason",
+          "failure_reason"
+        ],
+        "title": "EnrollmentRow"
+      },
+      "EnrollmentView": {
+        "properties": {
+          "enrollment_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Enrollment Id"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "ENROLLED",
+              "SUSPENDED",
+              "REMOVED",
+              "FAILED"
+            ],
+            "title": "Status"
+          },
+          "version": {
+            "type": "integer",
+            "title": "Version",
+            "description": "Increases with every change sent to the wallet operator"
+          },
+          "last4": {
+            "type": "string",
+            "title": "Last4",
+            "description": "last4 the wallet operator has for this card"
+          },
+          "expiry": {
+            "type": "string",
+            "title": "Expiry"
+          },
+          "status_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status Reason",
+            "description": "Why the card has this status, if known"
+          },
+          "failure_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Failure Reason",
+            "description": "Why the last operator request failed"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enrollment_id",
+          "status",
+          "version",
+          "last4",
+          "expiry",
+          "status_reason",
+          "failure_reason",
+          "updated_at"
+        ],
+        "title": "EnrollmentView"
+      },
+      "ErrorBody": {
+        "properties": {
+          "error_code": {
+            "type": "string",
+            "title": "Error Code"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          },
+          "correlation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correlation Id"
+          },
+          "details": {
+            "anyOf": [
+              {},
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Details"
+          }
+        },
+        "type": "object",
+        "required": [
+          "error_code",
+          "message",
+          "correlation_id"
+        ],
+        "title": "ErrorBody",
+        "description": "The common error response body."
+      },
+      "FaultScope": {
+        "properties": {
+          "method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Method",
+            "description": "HTTP method to match, e.g. POST"
+          },
+          "path": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Path",
+            "description": "Exact path, or a prefix ending in *"
+          },
+          "topic": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Topic",
+            "description": "Kafka topic, for Kafka faults"
+          }
+        },
+        "type": "object",
+        "title": "FaultScope"
+      },
+      "FaultSpec": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "latency",
+              "error",
+              "timeout",
+              "kafka_publish_failure",
+              "consumer_pause",
+              "relay_pause"
+            ],
+            "title": "Type"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/FaultScope"
+          },
+          "fail_next": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fail Next",
+            "description": "Fire on the next N matches only"
+          },
+          "rate": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rate",
+            "description": "Probability of firing per match"
+          },
+          "seed": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seed",
+            "description": "RNG seed for rate mode (deterministic runs)"
+          },
+          "latency_ms": {
+            "type": "integer",
+            "maximum": 120000.0,
+            "minimum": 0.0,
+            "title": "Latency Ms",
+            "default": 0
+          },
+          "status": {
+            "type": "integer",
+            "maximum": 599.0,
+            "minimum": 500.0,
+            "title": "Status",
+            "description": "Status for the error fault",
+            "default": 503
+          },
+          "timeout_ms": {
+            "type": "integer",
+            "maximum": 300000.0,
+            "minimum": 0.0,
+            "title": "Timeout Ms",
+            "default": 30000
+          }
+        },
+        "type": "object",
+        "required": [
+          "type"
+        ],
+        "title": "FaultSpec",
+        "description": "One fault. See the module docs for the meaning of each field."
+      },
+      "FaultsRequest": {
+        "properties": {
+          "faults": {
+            "items": {
+              "$ref": "#/components/schemas/FaultSpec"
+            },
+            "type": "array",
+            "title": "Faults"
+          }
+        },
+        "type": "object",
+        "title": "FaultsRequest",
+        "description": "Replaces the whole active fault set. ``{\"faults\": []}`` clears every fault."
+      },
+      "Finding": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Type",
+            "description": "MISSING_AT_OPERATOR, MISSING_IN_SOR, STATUS_MISMATCH or DATA_MISMATCH"
+          },
+          "enrollment_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enrollment Id"
+          },
+          "card_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Card Id"
+          },
+          "operator_ref": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operator Ref"
+          },
+          "sor_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sor Status"
+          },
+          "operator_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Operator Status"
+          },
+          "details": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Details",
+            "description": "For DATA_MISMATCH: each differing field, both values"
+          }
+        },
+        "type": "object",
+        "required": [
+          "type",
+          "enrollment_id",
+          "card_id",
+          "operator_ref",
+          "sor_status",
+          "operator_status",
+          "details"
+        ],
+        "title": "Finding"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "Run": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Run Id"
+          },
+          "file_date": {
+            "type": "string",
+            "format": "date",
+            "title": "File Date"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status",
+            "description": "COMPLETED or FAILED (the file could not be fetched)"
+          },
+          "sor_records": {
+            "type": "integer",
+            "title": "Sor Records"
+          },
+          "file_records": {
+            "type": "integer",
+            "title": "File Records"
+          },
+          "skipped_in_flight": {
+            "type": "integer",
+            "title": "Skipped In Flight",
+            "description": "PENDING or awaiting a callback; not compared"
+          },
+          "finding_count": {
+            "type": "integer",
+            "title": "Finding Count"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "finished_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Finished At"
+          },
+          "findings": {
+            "items": {
+              "$ref": "#/components/schemas/Finding"
+            },
+            "type": "array",
+            "title": "Findings"
+          }
+        },
+        "type": "object",
+        "required": [
+          "run_id",
+          "file_date",
+          "status",
+          "sor_records",
+          "file_records",
+          "skipped_in_flight",
+          "finding_count",
+          "error",
+          "started_at",
+          "finished_at",
+          "findings"
+        ],
+        "title": "Run"
+      },
+      "RunRequest": {
+        "properties": {
+          "file_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Date",
+            "description": "Business date of the operator file; default: today on the shared clock"
+          }
+        },
+        "type": "object",
+        "title": "RunRequest"
+      },
+      "SweepResult": {
+        "properties": {
+          "cards_checked": {
+            "type": "integer",
+            "title": "Cards Checked"
+          },
+          "actions": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Actions",
+            "description": "card_id and the action queued for it"
+          }
+        },
+        "type": "object",
+        "required": [
+          "cards_checked",
+          "actions"
+        ],
+        "title": "SweepResult"
+      },
+      "TemplateCard": {
+        "properties": {
+          "product": {
+            "type": "string",
+            "enum": [
+              "CREDIT",
+              "DEBIT",
+              "PREPAID"
+            ],
+            "title": "Product",
+            "default": "CREDIT"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "LOST",
+              "CLOSED"
+            ],
+            "title": "Status",
+            "default": "ACTIVE"
+          },
+          "used_days_ago": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Used Days Ago",
+            "description": "null means never used",
+            "default": 5
+          },
+          "enrolled": {
+            "type": "boolean",
+            "title": "Enrolled",
+            "description": "Create it already ENROLLED in the wallet",
+            "default": false
+          },
+          "limit": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Limit",
+            "description": "Cents",
+            "default": 300000
+          },
+          "available": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Available",
+            "description": "Cents; defaults to limit"
+          },
+          "expiry": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expiry"
+          }
+        },
+        "type": "object",
+        "title": "TemplateCard"
+      },
+      "TermsBody": {
+        "properties": {
+          "terms_version": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 1,
+            "title": "Terms Version",
+            "description": "Version of the wallet terms the customer accepted"
+          }
+        },
+        "type": "object",
+        "required": [
+          "terms_version"
+        ],
+        "title": "TermsBody"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "Wallet": {
+        "properties": {
+          "customer_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Customer Id"
+          },
+          "opted_out": {
+            "type": "boolean",
+            "title": "Opted Out"
+          },
+          "terms_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Terms Version",
+            "description": "Terms version the customer last accepted"
+          },
+          "cards": {
+            "items": {
+              "$ref": "#/components/schemas/WalletCard"
+            },
+            "type": "array",
+            "title": "Cards"
+          }
+        },
+        "type": "object",
+        "required": [
+          "customer_id",
+          "opted_out",
+          "terms_version",
+          "cards"
+        ],
+        "title": "Wallet"
+      },
+      "WalletCard": {
+        "properties": {
+          "card_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Card Id"
+          },
+          "product": {
+            "type": "string",
+            "enum": [
+              "CREDIT",
+              "DEBIT",
+              "PREPAID"
+            ],
+            "title": "Product"
+          },
+          "last4": {
+            "type": "string",
+            "title": "Last4"
+          },
+          "expiry": {
+            "type": "string",
+            "title": "Expiry",
+            "description": "Expiry month, YYYY-MM"
+          },
+          "card_status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "LOST",
+              "CLOSED"
+            ],
+            "title": "Card Status"
+          },
+          "eligible": {
+            "type": "boolean",
+            "title": "Eligible",
+            "description": "Whether the card can be added to the wallet now"
+          },
+          "ineligible_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ineligible Reason",
+            "description": "First failing eligibility rule: CARD_NOT_ACTIVE, CARD_EXPIRED, PRODUCT_NOT_SUPPORTED, NOT_RECENTLY_USED, CUSTOMER_OPTED_OUT, CARD_REMOVED_BY_CUSTOMER, EMAIL_NOT_VERIFIED, PHONE_NOT_VERIFIED"
+          },
+          "enrollment": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EnrollmentView"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "null if never enrolled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "card_id",
+          "product",
+          "last4",
+          "expiry",
+          "card_status",
+          "eligible",
+          "ineligible_reason",
+          "enrollment"
+        ],
+        "title": "WalletCard"
+      }
+    }
+  }
+}
