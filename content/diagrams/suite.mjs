@@ -539,3 +539,64 @@ export function journeySteps() {
   b += text(20, 136, 'Each step starts from the state the one before it left behind.', 't-sm t-muted', 'start');
   return svg(880, 148, 'A journey in four steps: add the card to the wallet, pay with its token, the merchant settles for less, and the customer disputes the charge. Each step uses the state left by the one before.', b);
 }
+
+/** From a failed test to the service's own log line, by correlation ID. */
+export function evidenceTrail() {
+  const steps = [
+    ['a test fails', 'the assertion message', 'stop'],
+    ['CardVault requests', 'every call, with its ID', 'plain'],
+    ['one correlation ID', 't-728df5802f1a', 'plain'],
+    ['the service’s logs', 'what it did, and why', 'bank'],
+  ];
+  let b = '';
+  steps.forEach(([t, s, k], i) => {
+    const x = 20 + i * 215;
+    b += box(x, 24, 185, 60, t, { kind: k, sub: s, cls: 't-md' });
+    if (i < steps.length - 1) b += arrow([[x + 185, 54], [x + 215, 54]], 'ln', 'ah');
+  });
+  b += text(20, 116, 'The same requests are attached to the test in the Allure report, with keys and passwords masked.', 't-sm t-muted', 'start');
+  return svg(880, 128, 'A test fails. Under it, the CardVault requests section lists every call it made, each with a correlation ID. Searching the services’ logs for that ID shows what the service did. The same requests are attached to the Allure report with secrets masked.', b);
+}
+
+/** The api-tests workflow, in order. */
+export function ciPipeline() {
+  let b = '';
+  b += text(20, 26, 'job: lint', 't-md', 'start');
+  b += box(20, 40, 180, 40, 'ruff check', { kind: 'plain', cls: 't-sm' });
+  b += box(220, 40, 180, 40, 'ruff format --check', { kind: 'plain', cls: 't-sm' });
+  b += arrow([[200, 60], [220, 60]], 'ln', 'ah');
+  b += text(20, 118, 'job: api-tests', 't-md', 'start');
+  const steps = [
+    ['start the stack', 'bank'], ['uv sync', 'plain'], ['pytest -n auto', 'plain'], ['pytest -m serial', 'plain'],
+  ];
+  steps.forEach(([t, k], i) => {
+    const x = 20 + i * 210;
+    b += box(x, 132, 180, 40, t, { kind: k, cls: 't-sm' });
+    if (i < steps.length - 1) b += arrow([[x + 180, 152], [x + 210, 152]], 'ln', 'ah');
+  });
+  const always = ['Allure report', 'compose logs', 'upload evidence', 'tear down'];
+  b += text(124, 214, 'always, pass or fail', 't-sm t-muted', 'start');
+  always.forEach((t, i) => {
+    const x = 20 + i * 210;
+    b += box(x, 222, 180, 40, t, { kind: 'mock', cls: 't-sm' });
+    if (i < always.length - 1) b += arrow([[x + 180, 242], [x + 210, 242]], 'ln-mock', 'ah-mock');
+  });
+  b += arrow([[740, 172], [740, 196], [110, 196], [110, 222]], 'ln-faint', 'ah');
+  return svg(880, 278, 'Two jobs run side by side. lint runs ruff check and ruff format --check. api-tests starts the stack, installs the suite, runs pytest -n auto, then pytest -m serial. After that, whether the tests passed or failed, it builds the Allure report, collects the container logs, uploads the evidence and tears the stack down.', b);
+}
+
+/** One suite, two targets, and how to read a red on stage. */
+export function stageReading() {
+  let b = '';
+  b += box(20, 70, 160, 60, 'the suite', { kind: 'plain', sub: 'same tests', cls: 't-lg' });
+  b += box(280, 20, 220, 56, 'local / CI', { kind: 'bank', sub: 'no known defects: all green', cls: 't-md' });
+  b += box(280, 124, 220, 56, 'stage', { kind: 'stop', sub: 'known defects on: some red', cls: 't-md' });
+  b += arrow([[180, 92], [280, 48]], 'ln', 'ah');
+  b += arrow([[180, 108], [280, 152]], 'ln', 'ah');
+  b += text(580, 40, 'a red test on stage:', 't-md', 'start');
+  b += text(580, 70, '· green locally too → likely a stage defect', 't-sm', 'start');
+  b += text(580, 94, '· red locally too → the test or the code', 't-sm', 'start');
+  b += text(580, 118, '· timeouts only → load or the tunnel', 't-sm', 'start');
+  b += text(580, 142, '· then read the evidence to confirm', 't-sm t-muted', 'start');
+  return svg(900, 196, 'The same suite runs against local or CI, where everything should be green, and against stage, where known defects are switched on and some tests go red. A red on stage that is green locally most likely shows a stage defect; red in both places points at the test or the code; timeouts alone suggest load or the tunnel. The evidence confirms which.', b);
+}

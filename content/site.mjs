@@ -178,9 +178,9 @@ export const tracks = [
         title: 'Running it for real',
         blurb: 'Evidence when a test fails, the CI pipeline, and running against stage.',
         lessons: [
-          ['suite-evidence', 'Evidence when a test fails', false],
-          ['suite-ci', 'The suite in CI', false],
-          ['suite-stage', 'Running against stage', false],
+          ['suite-evidence', 'Evidence when a test fails', true],
+          ['suite-ci', 'The suite in CI', true],
+          ['suite-stage', 'Running against stage', true],
         ],
       },
     ],
