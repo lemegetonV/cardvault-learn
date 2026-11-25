@@ -10,15 +10,16 @@ const icon = {
 };
 
 export function homePage() {
-  const t1 = tracks[0];
-  const modules = t1.modules.map((m, i) => {
+  const moduleCards = (t) => t.modules.map((m, i) => {
     const first = m.lessons.find((l) => l[2]);
     const readyCount = m.lessons.filter((l) => l[2]).length;
     const foot = readyCount ? `${m.lessons.length} lessons` : `${m.lessons.length} lessons · coming soon`;
     const inner = `<span class="num">MODULE ${i + 1}</span><h3>${esc(m.title)}</h3><p>${esc(m.blurb)}</p><span class="foot">${foot}</span>`;
     return first ? `<a class="module-card" href="${lessonUrl(first[0])}">${inner}</a>` : `<div class="module-card later">${inner}</div>`;
   }).join('');
-  const later = tracks.slice(1).map((t) => `<div class="module-card later"><span class="num">LATER</span><h3>${esc(t.title)}</h3><p>${esc(t.blurb)}</p></div>`).join('');
+  const open = tracks.filter((t) => !t.later);
+  const sections = open.map((t) => `<div><div class="track-head"><h2>${esc(t.title)}</h2><span>${esc(t.blurb)}</span></div><div class="modules">${moduleCards(t)}</div></div>`).join('');
+  const later = tracks.filter((t) => t.later).map((t) => `<div class="module-card later"><span class="num">LATER</span><h3>${esc(t.title)}</h3><p>${esc(t.blurb)}</p></div>`).join('');
 
   const body = `<div class="frame">
 <section class="hero">
@@ -31,8 +32,8 @@ export function homePage() {
 
 <h2 class="section-title">The learning path</h2>
 <div class="tracks">
-<div><div class="track-head"><h2>${esc(t1.title)}</h2><span>${esc(t1.blurb)}</span></div><div class="modules">${modules}</div></div>
-<div><div class="track-head"><h2>Then, testing it</h2><span>Two more tracks follow once the architecture is clear.</span></div><div class="modules">${later}</div></div>
+${sections}
+${later ? `<div><div class="track-head"><h2>Still to come</h2><span>More tracks follow.</span></div><div class="modules">${later}</div></div>` : ''}
 </div>
 
 <h2 class="section-title">Open any time</h2>

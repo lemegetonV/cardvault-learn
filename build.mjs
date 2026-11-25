@@ -56,7 +56,7 @@ for (const [i, l] of ready.entries()) {
 <aside class="rail" aria-label="Lessons">${rail(l.id)}</aside>
 <article class="article">
 <details class="rail-mobile"><summary>All lessons</summary><nav class="rail">${rail(l.id)}</nav></details>
-<p class="eyebrow"><span class="chip">Lesson ${String(l.n).padStart(2, '0')}</span><span>Module ${l.moduleNo} · ${esc(l.module)}</span></p>
+<p class="eyebrow"><span class="chip">Lesson ${String(l.n).padStart(2, '0')}</span><span>${l.track === 'understand' ? '' : `${esc(l.trackTitle)} · `}Module ${l.moduleNo} · ${esc(l.module)}</span></p>
 <h1>${esc(l.title)}</h1>
 <p class="lede">${mod.lede}</p>
 <div class="meta-row"><span>About ${mod.minutes} minutes</span><span>${esc(mod.youWill)}</span></div>

@@ -8,6 +8,7 @@ import http from 'highlight.js/lib/languages/http';
 import sql from 'highlight.js/lib/languages/sql';
 import dockerfile from 'highlight.js/lib/languages/dockerfile';
 import plaintext from 'highlight.js/lib/languages/plaintext';
+import ini from 'highlight.js/lib/languages/ini';
 
 hljs.registerLanguage('python', python);
 hljs.registerLanguage('bash', bash);
@@ -17,6 +18,8 @@ hljs.registerLanguage('http', http);
 hljs.registerLanguage('sql', sql);
 hljs.registerLanguage('dockerfile', dockerfile);
 hljs.registerLanguage('text', plaintext);
+hljs.registerLanguage('toml', ini);
+hljs.registerLanguage('ini', ini);
 
 export const esc = (s) => String(s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
