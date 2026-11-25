@@ -53,16 +53,16 @@ export const tracks = [
         title: 'Getting started',
         blurb: 'The Python and HTTP you need, and a first test.',
         lessons: [
-          ['py-python-for-tests', 'The Python you need for tests', false],
-          ['py-http-for-testers', 'HTTP for testers', false],
-          ['py-first-test', 'Your first test', false],
+          ['py-python-for-tests', 'The Python you need for tests', true],
+          ['py-http-for-testers', 'HTTP for testers', true],
+          ['py-first-test', 'Your first test', true],
         ],
       },
       {
         title: 'The framework',
         blurb: 'The folder map first, then each file and why it exists.',
         lessons: [
-          ['py-framework-map', 'The framework map', false],
+          ['py-framework-map', 'The framework map', true],
           ['py-config', 'Config: where URLs and users live', false],
           ['py-api-clients', 'API client classes', false],
           ['py-fixtures', 'Fixtures and conftest.py', false],

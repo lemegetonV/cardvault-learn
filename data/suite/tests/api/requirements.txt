@@ -1,0 +1,5 @@
+# The libraries this test suite needs. Install them with:
+#   pip install -r requirements.txt
+pytest==9.2.0        # the test runner: finds tests, runs them, reports results
+requests==2.34.2     # sends HTTP requests to the API
+pytest-html==4.2.0   # writes an HTML report of a test run
