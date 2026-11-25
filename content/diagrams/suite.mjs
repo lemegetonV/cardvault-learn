@@ -344,3 +344,103 @@ export function raceResult() {
   b += text(720, 202, 'more than 10 approved', 't-sm t-muted', 'start');
   return svg(900, 230, 'Twenty purchases of 10.00 arrive at the same moment at a card with 100.00 available. Exactly ten must be approved and ten declined with INSUFFICIENT_FUNDS, leaving exactly 0 available. More than ten approvals would mean two requests read the same balance.', b);
 }
+
+/** Days since last use: where the 90-day rule changes its answer, and where tests stand. */
+export function usageBoundary() {
+  const x0 = 60, px = 5.2; // per day
+  const X = (d) => x0 + d * px;
+  let b = '';
+  b += `<rect class="box-bank" x="${X(0)}" y="40" width="${90 * px}" height="26" rx="4"/>`;
+  b += `<rect class="box-stop" x="${X(90)}" y="40" width="${40 * px}" height="26" rx="4"/>`;
+  b += text(X(45), 58, 'eligible', 't-sm');
+  b += text(X(110), 58, 'NOT_RECENTLY_USED', 't-sm t-stop');
+  b += `<line class="ln" x1="${X(90)}" y1="28" x2="${X(90)}" y2="78"/>`;
+  b += text(X(90), 22, 'edge: last use + 90 days', 't-sm');
+  const points = [[5, 'default card', 'row'], [89, '1 min before', 'clock'], [91, '1 min after', 'clock'], [91, 'used 91 days ago', 'row']];
+  b += `<line class="ln-faint" x1="${X(0)}" y1="96" x2="${X(130)}" y2="96"/>`;
+  [0, 30, 60, 120].forEach((d) => { b += text(X(d), 114, `${d}`, 't-sm t-muted'); });
+  b += text(X(130) + 8, 114, 'days', 't-sm t-muted', 'start');
+  // test points
+  const tp = (d, y, label, cls, anchor = 'middle', dx = 0) => {
+    b += `<circle class="${cls}" cx="${X(d)}" cy="96" r="5"/>`;
+    b += `<line class="ln-faint" x1="${X(d)}" y1="101" x2="${X(d)}" y2="${y - 12}"/>`;
+    b += text(X(d) + dx, y, label, 't-sm', anchor);
+  };
+  tp(5, 150, 'used 5 days ago', 'dot');
+  tp(89.4, 150, 'edge − 1 min', 'dot', 'end', -4);
+  tp(90.6, 150, 'edge + 1 min', 'dot-stop', 'start', 4);
+  tp(120, 150, 'used 91+ days ago', 'dot-stop');
+  b += `<rect class="box-stop" x="${X(132)}" y="40" width="96" height="26" rx="4"/>`;
+  b += text(X(132) + 48, 58, 'never used', 't-sm t-stop');
+  return svg(860, 166, 'A line of days since the card was last used. Up to 90 days the card is eligible; past 90 days, or never used, it is not recently used. Tests stand on ordinary values (5 days, 91 or more) and a minute either side of the 90-day edge.', b);
+}
+
+/** Two ways to test the callback flow. */
+export function callbackTwoWays() {
+  let b = '';
+  b += text(20, 26, 'the whole flow', 't-md', 'start');
+  b += box(20, 40, 150, 44, 'test adds a card', { kind: 'plain', cls: 't-sm' });
+  b += box(230, 40, 150, 44, 'enrollment', { kind: 'bank', cls: 't-md' });
+  b += box(440, 40, 150, 44, 'operator mock', { kind: 'mock', cls: 't-md' });
+  b += arrow([[170, 62], [230, 62]], 'ln', 'ah');
+  b += arrow([[380, 54], [440, 54]], 'ln', 'ah');
+  b += arrow([[440, 72], [380, 72]], 'ln-mock', 'ah-mock');
+  b += text(410, 98, 'callback, ~2 s later', 't-sm t-muted');
+  b += text(620, 58, 'real, but the test cannot', 't-sm', 'start');
+  b += text(620, 74, 'choose what the operator says', 't-sm', 'start');
+  b += `<line x1="20" y1="118" x2="880" y2="118" class="life"/>`;
+  b += text(20, 148, 'straight to the callback', 't-md', 'start');
+  b += box(20, 162, 150, 44, 'test signs a callback', { kind: 'plain', cls: 't-sm' });
+  b += box(230, 162, 150, 44, 'enrollment', { kind: 'bank', cls: 't-md' });
+  b += arrow([[170, 184], [230, 184]], 'ln', 'ah');
+  b += text(200, 224, 'HMAC + timestamp', 't-sm t-muted');
+  b += text(620, 180, 'any status, version, signature', 't-sm', 'start');
+  b += text(620, 196, 'or timestamp the test wants', 't-sm', 'start');
+  return svg(900, 236, 'Top: the whole flow, where the test adds a card and the operator mock calls back about two seconds later. Bottom: the test signs a callback itself and sends it straight to the enrollment service, choosing every field.', b);
+}
+
+/** A misbehaving operator, set up by the test. */
+export function operatorControlFlow() {
+  let b = '';
+  const steps = [
+    ['1', 'test sets the operator’s behaviour', 'decline · errors · repeat or reorder callbacks'],
+    ['2', 'customer adds a card', 'as in any other test'],
+    ['3', 'bank calls the operator', 'and meets the misbehaviour'],
+    ['4', 'test waits for the bank’s outcome', 'FAILED, retried and ENROLLED, applied once…'],
+    ['5', 'fixture turns behaviour off', 'pass or fail'],
+  ];
+  steps.forEach(([n, t, sub], i) => {
+    const y = 16 + i * 52;
+    const kind = i === 2 ? 'mock' : i === 3 ? 'bank' : 'plain';
+    b += `<rect class="box-${kind}" x="20" y="${y}" width="420" height="42" rx="8"/>`;
+    b += `<circle class="dot" cx="44" cy="${y + 21}" r="10"/><text class="t-mono" x="44" y="${y + 25}" text-anchor="middle" style="fill:var(--surface);font-size:11px">${n}</text>`;
+    b += text(66, y + 26, t, 't-md', 'start');
+    b += text(460, y + 26, sub, 't-sm t-muted', 'start');
+  });
+  return svg(860, 16 + steps.length * 52, 'A test of a misbehaving operator in five steps: the test sets the operator mock’s behaviour, a customer adds a card, the bank calls the operator and meets the misbehaviour, the test waits for the bank’s outcome, and the fixture turns the behaviour off whether the test passed or failed.', b);
+}
+
+/** Bank records against the operator's file, and the finding each difference gives. */
+export function reconFindings() {
+  const rows = [
+    ['ENROLLED', '(no record)', 'MISSING_AT_OPERATOR'],
+    ['(no record)', 'ENROLLED', 'MISSING_IN_SOR'],
+    ['ENROLLED', 'SUSPENDED', 'STATUS_MISMATCH'],
+    ['ENROLLED · 4417', 'ENROLLED · 9999', 'DATA_MISMATCH'],
+    ['ENROLLED', 'ENROLLED', 'no finding'],
+  ];
+  let b = '';
+  b += text(110, 24, 'the bank (SOR)', 't-md');
+  b += text(370, 24, 'the operator’s file', 't-md');
+  b += text(680, 24, 'finding', 't-md');
+  rows.forEach(([sor, op, f], i) => {
+    const y = 40 + i * 50;
+    const none = (s) => s.startsWith('(');
+    b += box(20, y, 180, 38, sor, { kind: none(sor) ? 'plain' : 'bank', cls: 't-sm' });
+    b += box(280, y, 180, 38, op, { kind: none(op) ? 'plain' : 'mock', cls: 't-sm' });
+    b += `<line class="ln-faint" x1="200" y1="${y + 19}" x2="280" y2="${y + 19}"/>`;
+    b += arrow([[460, y + 19], [540, y + 19]], 'ln-faint', 'ah');
+    b += box(540, y, 280, 38, f, { kind: i === 4 ? 'plain' : 'stop', cls: 't-mono' });
+  });
+  return svg(840, 40 + rows.length * 50, 'Each row compares one enrolment. Bank has it, operator does not: MISSING_AT_OPERATOR. Operator has it, bank does not: MISSING_IN_SOR. Different statuses: STATUS_MISMATCH. Same status, different last4: DATA_MISMATCH. Both the same: no finding.', b);
+}

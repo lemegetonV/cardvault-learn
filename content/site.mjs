@@ -157,10 +157,10 @@ export const tracks = [
         title: 'Testing the wallet',
         blurb: 'Rules with boundaries, a flow that finishes later, an operator that misbehaves on purpose, and reconciliation.',
         lessons: [
-          ['suite-eligibility', 'Rules and their boundaries', false],
-          ['suite-async-flows', 'A flow that finishes later', false],
-          ['suite-playing-the-operator', 'Playing the operator', false],
-          ['suite-reconciliation', 'Testing reconciliation', false],
+          ['suite-eligibility', 'Rules and their boundaries', true],
+          ['suite-async-flows', 'A flow that finishes later', true],
+          ['suite-playing-the-operator', 'Playing the operator', true],
+          ['suite-reconciliation', 'Testing reconciliation', true],
         ],
       },
       {
