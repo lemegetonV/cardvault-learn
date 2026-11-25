@@ -88,6 +88,18 @@ then `envs/<env>.env` (committed, no secrets).
    TEST_ENV=stage uv run pytest -n 2
    ```
 
+### Running from the learning site (the stage runner)
+
+`runner/serve.py` is a small page that runs one test or file on stage and streams pytest's
+output. The learning site's "Run on stage" buttons open it. It runs on the VM with
+`TEST_ENV=vm` (`envs/vm.env`: stage's own local ports, no tunnel; secrets in the VM's
+untracked `tests/api/.env.vm`). It listens on 127.0.0.1:8790 only, Caddy publishes it with
+basic auth, it allows one run at a time, and each run resets and reseeds stage first.
+
+On the VM: `uv sync --frozen` in `tests/api`, create `.env.vm`, install
+`runner/cardvault-runner.service` (instructions inside it), then add a Caddy site that
+reverse-proxies to 127.0.0.1:8790 with basic auth and `flush_interval -1`.
+
 ## Layout
 
 ```

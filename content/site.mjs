@@ -5,7 +5,7 @@ export const site = {
   description: 'Learn how CardVault works: a simulated bank wallet built to be tested.',
   cardvaultCommit: 'fa94037',
   // The API test suite (tests/api) that the second track describes.
-  suiteCommit: '399f94d',
+  suiteCommit: 'b9eb9d0',
   cardvaultRepo: 'https://github.com/lemegetonV/cardvault',
   stageApp: 'https://cardvault.140-245-206-220.sslip.io',
   stageDocs: 'https://docs.140-245-206-220.sslip.io',
