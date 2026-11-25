@@ -81,9 +81,9 @@ export const tracks = [
         title: 'Wallet transactions',
         blurb: 'A customer-facing record built from events, its lists and export, and disputes.',
         lessons: [
-          ['record-from-events', 'A record built from events'],
-          ['lists-and-export', 'Lists, filters and the CSV export'],
-          ['disputes', 'Disputes'],
+          ['record-from-events', 'A record built from events', true],
+          ['lists-and-export', 'Lists, filters and the CSV export', true],
+          ['disputes', 'Disputes', true],
         ],
       },
       {
