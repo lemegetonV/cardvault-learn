@@ -17,6 +17,7 @@ from cardvault_tests.transactions import wallet_purchase
 from cardvault_tests.waits import wait_until
 
 
+@pytest.mark.lesson
 def test_a_card_number_is_never_stored_in_clear(make_customer, db):
     someone = make_customer(customer(card()))
 
@@ -64,6 +65,7 @@ def test_every_event_of_a_purchase_leaves_the_outbox(make_customer, card_network
     assert rows
 
 
+@pytest.mark.lesson
 def test_the_suite_cannot_write(db, settings):
     with connect(settings, "card") as conn, pytest.raises(psycopg.errors.InsufficientPrivilege):
         conn.execute("UPDATE cards SET status = status")

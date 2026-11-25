@@ -38,6 +38,7 @@ DECLINES = [
 ]
 
 
+@pytest.mark.lesson
 @pytest.mark.parametrize(
     ("template", "amount", "code"), [row[1:] for row in DECLINES], ids=[r[0] for r in DECLINES]
 )

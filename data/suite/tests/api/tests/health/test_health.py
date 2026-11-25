@@ -15,6 +15,7 @@ SERVICES = list(get_settings().services.items())
 BANK_SERVICES = ["auth", "card", "enrollment", "wallet-txn", "profile"]
 
 
+@pytest.mark.lesson
 @pytest.mark.smoke
 @pytest.mark.parametrize(("name", "url"), SERVICES, ids=[n for n, _ in SERVICES])
 def test_health_reports_the_service_by_name(controls, name, url):

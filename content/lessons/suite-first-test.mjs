@@ -55,6 +55,7 @@ ${terminal([
   ['uv run pytest -m smoke', 'CardVault environment: local (auth at http://localhost:8001)\n…\ncollected 397 items / 381 deselected / 16 selected\n…\n16 passed, 381 deselected in 0.46s'],
 ])}
 <p><code>-m smoke</code> selects tests carrying that marker: the health tests plus one login and one card-reading test. It takes under a second, so it is the first thing to run against an environment you are unsure of.</p>
+<p>Markers can also label a reading path. The 23 tests these lessons walk through carry a <code>lesson</code> marker, so <code>uv run pytest -m lesson</code> runs just them, and the <a href="/suite/">suite explorer</a> lists them in lesson order under “Start here”.</p>
 ${keyIdea(`<p>A test is a function named <code>test_…</code> that acts, then asserts. It can predict the answer because the run starts by putting the whole system into the same known state.</p>`)}
 ${testerEye(`<p>Health tests look trivial, but when one fails nothing else in the run can be trusted. That is why they are the smoke subset: run them first, and read the rest of a report only once they are green.</p>`)}
 

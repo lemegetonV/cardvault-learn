@@ -25,6 +25,7 @@ def run_together(calls):
         return list(pool.map(lambda call: call(), calls))
 
 
+@pytest.mark.lesson
 @pytest.mark.parametrize("product", ["DEBIT", "CREDIT"])
 def test_parallel_purchases_never_spend_more_than_available(make_customer, card_network, product):
     someone = make_customer(customer(card(product, limit=10_000)))

@@ -13,6 +13,8 @@ from __future__ import annotations
 
 import uuid
 
+import pytest
+
 from cardvault_tests.checks import expect, pan_like
 from cardvault_tests.data import card, customer
 from cardvault_tests.events import schema_errors
@@ -27,6 +29,7 @@ def assert_well_formed(event, key) -> None:
     assert pan_like(event.raw) == [], "an event carries something that looks like a PAN"
 
 
+@pytest.mark.lesson
 def test_a_wallet_purchase_publishes_auth_decided(make_customer, card_network, watch):
     events = watch("auth.decided")
     someone = make_customer(customer(card(enrolled=True)))

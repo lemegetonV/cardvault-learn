@@ -44,6 +44,7 @@ def reason_after_clock_move(services, someone, card_id, wanted):
     return view.ineligible_reason
 
 
+@pytest.mark.lesson
 def test_recent_use_means_at_most_90_days(make_customer, shared_clock, services):
     someone = make_customer(customer(card(used_days_ago=89)))
     card_id = someone.card_ids[0]

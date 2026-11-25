@@ -23,6 +23,7 @@ from cardvault_tests.waits import wait_until
 from cardvault_tests.wallet import wait_for_enrolment, wallet_card
 
 
+@pytest.mark.lesson
 def test_adding_an_eligible_card_ends_enrolled_with_a_working_token(
     make_customer, enrolments, card_network
 ):

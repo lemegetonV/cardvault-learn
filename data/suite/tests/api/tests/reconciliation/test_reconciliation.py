@@ -92,6 +92,7 @@ def test_a_record_only_the_operator_has_is_missing_in_sor(enrolled, reconciliati
     )
 
 
+@pytest.mark.lesson
 def test_a_different_status_is_a_status_mismatch(enrolled, reconciliation, operator_state):
     upsert = [{"enrollment_id": enrolled["enrollment_id"], "status": "SUSPENDED"}]
     expect_status(operator_state.change_state(upsert=upsert), 200)

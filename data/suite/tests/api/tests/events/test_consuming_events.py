@@ -50,6 +50,7 @@ def republish(event, settings, *, as_new: bool = True, **payload_changes) -> Non
     produce_raw(settings.kafka_bootstrap, event.topic, event.key, json.dumps(envelope).encode())
 
 
+@pytest.mark.lesson
 def test_a_redelivered_event_changes_nothing(captured, settings):
     someone, auth_event, clear_event = captured
     before = expect(someone.transactions.list(), 200, TransactionPage).items

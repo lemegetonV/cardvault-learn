@@ -40,6 +40,7 @@ def test_a_declined_enrolment_ends_failed_with_the_operators_reason(make_custome
     assert failed.enrollment.status_reason == "RISK_CHECK"
 
 
+@pytest.mark.lesson
 def test_a_short_outage_is_retried_and_the_card_still_enrols(make_customer, operator):
     expect_status(operator.behave({"type": "error", "fail_next": 2, "scope": ENROL}), 200)
     someone = make_customer(customer(card()))
@@ -50,6 +51,7 @@ def test_a_short_outage_is_retried_and_the_card_still_enrols(make_customer, oper
     wait_for_enrolment(someone, card_id, "ENROLLED")
 
 
+@pytest.mark.lesson
 @pytest.mark.slow
 def test_a_long_outage_ends_failed_after_five_attempts(make_customer, operator):
     expect_status(operator.behave({"type": "error", "status": 503, "scope": ENROL}), 200)

@@ -62,6 +62,7 @@ RULES = [
 ]
 
 
+@pytest.mark.lesson
 @pytest.mark.parametrize(("template", "reason"), [r[1:] for r in RULES], ids=[r[0] for r in RULES])
 def test_eligibility_and_reason(make_customer, template, reason):
     someone = make_customer(template)

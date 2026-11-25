@@ -42,6 +42,7 @@ def act(someone, action: str, card_id):
     return do(card_id)
 
 
+@pytest.mark.lesson
 @pytest.mark.parametrize(
     ("start", "action", "http_status", "result"),
     TRANSITIONS,

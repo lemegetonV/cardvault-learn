@@ -82,6 +82,7 @@ def test_a_customer_endpoint_needs_a_bearer_token(services, endpoint):
     expect_error(call(services, service, method, path), 401, "UNAUTHORIZED")
 
 
+@pytest.mark.lesson
 @pytest.mark.parametrize("endpoint", CUSTOMER, ids=label)
 def test_a_customer_endpoint_refuses_a_service_key(services, settings, endpoint):
     service, method, path, _ = endpoint
@@ -97,6 +98,7 @@ def test_an_internal_endpoint_needs_a_service_key(services, endpoint):
     expect_error(call(services, service, method, path), 401, "SERVICE_KEY_INVALID")
 
 
+@pytest.mark.lesson
 @pytest.mark.parametrize("endpoint", SERVICE, ids=label)
 def test_an_internal_endpoint_refuses_a_customer_token(services, alice, endpoint):
     service, method, path, _ = endpoint

@@ -65,6 +65,7 @@ def test_settle_charges_the_cleared_amount(
     assert available(someone, card_id) == expected_available
 
 
+@pytest.mark.lesson
 @pytest.mark.parametrize("product", ["DEBIT", "PREPAID"])
 def test_only_credit_may_settle_above_the_hold(approved, card_network, product):
     someone, card_id, trace_id = approved(product)
@@ -95,6 +96,7 @@ def test_a_trace_settles_only_once(approved, card_network):
 # ------------------------------------------------------------------ reverse
 
 
+@pytest.mark.lesson
 def test_partial_reverse_releases_that_part_of_the_hold(approved, card_network):
     someone, card_id, trace_id = approved()
 

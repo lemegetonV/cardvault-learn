@@ -153,6 +153,7 @@ def test_the_same_event_twice_is_applied_once(enrolled, callbacks, bank_now, enr
     assert len(enrolments.history(record["enrollment_id"])) == before + 1, "one change recorded"
 
 
+@pytest.mark.lesson
 def test_an_older_operator_version_is_ignored_as_stale(enrolled, callbacks, bank_now):
     someone, record = enrolled
     body = callback(record, "REMOVED", record["operator_version"] - 1)

@@ -11,6 +11,7 @@ from cardvault_tests.data import ALICE, BOB, card, customer
 from cardvault_tests.models import Card, CardPage
 
 
+@pytest.mark.lesson
 @pytest.mark.smoke
 def test_alice_sees_exactly_her_four_seed_cards(alice):
     page = expect(alice.cards.list(), 200, CardPage)

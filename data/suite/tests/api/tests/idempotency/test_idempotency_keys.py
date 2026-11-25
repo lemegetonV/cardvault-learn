@@ -16,6 +16,8 @@ from __future__ import annotations
 
 import uuid
 
+import pytest
+
 from cardvault_tests.checks import expect, expect_error
 from cardvault_tests.data import card, customer
 from cardvault_tests.models import Card
@@ -25,6 +27,7 @@ def new_key() -> str:
     return f"idem-{uuid.uuid4()}"
 
 
+@pytest.mark.lesson
 def test_same_key_replays_the_first_response(make_customer):
     someone = make_customer(customer(card()))
     card_id = someone.card_ids[0]

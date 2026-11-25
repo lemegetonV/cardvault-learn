@@ -8,6 +8,8 @@ services: an event not published, a projection not updated, a status not pushed.
 
 from __future__ import annotations
 
+import pytest
+
 from cardvault_tests.checks import expect
 from cardvault_tests.data import card, customer
 from cardvault_tests.models import Authorization, Card, Clearing, Dispute, Wallet, WalletCard
@@ -16,6 +18,7 @@ from cardvault_tests.waits import wait_until
 from cardvault_tests.wallet import wait_for_enrolment
 
 
+@pytest.mark.lesson
 def test_add_a_card_pay_with_it_and_dispute_the_charge(make_customer, card_network, enrolments):
     someone = make_customer(customer(card(limit=50_000)))
     card_id = someone.card_ids[0]

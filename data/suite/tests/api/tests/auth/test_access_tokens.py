@@ -102,6 +102,7 @@ def test_tampered_or_foreign_tokens_are_refused(alice, services, make_bad_token)
     expect_error(alice.auth.me(BearerAuth(bad)), 401, "TOKEN_INVALID")
 
 
+@pytest.mark.lesson
 @pytest.mark.serial
 def test_access_token_expires_after_15_minutes_of_shared_clock_time(
     make_customer, shared_clock, services
