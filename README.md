@@ -18,7 +18,7 @@ npm run build      # writes the site to dist/
 npm run preview    # serves dist/ at http://localhost:4321
 ```
 
-The build stops with a list of problems if a lesson links to a lesson id that does not exist. Links to lessons that are planned but not yet written render as plain text marked "later".
+The build stops with a list of problems if a lesson links to a lesson id that does not exist. Links to lessons that are planned but not yet written render as plain text marked "soon".
 
 ## Where things are
 

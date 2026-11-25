@@ -19,7 +19,7 @@ A learning site that teaches how CardVault (`lemegetonV/cardvault`) works, and l
 - Callouts, used sparingly: **Key idea** (the one thing to remember), **Through a tester's eyes** (what this means for tests), **In a real bank** (how real systems differ).
 - Close with "Words from this lesson" (terms), "Check yourself" (2 to 3 self-contained questions that test reasoning, each with a "why"), and "Recap".
 - Every fact must match the CardVault source at the commit in `content/site.mjs` (`cardvaultCommit`). Read the code before describing it. If unsure, leave it out.
-- A link to a planned lesson that is not written yet renders as text marked "later". Never link to unknown lesson ids.
+- A link to a planned lesson that is not written yet renders as text marked "soon". Never link to unknown lesson ids.
 
 ## Design rules
 

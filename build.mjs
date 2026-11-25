@@ -76,12 +76,12 @@ await out('events', await eventsPage(root));
 // 404 page
 await writeFile(path.join(dist, '404.html'), page({ title: 'Page not found · CardVault Learn', body: `<div class="frame"><div class="page-head"><h1>That page does not exist</h1><p class="lede">It may be a lesson that is not written yet. <a href="/">Go to the start</a>.</p></div></div>` }));
 
-/** Links to lessons not yet written become plain text marked "later"; unknown ids are errors. */
+/** Links to lessons not yet written become plain text marked "soon"; unknown ids are errors. */
 function softenLinks(id, html, lessons) {
   return html.replace(/<a href="\/learn\/([^/"]+)\/">([\s\S]*?)<\/a>/g, (whole, target, label) => {
     const t = lessons.find((x) => x.id === target);
     if (!t) { problems.push(`${id}: link to unknown lesson ${target}`); return whole; }
     if (ready.includes(t)) return whole;
-    return `<span class="later" title="A later lesson, not written yet">${label}<small>later</small></span>`;
+    return `<span class="later" title="A later lesson, not written yet">${label}<small>soon</small></span>`;
   });
 }
