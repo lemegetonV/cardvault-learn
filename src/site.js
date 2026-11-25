@@ -122,4 +122,19 @@
   function escapeHtml(s) {
     return String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
   }
+
+  // Framework explorer: highlight the line or range in the address (#L12 or #L12-L30)
+  const lines = document.querySelector('.ex-lines');
+  if (lines) {
+    const mark = () => {
+      lines.querySelectorAll('tr.hit').forEach((r) => r.classList.remove('hit'));
+      const m = location.hash.match(/^#L(\d+)(?:-L(\d+))?$/);
+      if (!m) return;
+      const from = Number(m[1]), to = Number(m[2] || m[1]);
+      for (let n = from; n <= to; n += 1) document.getElementById(`L${n}`)?.classList.add('hit');
+      document.getElementById(`L${from}`)?.scrollIntoView({ block: 'start' });
+    };
+    mark();
+    window.addEventListener('hashchange', mark);
+  }
 })();

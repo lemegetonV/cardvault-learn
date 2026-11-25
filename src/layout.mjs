@@ -9,6 +9,7 @@ const navItems = [
   ['map', '/map/', 'Service map'],
   ['apis', '/apis/', 'APIs'],
   ['events', '/events/', 'Events'],
+  ['suite', '/suite/', 'Test suite'],
 ];
 
 export function page({ title, description = site.description, active = '', body, head = '', scripts = '' }) {

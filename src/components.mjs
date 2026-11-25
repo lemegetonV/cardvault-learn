@@ -10,6 +10,8 @@ import dockerfile from 'highlight.js/lib/languages/dockerfile';
 import plaintext from 'highlight.js/lib/languages/plaintext';
 import ini from 'highlight.js/lib/languages/ini';
 
+import { readFileSync, existsSync } from 'node:fs';
+
 hljs.registerLanguage('python', python);
 hljs.registerLanguage('bash', bash);
 hljs.registerLanguage('json', json);
@@ -78,10 +80,58 @@ export const keyIdea = (html, label = 'Key idea') => callout('key', label, html)
 export const testerEye = (html) => callout('tester', 'Through a tester’s eyes', html);
 export const realWorld = (html) => callout('real', 'In a real bank', html);
 
+// ---------------------------------------------------------------- The API suite's own files
+
+const SUITE_DIR = new URL('../data/suite/', import.meta.url);
+/** What lessons quote from the suite: filled while lessons are built, read by the explorer. */
+export const quotes = { lesson: null, files: [], tests: [], problems: [] };
+
+export function suiteFile(rel) {
+  const f = new URL(rel, SUITE_DIR);
+  return existsSync(f) ? readFileSync(f, 'utf8') : null;
+}
+
+/** For an excerpt titled with a suite path: its file, first line, and the tests it shows. */
+function locateExcerpt(title, src) {
+  const m = title.match(/^((?:tests\/api|\.github\/workflows)\/\S+)/);
+  if (!m) return null;
+  const rel = m[1];
+  const file = suiteFile(rel);
+  const where = quotes.lesson || '?';
+  if (file === null) { quotes.problems.push(`${where}: ${rel} is not in data/suite`); return null; }
+  const lines = file.split('\n');
+  const wanted = src.split('\n').map((l) => l.trim()).filter((l) => l && !/^(\.\.\.|…)$/.test(l));
+  // Every excerpt line must appear in the file, in order (lines may be left out, never changed).
+  let at = -1, first = -1;
+  for (const w of wanted) {
+    const found = lines.findIndex((l, i) => i > at && l.trim() === w);
+    if (found < 0) { quotes.problems.push(`${where}: excerpt line not in ${rel}: ${w}`); break; }
+    if (first < 0) first = found;
+    at = found;
+  }
+  quotes.files.push({ lesson: quotes.lesson, path: rel, line: first + 1 });
+  for (const t of src.matchAll(/^def (test_\w+)/gm)) {
+    const line = lines.findIndex((l) => l.startsWith(`def ${t[1]}(`)) + 1;
+    quotes.tests.push({ lesson: quotes.lesson, path: rel, test: t[1], line });
+  }
+  return { rel, line: first + 1, last: at + 1 };
+}
+
+/** Where a suite file is served. Leading dots become underscores, because static hosts often skip dot-files. */
+export const suiteRoute = (rel) => `suite/${rel.replace(/(^|\/)\./g, '$1_')}`;
+export const suiteUrl = (rel, line, last) => `/${suiteRoute(rel)}/${line ? `#L${line}${last && last > line ? `-L${last}` : ''}` : ''}`;
+
 export function code({ src, lang = 'python', title = '' }) {
-  const body = hljs.highlight(src.replace(/^\n/, '').replace(/\s+$/, ''), { language: lang }).value;
-  return `<div class="code wide-ok"><div class="code-head"><span>${esc(title)}</span><span>${esc(lang === 'text' ? '' : lang)}</span></div>`
+  const clean = src.replace(/^\n/, '').replace(/\s+$/, '');
+  const body = hljs.highlight(clean, { language: lang }).value;
+  const at = title ? locateExcerpt(title, clean) : null;
+  const open = at ? `<a class="code-open" href="${suiteUrl(at.rel, at.line, at.last)}">Open in the explorer</a>` : `<span>${esc(lang === 'text' ? '' : lang)}</span>`;
+  return `<div class="code wide-ok"><div class="code-head"><span>${esc(title)}</span>${open}</div>`
     + `<pre><code>${body}</code></pre></div>`;
+}
+
+export function highlight(src, lang) {
+  return hljs.highlight(src, { language: lang }).value;
 }
 
 /** Terminal commands with optional output lines. */

@@ -1,0 +1,9 @@
+.venv/
+.env.*
+!.env.stage.example
+allure-results/
+allure-report/
+reports/
+__pycache__/
+.pytest_cache/
+.ruff_cache/

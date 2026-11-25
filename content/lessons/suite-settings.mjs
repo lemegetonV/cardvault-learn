@@ -50,7 +50,7 @@ class Settings(BaseSettings):
     ...
     # Keys the suite presents
     test_key: str = ""  # X-Test-Key for /test/* controls
-    service_key_tests: str = ""  # X-Service-Key of the "tests" caller
+    service_key_tests: str = ""  # X-Service-Key of the "tests" caller (sweep, reconciliation)
 
     # Run behaviour
     http_timeout_seconds: float = 10.0
