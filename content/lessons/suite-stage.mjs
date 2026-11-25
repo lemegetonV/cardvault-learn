@@ -2,7 +2,7 @@ import { figure, keyIdea, testerEye, realWorld, terms, check, recap, terminal } 
 import { stageReading } from '../diagrams/suite.mjs';
 
 export default {
-  minutes: 11,
+  minutes: 12,
   lede: 'Locally and in CI, CardVault runs with no known defects, and the suite is expected to be fully green. Stage is different on purpose: it is a shared machine where known defects are switched on, so a correct suite goes red there. This lesson shows how to point the suite at stage, how to run it gently, and how to read a red result as findings instead of noise.',
   youWill: 'You will learn what changes when the suite runs against stage, why it runs there with only two workers, and a short routine for deciding whether a red test is a defect, a test problem or the environment.',
   body: `
@@ -17,6 +17,10 @@ ${terminal([
   ['TEST_ENV=stage uv run pytest -m serial', '…'],
 ], 'Running against stage')}
 <p>Check the first line every time: it names the environment and the address the run is really using. The results that follow depend on which defects are switched on at the time, so they are not shown here.</p>
+
+<h2>Running a test from this site</h2>
+<p>You can also run a test on stage without a tunnel or a terminal. Every lesson excerpt of a test has a <strong>Run on stage</strong> button, and so does each test in the <a href="/suite/">suite explorer</a>. The button opens a page on the stage machine itself, which asks for the tools password, runs that test with pytest using <code>TEST_ENV=vm</code> (stage’s addresses as seen from the machine itself), and shows pytest’s output as it arrives.</p>
+<p>It is the same suite and the same command as above, run one test or one file at a time. The page allows one run at a time, because each run resets and reseeds stage first and two at once would disturb each other.</p>
 
 <h2>Running gently</h2>
 <p>Two settings reflect that stage is small and shared:</p>
@@ -72,6 +76,7 @@ ${recap([
   'Locally and in CI everything should be green; stage has known defects and should not be.',
   '`TEST_ENV=stage` with `-n 2`, the tunnel open and the keys in `.env.stage`.',
   'A stage run resets and reseeds stage, so agree on it first.',
+  'The Run on stage buttons run one test or file on stage from this site, one run at a time.',
   'Sort a red test: compare with local, look at the kind of failure, read the evidence against the spec.',
 ])}
 `,

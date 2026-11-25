@@ -11,6 +11,7 @@ import plaintext from 'highlight.js/lib/languages/plaintext';
 import ini from 'highlight.js/lib/languages/ini';
 
 import { readFileSync, existsSync } from 'node:fs';
+import { site } from '../content/site.mjs';
 
 hljs.registerLanguage('python', python);
 hljs.registerLanguage('bash', bash);
@@ -121,11 +122,19 @@ function locateExcerpt(title, src) {
 export const suiteRoute = (rel) => `suite/${rel.replace(/(^|\/)\./g, '$1_')}`;
 export const suiteUrl = (rel, line, last) => `/${suiteRoute(rel)}/${line ? `#L${line}${last && last > line ? `-L${last}` : ''}` : ''}`;
 
+/** The stage runner's address for a suite file, or one test in it. */
+export const runUrl = (rel, test) => `${site.stageRunner}/run?test=${encodeURIComponent(rel.replace(/^tests\/api\//, '') + (test ? `::${test}` : ''))}`;
+const runnable = (rel) => /^tests\/api\/tests\/.+\/test_\w+\.py$/.test(rel);
+
 export function code({ src, lang = 'python', title = '' }) {
   const clean = src.replace(/^\n/, '').replace(/\s+$/, '');
   const body = hljs.highlight(clean, { language: lang }).value;
   const at = title ? locateExcerpt(title, clean) : null;
-  const open = at ? `<a class="code-open" href="${suiteUrl(at.rel, at.line, at.last)}">Open in the explorer</a>` : `<span>${esc(lang === 'text' ? '' : lang)}</span>`;
+  const tests = [...clean.matchAll(/^def (test_\w+)/gm)].map((m) => m[1]);
+  const run = at && runnable(at.rel) && tests.length
+    ? `<a class="code-run" href="${runUrl(at.rel, tests.length === 1 ? tests[0] : '')}" target="_blank" rel="noopener" title="Runs ${tests.length === 1 ? 'this test' : 'this file'} on stage and shows the output (password)">Run on stage</a>`
+    : '';
+  const open = at ? `<span class="code-links">${run}<a class="code-open" href="${suiteUrl(at.rel, at.line, at.last)}">Open in the explorer</a></span>` : `<span>${esc(lang === 'text' ? '' : lang)}</span>`;
   return `<div class="code wide-ok"><div class="code-head"><span>${esc(title)}</span>${open}</div>`
     + `<pre><code>${body}</code></pre></div>`;
 }

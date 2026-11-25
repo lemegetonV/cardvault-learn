@@ -505,3 +505,15 @@ details.raw summary { cursor: pointer; font-size: 0.9375rem; font-weight: 500; c
   .ex-mobile summary { cursor: pointer; padding: 12px 4px; font-weight: 600; font-size: 0.9375rem; }
   .ex-mobile .tree { padding-bottom: 12px; }
 }
+.code .code-head { flex-wrap: wrap; }
+.code .code-links { display: inline-flex; flex-wrap: wrap; gap: 6px 14px; }
+.code .code-run { color: var(--code-str); text-decoration: none; white-space: nowrap; font-weight: 600; }
+.code .code-run::before { content: "▶ "; font-size: 0.8em; }
+.code .code-run:hover { text-decoration: underline; }
+.run-link { flex: none; padding: 1px 8px; border: 1px solid var(--accent); border-radius: 999px; color: var(--accent-strong); font: 600 0.6875rem/1.5 var(--font-body); text-decoration: none; }
+.run-link::before { content: "▶ "; font-size: 0.85em; }
+.run-link:hover { background: var(--accent-soft); }
+.run-link.big { display: inline-block; padding: 6px 14px; font-size: 0.875rem; }
+.ex-run-note { margin: 8px 0 20px; padding: 14px 18px; border-radius: 12px; background: var(--accent-soft); }
+.ex-run-note p { margin: 0 0 8px; font-size: 0.9375rem; }
+.ex-run-note p:last-child { margin: 0; }

@@ -1,7 +1,7 @@
 // The framework explorer: every file of the API suite, browsable, linked to the lessons that quote it.
 import { readdirSync, statSync } from 'node:fs';
 import { page } from '../../src/layout.mjs';
-import { esc, highlight, quotes, suiteFile, suiteRoute, suiteUrl } from '../../src/components.mjs';
+import { esc, highlight, quotes, runUrl, suiteFile, suiteRoute, suiteUrl } from '../../src/components.mjs';
 import { site, allLessons, lessonUrl } from '../site.mjs';
 
 const ROOT = new URL('../../data/suite/', import.meta.url);
@@ -95,7 +95,7 @@ export function suitePages() {
   const seen = new Set();
   const startRows = starts.filter((t) => !seen.has(t.path + t.test) && seen.add(t.path + t.test)).map((t) => {
     const l = lessonTitle(t.lesson);
-    return `<li><a class="mono" href="${suiteUrl(t.path, t.line)}">${esc(t.test)}</a><span class="where">${esc(short(t.path))}</span><a class="chip-link" href="${lessonUrl(l.id)}">${esc(l.title)}</a></li>`;
+    return `<li><a class="mono" href="${suiteUrl(t.path, t.line)}">${esc(t.test)}</a><span class="where">${esc(short(t.path))}</span><a class="chip-link" href="${lessonUrl(l.id)}">${esc(l.title)}</a><a class="run-link" href="${runUrl(t.path, t.test)}" target="_blank" rel="noopener" title="Run on stage (password)">Run</a></li>`;
   }).join('');
   const framework = paths.filter((p) => p.includes('/src/cardvault_tests/') && !p.includes('/clients/') && !p.includes('/models/') && !p.endsWith('__init__.py'));
   const fwRows = framework.map((p) => `<li><a class="mono" href="${suiteUrl(p)}">${esc(p.split('/').pop())}</a><span>${esc(summary(p))}</span></li>`).join('');
@@ -112,6 +112,8 @@ export function suitePages() {
 </div>
 <h2>Start here</h2>
 <p>These are the tests the lessons walk through, in the order they appear. Reading them in this order is the learning path through the suite; everything else follows the same patterns.</p>
+<div class="ex-run-note"><p><strong>Run on stage.</strong> Each <em>Run</em> button opens a page on the stage machine that runs that test with pytest and shows the output as it arrives. It asks for the tools password. Runs go one at a time, and each one resets and reseeds stage first. Stage has known defects switched on, so some tests are meant to go red there; <a href="/learn/suite-stage/">Running against stage</a> explains how to read the result.</p>
+<p><a class="run-link big" href="${site.stageRunner}/run?m=lesson" target="_blank" rel="noopener">Run all of these on stage</a></p></div>
 <ol class="ex-start">${startRows}</ol>
 <h2>The framework, in one list</h2>
 <p>The code the tests import lives in <code>src/cardvault_tests/</code>. Each line is the first line of that file’s own description. The <code>clients/</code> folder holds one class per API area and <code>models/</code> the response shapes.</p>
@@ -139,7 +141,7 @@ export function suitePages() {
     const tests = [...src.matchAll(/^def (test_\w+)/gm)].map((m) => {
       const line = src.slice(0, m.index).split('\n').length;
       const q = quotes.tests.find((t) => t.path === p && t.test === m[1]);
-      return `<li><a class="mono" href="#L${line}">${esc(m[1])}</a>${q ? `<a class="badge" href="${lessonUrl(q.lesson)}">lesson</a>` : ''}</li>`;
+      return `<li><a class="mono" href="#L${line}">${esc(m[1])}</a>${q ? `<a class="badge" href="${lessonUrl(q.lesson)}">lesson</a>` : ''}<a class="run-link" href="${runUrl(p, m[1])}" target="_blank" rel="noopener" title="Run on stage (password)">Run</a></li>`;
     });
     const testsHtml = tests.length
       ? `<details class="ex-tests"${tests.length <= 12 ? ' open' : ''}><summary>${tests.length} test${tests.length > 1 ? 's' : ''} in this file</summary><ul>${tests.join('')}</ul></details>`
@@ -151,7 +153,7 @@ export function suitePages() {
       active: 'suite',
       body: frame(paths, p, `<p class="ex-crumbs mono">${crumbs.map(esc).join('<span>/</span>')}</p>
 ${taughtHtml}${testsHtml}
-<div class="code ex-code wide-ok"><div class="code-head"><span>${esc(crumbs.at(-1))} · ${src.split('\n').length} lines</span><a class="code-open" href="${site.cardvaultRepo}/blob/${site.suiteCommit}/${p}">On GitHub</a></div>
+<div class="code ex-code wide-ok"><div class="code-head"><span>${esc(crumbs.at(-1))} · ${src.split('\n').length} lines</span><span class="code-links">${tests.length ? `<a class="code-run" href="${runUrl(p)}" target="_blank" rel="noopener">Run this file on stage</a>` : ''}<a class="code-open" href="${site.cardvaultRepo}/blob/${site.suiteCommit}/${p}">On GitHub</a></span></div>
 <table class="ex-lines"><tbody>${rows}</tbody></table></div>`),
     }) });
   }

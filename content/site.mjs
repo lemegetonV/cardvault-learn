@@ -9,6 +9,8 @@ export const site = {
   cardvaultRepo: 'https://github.com/lemegetonV/cardvault',
   stageApp: 'https://cardvault.140-245-206-220.sslip.io',
   stageDocs: 'https://docs.140-245-206-220.sslip.io',
+  // Runs one test on stage and streams pytest's output (password-protected, the owner's tool).
+  stageRunner: 'https://run.140-245-206-220.sslip.io',
 };
 
 // A lesson with `ready: false` shows in the contents as "soon" and is not built yet.
