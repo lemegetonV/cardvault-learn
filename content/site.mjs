@@ -28,17 +28,17 @@ export const tracks = [
         blurb: 'The parts behind the screens, and three journeys through them.',
         lessons: [
           ['system-at-a-glance', 'The system at a glance', true],
-          ['flow-login', 'Flow: logging in', false],
-          ['flow-add-to-wallet', 'Flow: adding a card to the wallet', false],
-          ['flow-purchase', 'Flow: a purchase', false],
+          ['flow-login', 'Flow: logging in', true],
+          ['flow-add-to-wallet', 'Flow: adding a card to the wallet', true],
+          ['flow-purchase', 'Flow: a purchase', true],
         ],
       },
       {
         title: 'Talking about it',
         blurb: 'Explaining the architecture out loud, and deciding what to test.',
         lessons: [
-          ['explain-the-architecture', 'Explaining the architecture in an interview', false],
-          ['what-to-test', 'What I would test, and why', false],
+          ['explain-the-architecture', 'Explaining the architecture in an interview', true],
+          ['what-to-test', 'What I would test, and why', true],
         ],
       },
     ],
