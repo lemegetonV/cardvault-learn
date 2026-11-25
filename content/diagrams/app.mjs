@@ -80,3 +80,23 @@ export function twoWays() {
   b += text(523, 180, 'picks it up', 't-sm t-event');
   return svg(W, H, 'A direct call waits for an answer. An event is announced on the message bus and picked up by whoever listens.', b);
 }
+
+/** The test pyramid: many API tests, fewer UI tests, unit tests underneath. */
+export function pyramid() {
+  const W = 640, H = 300, cx = 230;
+  const layer = (yTop, yBot, halfTop, halfBot, cls) =>
+    `<polygon class="${cls}" points="${cx - halfTop},${yTop} ${cx + halfTop},${yTop} ${cx + halfBot},${yBot} ${cx - halfBot},${yBot}"/>`;
+  let b = '';
+  b += layer(20, 100, 0, 70, 'box');
+  b += layer(106, 196, 73, 151, 'box-bank');
+  b += layer(202, 280, 154, 222, 'box-plain');
+  b += text(cx, 78, 'UI', 't-lg');
+  b += text(cx, 158, 'API', 't-lg');
+  b += text(cx, 248, 'Unit', 't-lg');
+  b += text(400, 60, 'Fewer, slower: what the customer sees', 't-sm', 'start');
+  b += text(400, 78, 'Playwright (TypeScript)', 't-mono', 'start');
+  b += text(400, 146, 'Many, fast: the business rules', 't-sm', 'start');
+  b += text(400, 164, 'pytest + requests (Python)', 't-mono', 'start');
+  b += text(470, 236, 'Developers: single functions', 't-sm', 'start');
+  return svg(W, H, 'The test pyramid: unit tests at the bottom, many API tests in the middle, fewer UI tests at the top.', b);
+}

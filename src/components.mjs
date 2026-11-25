@@ -11,6 +11,8 @@ import plaintext from 'highlight.js/lib/languages/plaintext';
 import ini from 'highlight.js/lib/languages/ini';
 
 
+import { readFileSync, existsSync } from 'node:fs';
+
 hljs.registerLanguage('python', python);
 hljs.registerLanguage('bash', bash);
 hljs.registerLanguage('json', json);
@@ -81,12 +83,42 @@ export const realWorld = (html) => callout('real', 'In a real bank', html);
 
 // ---------------------------------------------------------------- Code, screenshots, interview corner
 
+// Excerpts titled with a suite path (tests/api/...) are checked against the copy in data/suite/.
+export const excerptProblems = [];
+const SUITE = new URL('../data/suite/', import.meta.url);
+
+function checkExcerpt(title, src) {
+  const m = title.match(/^(tests\/api\/\S+)/);
+  if (!m) return;
+  const file = new URL(m[1], SUITE);
+  if (!existsSync(file)) { excerptProblems.push(`${m[1]} is not in data/suite`); return; }
+  const lines = readFileSync(file, 'utf8').split('\n');
+  let at = -1;
+  for (const want of src.split('\n').map((l) => l.trim()).filter((l) => l && l !== '...')) {
+    const found = lines.findIndex((l, i) => i > at && l.trim() === want);
+    if (found < 0) { excerptProblems.push(`excerpt line not in ${m[1]}: ${want}`); return; }
+    at = found;
+  }
+}
+
 /** A code block. title names the file it comes from; note is a short line on the right. */
 export function code({ src, lang = 'python', title = '', note = '' }) {
   const clean = src.replace(/^\n/, '').replace(/\s+$/, '');
+  checkExcerpt(title, clean);
   const body = hljs.highlight(clean, { language: lang }).value;
   return `<div class="code wide-ok"><div class="code-head"><span>${esc(title)}</span><span>${esc(note || (lang === 'text' ? '' : lang))}</span></div>`
     + `<pre><code>${body}</code></pre></div>`;
+}
+
+/**
+ * A folder tree with a one-line job for each entry.
+ * rows: [[name, depth, job], ...]; a name ending in / is a folder.
+ */
+export function tree(rows, title = '') {
+  const body = rows.map(([name, depth, job]) => `<div class="tree-row" style="--d:${depth}">`
+    + `<span class="tree-name${name.endsWith('/') ? ' dir' : ''}">${esc(name)}</span>`
+    + `<span class="tree-job">${md(job || '')}</span></div>`).join('');
+  return `<div class="tree wide-ok">${title ? `<div class="code-head"><span>${esc(title)}</span><span></span></div>` : ''}<div class="tree-body">${body}</div></div>`;
 }
 
 /** A screenshot of the real app, from content/images/. */

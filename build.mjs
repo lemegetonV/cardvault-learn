@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { page, rail } from './src/layout.mjs';
-import { esc } from './src/components.mjs';
+import { esc, excerptProblems } from './src/components.mjs';
 import { site, allLessons, lessonUrl } from './content/site.mjs';
 import { homePage } from './content/pages/home.mjs';
 
@@ -54,6 +54,8 @@ ${pager}
 
 await out('', homePage());
 await out('learn', homePage());
+
+problems.push(...excerptProblems);
 
 // 404 page
 await writeFile(path.join(dist, '404.html'), page({ title: 'Page not found · CardVault Learn', body: `<div class="frame"><div class="page-head"><h1>That page does not exist</h1><p class="lede">It may be a lesson that is not written yet. <a href="/">Go to the start</a>.</p></div></div>` }));
