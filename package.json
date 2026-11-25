@@ -1,0 +1,15 @@
+{
+  "name": "cardvault-learn",
+  "private": true,
+  "type": "module",
+  "description": "Learning site that explains how CardVault works. Static pages on a Cloudflare Worker.",
+  "scripts": {
+    "build": "node build.mjs",
+    "preview": "node tools/serve.mjs"
+  },
+  "devDependencies": {
+    "highlight.js": "11.11.1",
+    "swagger-ui-dist": "5.17.14",
+    "wrangler": "4.149.0"
+  }
+}

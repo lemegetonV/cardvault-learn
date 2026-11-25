@@ -1,0 +1,132 @@
+{
+  "$defs": {
+    "TxnClearedPayload": {
+      "additionalProperties": false,
+      "properties": {
+        "amount": {
+          "description": "Amount in integer minor units (cents)",
+          "title": "Amount",
+          "type": "integer"
+        },
+        "card_id": {
+          "format": "uuid",
+          "title": "Card Id",
+          "type": "string"
+        },
+        "cleared_at": {
+          "format": "date-time",
+          "title": "Cleared At",
+          "type": "string"
+        },
+        "clearing_id": {
+          "title": "Clearing Id",
+          "type": "string"
+        },
+        "currency": {
+          "const": "USD",
+          "title": "Currency",
+          "type": "string"
+        },
+        "customer_id": {
+          "format": "uuid",
+          "title": "Customer Id",
+          "type": "string"
+        },
+        "token_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Token Ref"
+        },
+        "token_requestor": {
+          "enum": [
+            "WALLET",
+            "CARD"
+          ],
+          "title": "Token Requestor",
+          "type": "string"
+        },
+        "trace_id": {
+          "title": "Trace Id",
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "SETTLE",
+            "REVERSE",
+            "REFUND"
+          ],
+          "title": "Type",
+          "type": "string"
+        }
+      },
+      "required": [
+        "clearing_id",
+        "trace_id",
+        "type",
+        "amount",
+        "card_id",
+        "customer_id",
+        "token_ref",
+        "token_requestor",
+        "currency",
+        "cleared_at"
+      ],
+      "title": "TxnClearedPayload",
+      "type": "object"
+    }
+  },
+  "$id": "https://cardvault.example/events/txn.cleared.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "correlation_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Correlation Id"
+    },
+    "event_id": {
+      "format": "uuid",
+      "title": "Event Id",
+      "type": "string"
+    },
+    "event_type": {
+      "title": "Event Type",
+      "type": "string"
+    },
+    "occurred_at": {
+      "format": "date-time",
+      "title": "Occurred At",
+      "type": "string"
+    },
+    "payload": {
+      "$ref": "#/$defs/TxnClearedPayload"
+    },
+    "version": {
+      "const": 1,
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "event_id",
+    "event_type",
+    "occurred_at",
+    "correlation_id",
+    "payload"
+  ],
+  "title": "txn.cleared event",
+  "type": "object"
+}

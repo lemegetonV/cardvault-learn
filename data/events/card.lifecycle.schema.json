@@ -1,0 +1,131 @@
+{
+  "$defs": {
+    "CardLifecyclePayload": {
+      "additionalProperties": false,
+      "properties": {
+        "card_id": {
+          "format": "uuid",
+          "title": "Card Id",
+          "type": "string"
+        },
+        "customer_id": {
+          "format": "uuid",
+          "title": "Customer Id",
+          "type": "string"
+        },
+        "event": {
+          "enum": [
+            "CARD_ACTIVATED",
+            "CARD_LOST",
+            "CARD_REISSUED",
+            "CARD_CLOSED",
+            "CARD_USED"
+          ],
+          "title": "Event",
+          "type": "string"
+        },
+        "expiry": {
+          "description": "Expiry month, YYYY-MM",
+          "pattern": "^\\d{4}-\\d{2}$",
+          "title": "Expiry",
+          "type": "string"
+        },
+        "last4": {
+          "pattern": "^\\d{4}$",
+          "title": "Last4",
+          "type": "string"
+        },
+        "last_used_at": {
+          "anyOf": [
+            {
+              "format": "date-time",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Last Used At"
+        },
+        "product": {
+          "enum": [
+            "CREDIT",
+            "DEBIT",
+            "PREPAID"
+          ],
+          "title": "Product",
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "ACTIVE",
+            "LOST",
+            "CLOSED"
+          ],
+          "title": "Status",
+          "type": "string"
+        }
+      },
+      "required": [
+        "card_id",
+        "customer_id",
+        "event",
+        "status",
+        "product",
+        "last4",
+        "expiry",
+        "last_used_at"
+      ],
+      "title": "CardLifecyclePayload",
+      "type": "object"
+    }
+  },
+  "$id": "https://cardvault.example/events/card.lifecycle.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "correlation_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Correlation Id"
+    },
+    "event_id": {
+      "format": "uuid",
+      "title": "Event Id",
+      "type": "string"
+    },
+    "event_type": {
+      "title": "Event Type",
+      "type": "string"
+    },
+    "occurred_at": {
+      "format": "date-time",
+      "title": "Occurred At",
+      "type": "string"
+    },
+    "payload": {
+      "$ref": "#/$defs/CardLifecyclePayload"
+    },
+    "version": {
+      "const": 1,
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "event_id",
+    "event_type",
+    "occurred_at",
+    "correlation_id",
+    "payload"
+  ],
+  "title": "card.lifecycle event",
+  "type": "object"
+}

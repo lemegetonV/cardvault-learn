@@ -1,0 +1,120 @@
+{
+  "$defs": {
+    "EnrollmentChangedPayload": {
+      "additionalProperties": false,
+      "properties": {
+        "card_id": {
+          "format": "uuid",
+          "title": "Card Id",
+          "type": "string"
+        },
+        "customer_id": {
+          "format": "uuid",
+          "title": "Customer Id",
+          "type": "string"
+        },
+        "enrollment_id": {
+          "format": "uuid",
+          "title": "Enrollment Id",
+          "type": "string"
+        },
+        "operator_version": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Operator Version"
+        },
+        "status": {
+          "enum": [
+            "PENDING",
+            "ENROLLED",
+            "SUSPENDED",
+            "REMOVED",
+            "FAILED"
+          ],
+          "title": "Status",
+          "type": "string"
+        },
+        "token_ref": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Token Ref"
+        },
+        "version": {
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "enrollment_id",
+        "card_id",
+        "customer_id",
+        "token_ref",
+        "status",
+        "version",
+        "operator_version"
+      ],
+      "title": "EnrollmentChangedPayload",
+      "type": "object"
+    }
+  },
+  "$id": "https://cardvault.example/events/enrollment.changed.schema.json",
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "correlation_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "title": "Correlation Id"
+    },
+    "event_id": {
+      "format": "uuid",
+      "title": "Event Id",
+      "type": "string"
+    },
+    "event_type": {
+      "title": "Event Type",
+      "type": "string"
+    },
+    "occurred_at": {
+      "format": "date-time",
+      "title": "Occurred At",
+      "type": "string"
+    },
+    "payload": {
+      "$ref": "#/$defs/EnrollmentChangedPayload"
+    },
+    "version": {
+      "const": 1,
+      "default": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "event_id",
+    "event_type",
+    "occurred_at",
+    "correlation_id",
+    "payload"
+  ],
+  "title": "enrollment.changed event",
+  "type": "object"
+}
