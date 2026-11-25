@@ -90,9 +90,9 @@ export const tracks = [
         title: 'The web app',
         blurb: 'The Next.js app and its backend-for-frontend, browser security, and UI behaviour tests will meet.',
         lessons: [
-          ['web-and-bff', 'Next.js and the BFF'],
-          ['browser-security', 'Browser security'],
-          ['ui-behaviour', 'What the UI does that tests will meet'],
+          ['web-and-bff', 'Next.js and the BFF', true],
+          ['browser-security', 'Browser security', true],
+          ['ui-behaviour', 'What the UI does that tests will meet', true],
         ],
       },
       {
