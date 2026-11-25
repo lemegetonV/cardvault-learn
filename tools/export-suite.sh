@@ -12,5 +12,7 @@ mkdir -p "$here/data/suite"
 git -C "$cardvault" archive "$commit" tests/api .github/workflows/api-tests.yml \
   | tar -x -C "$here/data/suite" --exclude='tests/api/uv.lock'
 echo "suite: copied tests/api and api-tests.yml at $commit"
-# The site shows no passwords except the public seed one: blank the local read-only DB password.
-sed -i -E 's/^(READONLY_DB_PASSWORD=).+$/\1(local default, left out here)/' "$here/data/suite/tests/api/envs/local.env"
+# The site shows no keys or passwords except the public seed password. The local ones are
+# fictional, but blank them anyway so the explorer never shows a key.
+sed -i -E 's/^(TEST_KEY|SERVICE_KEY_TESTS|OPERATOR_HMAC_SECRET|READONLY_DB_PASSWORD)=.+$/\1=(local value, left out here)/' \
+  "$here/data/suite/tests/api/envs/local.env"

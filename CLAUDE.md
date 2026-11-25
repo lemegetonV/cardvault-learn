@@ -36,4 +36,4 @@ A learning site that teaches how CardVault (`lemegetonV/cardvault`) works, and l
 
 Run CardVault locally (`make up`), then `tools/export-data.sh ../cardvault`, and update `cardvaultCommit` in `content/site.mjs`.
 
-For the API suite: `tools/export-suite.sh ../cardvault <commit>`, then set `suiteCommit` to the same commit. The build checks that every lesson excerpt titled with a suite path still matches that file, line by line, and fails if not. The explorer (`/suite/`) shows every copied file, so the export blanks the local read-only database password.
+For the API suite: `tools/export-suite.sh ../cardvault <commit>`, then set `suiteCommit` to the same commit. The build checks that every lesson excerpt titled with a suite path still matches that file, line by line, and fails if not. The explorer (`/suite/`) shows every copied file, so the export blanks the local keys and passwords in `envs/local.env`.
