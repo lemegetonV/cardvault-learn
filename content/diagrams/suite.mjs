@@ -444,3 +444,98 @@ export function reconFindings() {
   });
   return svg(840, 40 + rows.length * 50, 'Each row compares one enrolment. Bank has it, operator does not: MISSING_AT_OPERATOR. Operator has it, bank does not: MISSING_IN_SOR. Different statuses: STATUS_MISMATCH. Same status, different last4: DATA_MISMATCH. Both the same: no finding.', b);
 }
+
+/** An event watch starts at the end of each partition, before the test acts. */
+export function eventWatch() {
+  let b = '';
+  const rows = [['partition 0', 7, null], ['partition 1', 5, 6], ['partition 2', 9, null]];
+  rows.forEach(([name, old, mine], r) => {
+    const y = 40 + r * 52;
+    b += text(20, y + 22, name, 't-sm t-muted', 'start');
+    for (let i = 0; i < old; i++) b += `<rect class="box-plain" x="${120 + i * 40}" y="${y + 4}" width="32" height="26" rx="4"/>`;
+    const sx = 120 + old * 40;
+    b += `<line class="ln" x1="${sx - 4}" y1="${y - 2}" x2="${sx - 4}" y2="${y + 36}"/>`;
+    if (mine !== null) {
+      b += `<rect class="box-plain" x="${sx}" y="${y + 4}" width="32" height="26" rx="4"/>`;
+      b += `<rect class="box-event" x="${sx + 40}" y="${y + 4}" width="32" height="26" rx="4"/>`;
+      b += text(sx + 84, y + 22, 'the test’s own event', 't-sm', 'start');
+    }
+  });
+  b += text(120, 24, 'grey boxes before each line: already there, never read', 't-sm t-muted', 'start');
+  b += text(120, 210, 'each line: where the watch starts, before the test acts', 't-sm', 'start');
+  return svg(760, 222, 'Three partitions of a topic. Old events sit before a line where the watch starts, set before the test acts. After the line, other tests’ events and the test’s own event arrive; the watch picks out the one that matches.', b);
+}
+
+/** Three kinds of messy delivery and the expected outcome. */
+export function messyDelivery() {
+  const rows = [
+    ['the same event twice', [['event', 'E1'], ['event', 'E1']], 'applied once', 'bank'],
+    ['cleared before decided', [['event', 'cleared'], ['event', 'decided']], 'same end state: SETTLED', 'bank'],
+    ['a message nobody can read', [['stop', '{"this is…'], ['event', 'next']], 'retried, parked on the DLQ, next one applied', 'stop'],
+  ];
+  let b = '';
+  rows.forEach(([label, msgs, out, k], i) => {
+    const y = 16 + i * 64;
+    b += text(20, y + 28, label, 't-md', 'start');
+    msgs.forEach(([kind, t], j) => { b += box(250 + j * 120, y + 6, 108, 36, t, { kind, cls: 't-sm' }); });
+    b += arrow([[490, y + 24], [530, y + 24]], 'ln', 'ah');
+    b += box(530, y + 6, 330, 36, out, { kind: k, cls: 't-sm' });
+  });
+  return svg(880, 16 + rows.length * 64, 'Three kinds of messy delivery. The same event twice must be applied once. A clearing that arrives before its authorization must end in the same state as the usual order. A message nobody can read is retried, parked on the dead-letter topic, and the next message is still applied.', b);
+}
+
+/** Writes go through the services; the suite only reads the databases. */
+export function readOnlyDb() {
+  let b = '';
+  b += box(20, 70, 160, 60, 'the suite', { kind: 'plain', cls: 't-lg' });
+  b += box(300, 20, 200, 50, 'services', { kind: 'bank', sub: 'the only writers', cls: 't-md' });
+  b += box(300, 130, 200, 50, 'databases', { kind: 'plain', sub: 'card · wallet_txn · …', cls: 't-md' });
+  b += arrow([[180, 86], [300, 46]], 'ln', 'ah');
+  b += text(150, 40, 'API calls change state', 't-sm', 'start');
+  b += arrow([[400, 70], [400, 130]], 'ln', 'ah');
+  b += arrow([[180, 116], [300, 156]], 'ln-faint', 'ah');
+  b += text(222, 160, '<db>_ro: SELECT only', 't-sm t-muted', 'middle');
+  b += box(560, 130, 180, 50, 'UPDATE …', { kind: 'stop', sub: 'InsufficientPrivilege', cls: 't-mono' });
+  b += `<line class="ln-stop" x1="500" y1="155" x2="560" y2="155"/>`;
+  return svg(760, 196, 'The suite changes state only through the services’ APIs; the services are the only writers to their databases. The suite reads the databases with a read-only role, and any attempt to write is refused with InsufficientPrivilege.', b);
+}
+
+/** Three doors, three proofs: only the matching pair opens. */
+export function doorsAndProofs() {
+  const doors = [['customer', '/v1/…'], ['internal', '/internal/v1/…'], ['test', '/test/…']];
+  const proofs = ['Bearer token', 'X-Service-Key', 'X-Test-Key'];
+  let b = '';
+  b += text(20, 30, 'proof sent →', 't-sm t-muted', 'start');
+  proofs.forEach((p, j) => { b += text(300 + j * 170, 30, p, 't-md'); });
+  doors.forEach(([d, path], i) => {
+    const y = 50 + i * 56;
+    b += text(20, y + 22, `${d} endpoints`, 't-md', 'start');
+    b += mono(20, y + 40, path, { size: 11.5, anchor: 'start', ink: false });
+    proofs.forEach((_, j) => {
+      const ok = i === j;
+      b += box(230 + j * 170, y, 140, 44, ok ? 'opens' : '401', { kind: ok ? 'bank' : 'stop', cls: 't-sm' });
+    });
+  });
+  return svg(760, 50 + 3 * 56 + 6, 'A grid of three kinds of endpoint against three kinds of proof. Customer endpoints open only for a bearer token, internal endpoints only for a service key, test endpoints only for the test key. Every other pair is refused with 401.', b);
+}
+
+/** One journey across the services. */
+export function journeySteps() {
+  const steps = [
+    ['add the card', 'enrollment · operator mock'],
+    ['pay with the token', 'card'],
+    ['merchant settles less', 'card → wallet-txn'],
+    ['dispute the charge', 'wallet-txn'],
+  ];
+  let b = '';
+  steps.forEach(([t, s], i) => {
+    const x = 20 + i * 215;
+    b += `<rect class="box-bank" x="${x}" y="20" width="190" height="58" rx="10"/>`;
+    b += `<circle class="dot" cx="${x + 20}" cy="40" r="10"/><text class="t-mono" x="${x + 20}" y="44" text-anchor="middle" style="fill:var(--surface);font-size:11px">${i + 1}</text>`;
+    b += text(x + 38, 45, t, 't-sm', 'start');
+    b += text(x + 95, 100, s, 't-sm t-muted');
+    if (i < steps.length - 1) b += arrow([[x + 190, 49], [x + 215, 49]], 'ln', 'ah');
+  });
+  b += text(20, 136, 'Each step starts from the state the one before it left behind.', 't-sm t-muted', 'start');
+  return svg(880, 148, 'A journey in four steps: add the card to the wallet, pay with its token, the merchant settles for less, and the customer disputes the charge. Each step uses the state left by the one before.', b);
+}

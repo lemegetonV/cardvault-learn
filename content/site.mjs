@@ -167,11 +167,11 @@ export const tracks = [
         title: 'Beyond the response',
         blurb: 'Events, the database, security rules and whole customer journeys.',
         lessons: [
-          ['suite-reading-events', 'Reading events', false],
-          ['suite-messy-delivery', 'Messy delivery on purpose', false],
-          ['suite-database', 'Looking in the database', false],
-          ['suite-security', 'Who may call what', false],
-          ['suite-journeys', 'Customer journeys', false],
+          ['suite-reading-events', 'Reading events', true],
+          ['suite-messy-delivery', 'Messy delivery on purpose', true],
+          ['suite-database', 'Looking in the database', true],
+          ['suite-security', 'Who may call what', true],
+          ['suite-journeys', 'Customer journeys', true],
         ],
       },
       {
