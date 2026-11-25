@@ -60,9 +60,9 @@ export const tracks = [
         title: 'Events',
         blurb: 'Why services talk in events, and how CardVault makes sure no event is lost or applied twice.',
         lessons: [
-          ['why-events', 'Why services talk in events'],
-          ['transactional-outbox', 'The transactional outbox'],
-          ['consumers-and-dead-letters', 'Consumers, retries and dead letters'],
+          ['why-events', 'Why services talk in events', true],
+          ['transactional-outbox', 'The transactional outbox', true],
+          ['consumers-and-dead-letters', 'Consumers, retries and dead letters', true],
         ],
       },
       {
