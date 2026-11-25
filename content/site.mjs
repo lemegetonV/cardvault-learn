@@ -69,12 +69,12 @@ export const tracks = [
         title: 'The wallet',
         blurb: 'Contact details, eligibility, enrolment with the operator, callbacks and reconciliation.',
         lessons: [
-          ['contact-details', 'Contact details and verification'],
-          ['eligibility', 'Who may join the wallet'],
-          ['enrolment', 'Enrolment and the wallet operator'],
-          ['callbacks', 'Callbacks in depth'],
-          ['when-a-card-changes', 'When a card changes'],
-          ['reconciliation', 'Reconciliation'],
+          ['contact-details', 'Contact details and verification', true],
+          ['eligibility', 'Who may join the wallet', true],
+          ['enrolment', 'Enrolment and the wallet operator', true],
+          ['callbacks', 'Callbacks in depth', true],
+          ['when-a-card-changes', 'When a card changes', true],
+          ['reconciliation', 'Reconciliation', true],
         ],
       },
       {
