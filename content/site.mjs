@@ -49,11 +49,11 @@ export const tracks = [
         title: 'Cards and money',
         blurb: 'The card master, safe retries, and how a purchase is approved, held and cleared.',
         lessons: [
-          ['card-lifecycle', 'The card and its lifecycle'],
-          ['idempotency-keys', 'Safe retries with idempotency keys'],
-          ['authorization', 'Deciding an authorization'],
-          ['holds-and-clearing', 'Holds and clearing'],
-          ['network-mock', 'The network mock'],
+          ['card-lifecycle', 'The card and its lifecycle', true],
+          ['idempotency-keys', 'Safe retries with idempotency keys', true],
+          ['authorization', 'Deciding an authorization', true],
+          ['holds-and-clearing', 'Holds and clearing', true],
+          ['network-mock', 'The network mock', true],
         ],
       },
       {
