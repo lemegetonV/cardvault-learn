@@ -1,10 +1,16 @@
 """Transactions: the customer's record of wallet purchases (wallet-txn-service)."""
 
+from pathlib import Path
+
 import pytest
 
 from api.card_network_api import CardNetworkApi
 from api.transactions_api import TransactionsApi
 from helpers import wait_for_transactions
+
+# The folder with the test files. It is found from where this file is,
+# so the tests work whichever folder you run pytest from.
+FILES_FOLDER = Path(__file__).parent.parent / "data" / "files"
 
 
 @pytest.mark.smoke
@@ -83,6 +89,37 @@ def test_open_a_dispute(customer):
     assert response.json()["status"] == "OPEN"
     # The transaction now points at its open dispute.
     assert transactions_api.get_transaction(txn_id).json()["open_dispute_id"] is not None
+
+
+def test_open_a_dispute_with_a_receipt(customer):
+    card = customer["wallet_card"]
+    CardNetworkApi().make_purchase(card["token_ref"], amount=3000)
+    transactions_api = TransactionsApi(customer["token"])
+    txn_id = wait_for_transactions(transactions_api, count=1)[0]["txn_id"]
+
+    # "with" opens the file and closes it again when the block ends. "rb" means read bytes.
+    with open(FILES_FOLDER / "receipt.png", "rb") as receipt:
+        response = transactions_api.open_dispute(
+            txn_id, reason="WRONG_AMOUNT", receipt_file=receipt
+        )
+
+    assert response.status_code == 201
+    assert response.json()["receipt"]["filename"] == "receipt.png"
+    assert response.json()["receipt"]["content_type"] == "image/png"
+
+
+def test_a_text_file_named_like_a_picture_is_refused(customer):
+    card = customer["wallet_card"]
+    CardNetworkApi().make_purchase(card["token_ref"], amount=3000)
+    transactions_api = TransactionsApi(customer["token"])
+    txn_id = wait_for_transactions(transactions_api, count=1)[0]["txn_id"]
+
+    # The service must look at what is inside the file, not trust its name.
+    with open(FILES_FOLDER / "not_a_picture.png", "rb") as fake:
+        response = transactions_api.open_dispute(txn_id, reason="WRONG_AMOUNT", receipt_file=fake)
+
+    assert response.status_code == 422
+    assert response.json()["error_code"] == "RECEIPT_TYPE_NOT_ALLOWED"
 
 
 def test_only_one_open_dispute_per_transaction(customer):

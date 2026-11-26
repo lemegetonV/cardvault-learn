@@ -1,5 +1,7 @@
 """Logging in: the Login service (auth-service)."""
 
+import uuid
+
 import pytest
 
 import config
@@ -31,7 +33,10 @@ def test_login_with_wrong_password_is_refused():
 
 def test_unknown_user_gets_the_same_error_as_a_wrong_password():
     # The app must not reveal which usernames exist.
-    response = AuthApi().login("nobody-has-this-name", "not-the-password")
+    # A new made-up name every run: failed logins count towards a lockout even
+    # for names that do not exist, so a fixed name would be locked after 5 runs.
+    unknown_username = f"nobody-{uuid.uuid4().hex[:8]}"
+    response = AuthApi().login(unknown_username, "not-the-password")
 
     assert response.status_code == 401
     assert response.json()["error_code"] == "INVALID_CREDENTIALS"
@@ -50,6 +55,21 @@ def test_login_with_an_empty_field_is_refused(username, password):
     # 422: the request itself is invalid, so the password is never even checked.
     assert response.status_code == 422
     assert response.json()["error_code"] == "VALIDATION_ERROR"
+
+
+def test_refresh_gives_new_tokens_and_the_old_refresh_token_stops_working():
+    someone = create_logged_in_customer(cards=[])
+    login = AuthApi().login(someone["username"], someone["password"]).json()
+
+    refreshed = AuthApi().refresh(login["refresh_token"])
+
+    assert refreshed.status_code == 200
+    # The new access token works.
+    assert AuthApi().me(refreshed.json()["access_token"]).status_code == 200
+    # The old refresh token was used once, so using it again is refused.
+    reused = AuthApi().refresh(login["refresh_token"])
+    assert reused.status_code == 401
+    assert reused.json()["error_code"] == "REFRESH_TOKEN_REUSED"
 
 
 def test_me_tells_who_is_logged_in(alice_token):

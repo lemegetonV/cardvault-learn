@@ -39,14 +39,22 @@ class TransactionsApi:
             timeout=config.TIMEOUT,
         )
 
-    def open_dispute(self, txn_id, reason, note=None):
-        """Disputes are sent as a form (like a web page form), not as JSON."""
+    def open_dispute(self, txn_id, reason, note=None, receipt_file=None):
+        """Disputes are sent as a form (like a web page form), not as JSON.
+
+        receipt_file is an optional file opened for reading, for example
+        open("data/files/receipt.png", "rb"). requests uploads it with the form.
+        """
         form = {"reason": reason}
         if note:
             form["note"] = note
+        files = {}
+        if receipt_file:
+            files["receipt"] = receipt_file
         return requests.post(
             f"{self.base_url}/v1/wallet/transactions/{txn_id}/disputes",
             data=form,
+            files=files,
             headers=self.headers,
             timeout=config.TIMEOUT,
         )
