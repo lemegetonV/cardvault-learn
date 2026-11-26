@@ -106,8 +106,19 @@ export function code({ src, lang = 'python', title = '', note = '' }) {
   const clean = src.replace(/^\n/, '').replace(/\s+$/, '');
   checkExcerpt(title, clean);
   const body = hljs.highlight(clean, { language: lang }).value;
-  return `<div class="code wide-ok"><div class="code-head"><span>${esc(title)}</span><span>${esc(note || (lang === 'text' ? '' : lang))}</span></div>`
-    + `<pre><code>${body}</code></pre></div>`;
+  // A suite file gets a link to the full file, and a test file a Run button per test shown.
+  const suite = title.match(/^(tests\/api\/\S+)/);
+  let right = esc(note || (lang === 'text' ? '' : lang));
+  let runs = '';
+  if (suite) {
+    right = `<a href="/suite/#${esc(suite[1])}">Full file</a>`;
+    if (/^tests\/api\/tests\/test_\w+\.py$/.test(suite[1])) {
+      const names = [...clean.matchAll(/^def (test_\w+)\(/gm)].map((m) => m[1]);
+      runs = names.map((t) => runButton(`${nodeFile(suite[1])}::${t}`, names.length > 1 ? `Run ${t}` : 'Run this test on the live app')).join('');
+    }
+  }
+  return `<div class="code wide-ok"><div class="code-head"><span>${esc(title)}</span><span>${right}</span></div>`
+    + `<pre><code>${body}</code></pre>${runs ? `<div class="code-runs">${runs}</div>` : ''}</div>`;
 }
 
 /**
@@ -225,3 +236,52 @@ export function sequence({ id, label, actors, steps, caption }) {
 function numDot(x, y, n) {
   return `<circle class="num" cx="${x}" cy="${y}" r="9" stroke-width="1.5"/><text class="t-mono num-t" x="${x}" y="${y + 4}" text-anchor="middle" style="font-size:10px">${n}</text>`;
 }
+
+// ---------------------------------------------------------------- Live lab (talks to the real app through /vm/*)
+
+export const LAB_SERVICES = [
+  ['auth', 'Login · auth-service'],
+  ['cards', 'Cards · card-service'],
+  ['wallet', 'Wallet · enrollment-service'],
+  ['transactions', 'Transactions · wallet-txn-service'],
+  ['profile', 'Profile · profile-service'],
+];
+const LAB_METHODS = ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'];
+
+/** One editable request: the form inside a tryIt panel and on the lab page. */
+export function labRequest({ label = '', note = '', method = 'GET', service = 'auth', path = '/', headers = {}, body = '', save = {} }, n = 0) {
+  const headerText = Object.entries(headers).map(([k, v]) => `${k}: ${v}`).join('\n');
+  const bodyText = typeof body === 'string' ? body : JSON.stringify(body, null, 2);
+  const rows = (s, min) => Math.max(min, s.split('\n').length);
+  const opts = (list, current) => list.map(([v, l]) => `<option value="${esc(v)}"${v === current ? ' selected' : ''}>${esc(l)}</option>`).join('');
+  return `<div class="tryit-req" data-save="${esc(JSON.stringify(save))}">`
+    + (label ? `<p class="tr-label">${n ? `<b>${n}</b>` : ''}<span>${md(label)}</span></p>` : '')
+    + (note ? `<p class="tr-note">${md(note)}</p>` : '')
+    + `<div class="tr-line"><select class="tr-method" aria-label="Method">${opts(LAB_METHODS.map((m) => [m, m]), method)}</select>`
+    + `<select class="tr-service" aria-label="Service">${opts(LAB_SERVICES, service)}</select>`
+    + `<input class="tr-path" aria-label="Path" value="${esc(path)}" spellcheck="false" autocomplete="off"></div>`
+    + `<label class="tr-field"><span>Headers</span><textarea class="tr-headers" rows="${rows(headerText, 1)}" spellcheck="false" placeholder="Name: value, one per line">${esc(headerText)}</textarea></label>`
+    + `<label class="tr-field tr-body-wrap"><span>Body</span><textarea class="tr-body" rows="${rows(bodyText, 2)}" spellcheck="false">${esc(bodyText)}</textarea></label>`
+    + `<div class="tr-actions"><button type="button" class="btn primary tr-send" disabled>Send</button><button type="button" class="link-btn tr-restore">Undo my edits</button></div>`
+    + `<div class="tr-result" hidden aria-live="polite"></div></div>`;
+}
+
+/**
+ * "Try it": real requests to the live CardVault, editable before sending.
+ * requests: [{ label, note, method, service, path, headers, body, save }]
+ * A login response saves {{token}}; save: { name: 'path.in.json' } saves more values.
+ */
+export function tryIt({ title = 'Try it on the live app', requests, foot = '' }) {
+  return `<div class="tryit wide-ok" data-tryit><div class="code-head"><span>${esc(title)}</span><span class="tryit-vars"></span></div>`
+    + `<div class="tryit-body">${requests.map((r, i) => labRequest(r, requests.length > 1 ? i + 1 : 0)).join('')}</div>`
+    + `<p class="tryit-foot">${foot ? `${foot} ` : ''}These are real requests to CardVault on the server. If a demo changes something, <a href="/lab/">the Live lab page</a> puts the app back to its starting data.</p></div>`;
+}
+
+/** The pytest node id of a suite file, as the runner wants it (relative to tests/api). */
+export const nodeFile = (suitePath) => suitePath.replace(/^tests\/api\//, '');
+
+/** A button that runs one test (or a whole file) on the live app and shows pytest's output below. */
+export function runButton(nodeId, label = 'Run on the live app') {
+  return `<button type="button" class="run-btn" data-run="${esc(nodeId)}" disabled title="pytest ${esc(nodeId)}">${runIcon}${esc(label)}</button>`;
+}
+const runIcon = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 3v10l8-5z" fill="currentColor"/></svg>';

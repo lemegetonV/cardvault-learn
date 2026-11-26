@@ -1,7 +1,7 @@
-import { code, interview, table, keyIdea } from '../../src/components.mjs';
+import { code, interview, table, keyIdea, tryIt } from '../../src/components.mjs';
 
 export default {
-  minutes: 9,
+  minutes: 12,
   lede: 'An API test talks to a service the same way the web app does: over HTTP. Before writing one, it helps to see exactly what travels in each direction. This lesson takes one real CardVault call apart.',
   youWill: 'You will be able to read any request and response in the suite: method, URL, headers, body and status code.',
   body: `
@@ -67,6 +67,15 @@ ${code({ lang: 'json', title: 'Response body for a wrong password (401)', src: `
 <p>The <code>correlation_id</code> is an ID for this one request. Developers can search the service logs for it, so it is worth putting in a bug report.</p>
 
 ${keyIdea('<p>An API test checks three things in the response: the status code, the important values in the body, and, for errors, the <code>error_code</code>.</p>')}
+
+<h2>Try it on the live app</h2>
+<p>The panel below sends these requests to CardVault running on the server. Send them in order. The first one logs alice in, and the page keeps her access token as <code>{{token}}</code> and puts it into the requests that need it. Then change things and predict the answer before you press Send: delete the <code>Authorization</code> line, change one letter of the token, or ask for <code>/v1/cards/not-a-card</code>.</p>
+${tryIt({ requests: [
+  { label: 'Log in as alice', note: 'Expect `200` and a body with `access_token` and `refresh_token`.', method: 'POST', service: 'auth', path: '/v1/auth/login', body: { username: 'alice', password: 'CardVault-Demo-1' } },
+  { label: 'List her cards, with the token', note: 'Expect `200` and her four cards in `items`.', method: 'GET', service: 'cards', path: '/v1/cards', headers: { Authorization: 'Bearer {{token}}' } },
+  { label: 'The same request with no token', note: 'Expect `401` with `error_code` `UNAUTHORIZED`.', method: 'GET', service: 'cards', path: '/v1/cards' },
+  { label: 'A wrong password', note: 'Expect `401` with `INVALID_CREDENTIALS`. Five in a row lock bob’s account (`423`); resetting the app unlocks him.', method: 'POST', service: 'auth', path: '/v1/auth/login', body: { username: 'bob', password: 'not-the-password' } },
+] })}
 
 ${interview({
   say: `<p>“Each service exposes a REST API with JSON bodies. Customer calls carry a Bearer token in the Authorization header. In tests I check the status code first, then the fields in the JSON body, and for errors the stable error_code rather than the message text. Every response carries a correlation ID, which I include in bug reports so developers can find the request in the logs.”</p>`,

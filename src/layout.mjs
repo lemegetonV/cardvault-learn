@@ -9,6 +9,7 @@ const themeButton = `<button class="theme-btn" type="button" aria-label="Switch 
 const navItems = [
   ['home', '/', 'Start'],
   ...tracks.map((t) => [t.id, `/#${t.id}`, t.short]),
+  ['lab', '/lab/', 'Live lab'],
 ];
 
 export function page({ title, description = site.description, active = '', body, head = '', scripts = '' }) {
@@ -44,6 +45,7 @@ ${body}
 <span>Every bank, card and person here is fictional.</span>
 </div></footer>
 <script src="/assets/site.js" defer></script>
+<script src="/assets/lab.js" defer></script>
 ${scripts}
 </body>
 </html>

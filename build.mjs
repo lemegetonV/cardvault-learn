@@ -7,6 +7,8 @@ import { page, rail } from './src/layout.mjs';
 import { esc, excerptProblems } from './src/components.mjs';
 import { site, allLessons, lessonUrl } from './content/site.mjs';
 import { homePage } from './content/pages/home.mjs';
+import { labPage } from './content/pages/lab.mjs';
+import { suitePage } from './content/pages/suite.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const dist = path.join(root, 'dist');
@@ -22,6 +24,7 @@ await rm(dist, { recursive: true, force: true });
 await mkdir(path.join(dist, 'assets'), { recursive: true });
 await cp(path.join(root, 'src/styles.css'), path.join(dist, 'assets/styles.css'));
 await cp(path.join(root, 'src/site.js'), path.join(dist, 'assets/site.js'));
+await cp(path.join(root, 'src/lab.js'), path.join(dist, 'assets/lab.js'));
 await cp(path.join(root, 'src/favicon.svg'), path.join(dist, 'favicon.svg'));
 await cp(path.join(root, 'content/images'), path.join(dist, 'images'), { recursive: true });
 
@@ -54,6 +57,8 @@ ${pager}
 
 await out('', homePage());
 await out('learn', homePage());
+await out('lab', labPage());
+await out('suite', suitePage());
 
 problems.push(...excerptProblems);
 

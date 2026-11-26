@@ -1,0 +1,18 @@
+# systemd unit for the live lab. It replaces the old cardvault-runner unit. Install on the server:
+#   sudo cp /opt/cardvault-learn/lab/cardvault-lab.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now cardvault-lab
+[Unit]
+Description=CardVault live lab for the learning site (behind Caddy basic auth)
+After=network-online.target docker.service
+
+[Service]
+User=ubuntu
+WorkingDirectory=/opt/cardvault-learn/lab
+Environment=CARDVAULT_DIR=/opt/cardvault
+Environment=SUITE_DIR=/opt/cardvault-suite/tests/api
+Environment=PATH=/home/ubuntu/.local/bin:/usr/local/bin:/usr/bin:/bin
+ExecStart=/usr/bin/python3 server.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

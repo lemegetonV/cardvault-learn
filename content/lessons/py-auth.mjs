@@ -1,7 +1,7 @@
-import { code, interview, keyIdea, testerEye, table, sequence } from '../../src/components.mjs';
+import { code, interview, keyIdea, testerEye, table, sequence, tryIt } from '../../src/components.mjs';
 
 export default {
-  minutes: 11,
+  minutes: 13,
   lede: 'Two questions guard every API call: who are you, and are you allowed to do this? They sound alike, interviewers love to ask about the difference, and they fail in different ways. This lesson covers both, with CardVault’s tokens as the example.',
   youWill: 'You will be able to explain authentication and authorisation, how access and refresh tokens work, and how the suite tests each.',
   body: `
@@ -49,6 +49,12 @@ def test_refresh_gives_new_tokens_and_the_old_refresh_token_stops_working():
     assert reused.json()["error_code"] == "REFRESH_TOKEN_REUSED"
 ` })}
 <p>The rest of the authentication tests are in the same file: the right password works, a wrong one and an unknown username get the same error, a missing or made-up token is refused, and five wrong passwords lock the account.</p>
+<p>The same refresh story, on the live app. The login saves alice’s first refresh token as <code>{{first_refresh}}</code>, so requests 2 and 3 can both send it.</p>
+${tryIt({ requests: [
+  { label: 'Log in as alice', method: 'POST', service: 'auth', path: '/v1/auth/login', body: { username: 'alice', password: 'CardVault-Demo-1' }, save: { first_refresh: 'refresh_token' } },
+  { label: 'Swap the refresh token for new tokens', note: 'Expect `200` with a new `access_token` and a new `refresh_token`.', method: 'POST', service: 'auth', path: '/v1/auth/refresh', body: { refresh_token: '{{first_refresh}}' } },
+  { label: 'Use the same refresh token again', note: 'It was already used once, so expect `401` with `REFRESH_TOKEN_REUSED`.', method: 'POST', service: 'auth', path: '/v1/auth/refresh', body: { refresh_token: '{{first_refresh}}' } },
+] })}
 
 <h2>Testing authorisation</h2>
 <p>The key authorisation test uses two real customers. Both are properly logged in, so authentication passes. The question is only whether one may touch the other’s card:</p>

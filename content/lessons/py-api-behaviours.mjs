@@ -1,7 +1,7 @@
-import { code, interview, keyIdea, testerEye, table } from '../../src/components.mjs';
+import { code, interview, keyIdea, testerEye, table, tryIt } from '../../src/components.mjs';
 
 export default {
-  minutes: 12,
+  minutes: 14,
   lede: 'Most real APIs share four behaviours: long lists come back in pages, a request can be repeated safely, an update cannot silently overwrite someone else’s change, and callers who ask too often are slowed down. CardVault has all four, and each needs its own kind of test.',
   youWill: 'You will be able to explain pagination, idempotency keys, version checks with If-Match, and rate limits, and how the suite tests each.',
   body: `
@@ -31,6 +31,13 @@ def test_pages_of_two_cards_cover_all_of_alices_cards(alice_token):
     assert sorted(last4s) == sorted(ALICE["cards"])
 ` })}
 <p>The last two lines are the important ones: no card is lost or repeated between pages. The square brackets build a list from a loop, a <strong>list comprehension</strong>: “the last4 of every card in both pages”. <code>sorted(ALICE["cards"])</code> sorts the keys of the dictionary, the four last4s.</p>
+<p>You can walk the same pages on the live app. Request 2 saves the <code>next_cursor</code> it gets back as <code>{{cursor}}</code>, and request 3 sends it back.</p>
+${tryIt({ requests: [
+  { label: 'Log in as alice', method: 'POST', service: 'auth', path: '/v1/auth/login', body: { username: 'alice', password: 'CardVault-Demo-1' } },
+  { label: 'The first page of two cards', note: 'Two cards in `items`, and a `next_cursor` that is not null.', method: 'GET', service: 'cards', path: '/v1/cards?limit=2', headers: { Authorization: 'Bearer {{token}}' }, save: { cursor: 'next_cursor' } },
+  { label: 'The next page', note: 'The other two cards, and `next_cursor` is `null`: this was the last page.', method: 'GET', service: 'cards', path: '/v1/cards?limit=2&cursor={{cursor}}', headers: { Authorization: 'Bearer {{token}}' } },
+  { label: 'A page size above the maximum', note: 'The most one page may hold is 100, so this gets `422` with `VALIDATION_ERROR`.', method: 'GET', service: 'cards', path: '/v1/cards?limit=101', headers: { Authorization: 'Bearer {{token}}' } },
+] })}
 
 <h2>Idempotency keys</h2>
 <p>An action is <strong>idempotent</strong> when doing it twice has the same effect as doing it once. A network timeout leaves a caller unsure whether its request arrived. With a unique key in a header, the caller can simply send it again:</p>
