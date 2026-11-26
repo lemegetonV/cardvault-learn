@@ -1,8 +1,8 @@
-import { figure, interview, keyIdea, table, testerEye } from '../../src/components.mjs';
+import { figure, interview, keyIdea, table, testerEye, tryIt } from '../../src/components.mjs';
 import { system, twoWays } from '../diagrams/app.mjs';
 
 export default {
-  minutes: 9,
+  minutes: 11,
   lede: 'You have seen the screens. Now look behind them: what parts make up CardVault, what each part is responsible for, and how they talk to each other. This is the picture interviewers ask you to draw.',
   youWill: 'You will be able to draw the architecture on a whiteboard and explain each box in one sentence.',
   body: `
@@ -33,6 +33,15 @@ ${table(['Service', 'What it is responsible for', 'Screens it serves'], [
 <p>Each service owns its own database. No service reads another service’s tables. If Wallet needs to know about a card, it asks Cards or listens for news from it.</p>
 
 ${keyIdea('<p>One service, one job, its own data. When something goes wrong on a screen, this tells you which service to look at first.</p>')}
+
+<p>You can talk to each service yourself. The panel below calls them directly, the way an API test does, instead of going through the web app. Log in first: the Login service hands back a token, and the other four services each answer with their own part of alice’s data.</p>
+${tryIt({ title: 'Try it: one request to each service', requests: [
+  { label: 'Login: sign alice in', method: 'POST', service: 'auth', path: '/v1/auth/login', body: { username: 'alice', password: 'CardVault-Demo-1' } },
+  { label: 'Cards: her cards, limits and available amounts', method: 'GET', service: 'cards', path: '/v1/cards', headers: { Authorization: 'Bearer {{token}}' } },
+  { label: 'Wallet: which cards are in her wallet', method: 'GET', service: 'wallet', path: '/v1/wallet', headers: { Authorization: 'Bearer {{token}}' } },
+  { label: 'Transactions: her three latest wallet purchases', method: 'GET', service: 'transactions', path: '/v1/wallet/transactions?limit=3', headers: { Authorization: 'Bearer {{token}}' } },
+  { label: 'Profile: her email and phone', method: 'GET', service: 'profile', path: '/v1/profile', headers: { Authorization: 'Bearer {{token}}' } },
+] })}
 
 <h2>Two ways the services talk</h2>
 ${figure({ svg: twoWays(), caption: 'Top: a direct call. Bottom: an event on the message bus.' })}

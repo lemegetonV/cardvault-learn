@@ -1,0 +1,90 @@
+// The Live lab page: unlock, send any customer request, run a test, reset the app.
+import { page } from '../../src/layout.mjs';
+import { esc, labRequest, nodeFile } from '../../src/components.mjs';
+import { lessonUrl } from '../site.mjs';
+import { suiteFiles, testsIn, isTestFile } from './suite.mjs';
+
+const ALICE = { username: 'alice', password: 'CardVault-Demo-1' };
+const BEARER = { Authorization: 'Bearer {{token}}' };
+
+// Ready-made requests for the "Send a request" form. A login saves {{token}}.
+export const EXAMPLES = [
+  { label: 'Log in as alice', method: 'POST', service: 'auth', path: '/v1/auth/login', body: ALICE },
+  { label: 'Who am I? (uses the token)', method: 'GET', service: 'auth', path: '/v1/auth/me', headers: BEARER },
+  { label: 'List my cards', method: 'GET', service: 'cards', path: '/v1/cards', headers: BEARER, save: { card_id: 'items.0.card_id' } },
+  { label: 'One card (uses {{card_id}})', method: 'GET', service: 'cards', path: '/v1/cards/{{card_id}}', headers: BEARER },
+  { label: 'Cards, two per page', method: 'GET', service: 'cards', path: '/v1/cards?limit=2', headers: BEARER },
+  { label: 'My wallet', method: 'GET', service: 'wallet', path: '/v1/wallet', headers: BEARER },
+  { label: 'My last five transactions', method: 'GET', service: 'transactions', path: '/v1/wallet/transactions?limit=5', headers: BEARER },
+  { label: 'My profile', method: 'GET', service: 'profile', path: '/v1/profile', headers: BEARER },
+  { label: 'Log in with a wrong password', method: 'POST', service: 'auth', path: '/v1/auth/login', body: { username: 'bob', password: 'not-the-password' } },
+  { label: 'List cards with no token', method: 'GET', service: 'cards', path: '/v1/cards' },
+];
+
+const toForm = (e) => ({
+  method: e.method,
+  service: e.service,
+  path: e.path,
+  headers: Object.entries(e.headers || {}).map(([k, v]) => `${k}: ${v}`).join('\n'),
+  body: e.body ? JSON.stringify(e.body, null, 2) : '',
+  save: e.save || {},
+});
+
+export function labPage() {
+  const tests = suiteFiles().filter(isTestFile);
+  const groups = tests.map((p) => {
+    const file = nodeFile(p);
+    const opts = testsIn(p).map((t) => `<option value="${esc(`${file}::${t}`)}">${esc(t)}</option>`).join('');
+    return `<optgroup label="${esc(file)}"><option value="${esc(file)}">All tests in ${esc(file.replace('tests/', ''))}</option>${opts}</optgroup>`;
+  }).join('');
+  const exampleOpts = EXAMPLES.map((e, i) => `<option value="${i}">${esc(e.label)}</option>`).join('');
+
+  const body = `<div class="frame lab-frame">
+<div class="page-head">
+<p class="eyebrow"><span class="chip">Live</span><span>The real app, on the server</span></p>
+<h1>Live lab</h1>
+<p class="lede">Send real requests to CardVault, run tests from the suite, and put the app back to its starting data. Everything on this page talks to the app running on the server, the same one the lessons describe.</p>
+</div>
+
+<section class="lab-card">
+<h2>Is the app up?</h2>
+<p>Each of the five services, as the server sees it right now.</p>
+<div class="lab-row"><div class="svc-status" data-lab-status aria-live="polite"></div></div>
+</section>
+
+<section class="lab-card">
+<h2>Send a request</h2>
+<p>Pick a ready-made request or write your own. Start with <em>Log in as alice</em>: its response holds a token, which the page saves as <code>{{token}}</code> and puts into the requests that need it. Only the customer API (paths under <code>/v1/</code>) can be called.</p>
+<label class="lab-pick"><span>Ready-made request</span><select id="lab-example">${exampleOpts}</select></label>
+<div class="tryit" data-tryit><div class="code-head"><span>Request</span><span class="tryit-vars"></span></div>
+<div class="tryit-body" id="lab-request">${labRequest({ ...EXAMPLES[0], label: '' })}</div></div>
+</section>
+
+<section class="lab-card">
+<h2>Run a test</h2>
+<p>Runs one test, or a whole file, from <a href="/suite/">the API suite</a> against the live app. You see pytest’s output as it runs. One run happens at a time. Tests that change data make their own new customer, so a run leaves alice as she was.</p>
+<div class="lab-row run-host"><select id="lab-test" aria-label="Test to run">${groups}</select><button type="button" class="run-btn" data-run-select="#lab-test" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 3v10l8-5z" fill="currentColor"/></svg>Run</button></div>
+</section>
+
+<section class="lab-card">
+<h2>Reset to starting data</h2>
+<p>Puts every service back to the same starting customers, cards, wallets and transactions. Use it when a demo has changed something, for example after locking an account with wrong passwords or reporting a card lost. It takes a few seconds, and saved tokens are cleared.</p>
+<div class="lab-row"><button type="button" class="btn" data-lab-reset>Reset the app</button><span class="lab-reset-msg muted" aria-live="polite"></span></div>
+</section>
+
+<p class="how-note">New to requests and responses? <a href="${lessonUrl('py-http-for-testers')}">HTTP for testers</a> explains every part of the form above.</p>
+</div>`;
+
+  const scripts = `<script type="application/json" id="lab-examples">${JSON.stringify(EXAMPLES.map(toForm)).replace(/</g, '\\u003c')}</script>
+<script>
+(function () {
+  var examples = JSON.parse(document.getElementById('lab-examples').textContent);
+  var select = document.getElementById('lab-example');
+  var block = document.querySelector('#lab-request .tryit-req');
+  select.addEventListener('change', function () {
+    block.dispatchEvent(new CustomEvent('tr-load', { detail: examples[Number(select.value)] }));
+  });
+}());
+</script>`;
+  return page({ title: 'Live lab · CardVault Learn', active: 'lab', body, scripts });
+}

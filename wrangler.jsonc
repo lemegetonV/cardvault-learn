@@ -1,11 +1,17 @@
 // Cloudflare Worker that serves the built site from dist/ as static assets.
+// Only /vm/* (the live lab) runs worker/index.js; every other path is a static file.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "cardvault-learn",
+  "main": "worker/index.js",
   "compatibility_date": "2026-11-01",
+  // Where /vm/* goes: the lab on the CardVault server.
+  "vars": { "LAB_UPSTREAM": "https://run.140-245-206-220.sslip.io" },
   "assets": {
     "directory": "./dist",
+    "binding": "ASSETS",
     "html_handling": "auto-trailing-slash",
-    "not_found_handling": "404-page"
+    "not_found_handling": "404-page",
+    "run_worker_first": ["/vm/*"]
   }
 }
