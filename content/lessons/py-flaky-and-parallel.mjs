@@ -43,10 +43,10 @@ def wait_for_wallet_status(wallet_api, card_id, expected_status, timeout=10):
 <h2>Running tests in parallel</h2>
 <p>The <strong>pytest-xdist</strong> plugin starts several worker processes and shares the tests out among them. <code>-n 4</code> means four workers; <code>-n auto</code> means one per CPU core.</p>
 ${terminal([
-  ['pytest -q', '============================= 72 passed in 23.91s =============================='],
-  ['pytest -q -n 4', '============================= 72 passed in 9.82s ==============================='],
+  ['pytest -q', '============================= 79 passed in 26.44s =============================='],
+  ['pytest -q -n 4', '============================= 79 passed in 12.38s =============================='],
 ], 'Terminal')}
-<p>On this machine four workers cut the run from about 24 seconds to about 10. CI uses <code>-n 4</code> too.</p>
+<p>On this machine four workers cut the run from about 26 seconds to about 12. CI uses <code>-n 4</code> too.</p>
 
 <h2>Why the suite is safe to run in parallel</h2>
 <p>Parallel runs expose every hidden dependency between tests, because tests now run at the same time and in a different order. The suite is safe because of rules you already know:</p>

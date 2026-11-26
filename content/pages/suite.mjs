@@ -49,8 +49,9 @@ function fileSection(p) {
     return `<section class="sf" data-path="${esc(p)}"><div class="code">${head}<p class="sf-binary">A small file the upload tests send (${size} bytes). It is not text, so it is not shown.</p></div></section>`;
   }
   let src = readFileSync(full, 'utf8').replace(/\s+$/, '');
-  // The local test key is not shown on the site.
-  src = src.replace(/(TEST_KEY = os\.getenv\("TEST_KEY", )"[^"]*"\)/, '$1"…")');
+  // The local test key and database password are not shown on the site.
+  src = src.replace(/(TEST_KEY = os\.getenv\("TEST_KEY", )"[^"]*"\)/, '$1"…")')
+    .replace(/(DB_READONLY_PASSWORD = os\.getenv\("DB_READONLY_PASSWORD", )"[^"]*"\)/, '$1"…")');
   let runs = '';
   if (isTestFile(p)) {
     const tests = testsIn(p);
@@ -87,7 +88,7 @@ export function suitePage() {
 <div class="page-head">
 <p class="eyebrow"><span class="chip">API suite</span><span>Python and pytest</span></p>
 <h1>The suite, file by file</h1>
-<p class="lede">Every file of the API test suite that the Python lessons teach. Test files list their tests with a Run button, which runs that test on the live app and shows pytest’s output. Start from <a href="${lessonUrl('py-framework-map')}">the framework map</a> if you want each file’s job first.</p>
+<p class="lede">Every file of the API test suite that the Python lessons teach. Test files list their tests with a Run button, which runs that test on the live app and opens a panel with every API call it made, request and response. Start from <a href="${lessonUrl('py-framework-map')}">the framework map</a> if you want each file’s job first.</p>
 </div>
 <div class="suite">
 <nav class="suite-tree" aria-label="Suite files"><p class="st-root">tests/api/</p><ul>${treeNav(files)}</ul></nav>

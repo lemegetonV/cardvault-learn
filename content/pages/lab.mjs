@@ -62,7 +62,7 @@ export function labPage() {
 
 <section class="lab-card">
 <h2>Run a test</h2>
-<p>Runs one test, or a whole file, from <a href="/suite/">the API suite</a> against the live app. You see pytest’s output as it runs. One run happens at a time. Tests that change data make their own new customer, so a run leaves alice as she was.</p>
+<p>Runs one test, or a whole file, from <a href="/suite/">the API suite</a> against the live app. A panel opens beside the page and shows each step as the test takes it: every API request with its response, and any database query or Kafka event, in order. One run happens at a time. Tests that change data make their own new customer, so a run leaves alice as she was.</p>
 <div class="lab-row run-host"><select id="lab-test" aria-label="Test to run">${groups}</select><button type="button" class="run-btn" data-run-select="#lab-test" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 3v10l8-5z" fill="currentColor"/></svg>Run</button></div>
 </section>
 

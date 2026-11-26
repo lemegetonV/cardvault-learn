@@ -26,5 +26,15 @@ TEST_KEY = os.getenv("TEST_KEY", "cv-test-key-local")
 # The password shared by the demo customers (alice, bob, charlie and dana).
 DEMO_PASSWORD = os.getenv("DEMO_PASSWORD", "CardVault-Demo-1")
 
+# Database checks connect straight to Postgres. Each service has its own database, and
+# each database has a read-only user called "<database>_ro" (for example "card_ro"), so
+# a test can look at the data but never change it. They all share this password.
+DB_HOST = os.getenv("DB_HOST", "127.0.0.1")
+DB_PORT = int(os.getenv("DB_PORT", "5432"))
+DB_READONLY_PASSWORD = os.getenv("DB_READONLY_PASSWORD", "cv-readonly-local")
+
+# Event checks read Kafka, the message bus the services use to tell each other about changes.
+KAFKA_BOOTSTRAP = os.getenv("KAFKA_BOOTSTRAP", "127.0.0.1:19092")
+
 # How many seconds to wait for a response before giving up.
 TIMEOUT = 10

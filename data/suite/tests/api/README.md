@@ -3,6 +3,8 @@
 A small, readable API test suite for CardVault, written in Python with
 [pytest](https://docs.pytest.org) and [requests](https://requests.readthedocs.io).
 It calls the five backend services directly over HTTP and checks their answers.
+A few tests also look inside a service's database (read-only) or read the events
+the services send each other through Kafka.
 
 ## What is where
 
@@ -13,6 +15,8 @@ tests/api/
   config.py             service addresses and shared settings
   conftest.py           fixtures: alice's login, a fresh customer per test
   helpers.py            create a logged-in customer, wait for slow changes
+  database.py           query_one(): read a row from a service's database (read-only user)
+  events.py             EventWatcher: wait for an event on a Kafka topic; list_topics()
   api/                  one class per service, one method per API call
     auth_api.py           login, who am I
     cards_api.py          list cards, report lost, reissue, close
@@ -31,6 +35,8 @@ tests/api/
     test_response_shape.py   responses checked against a JSON Schema
     test_security.py         other customers' data, forged tokens, fields you may not set
     test_api_behaviours.py   pages, idempotency keys, version checks, rate limits
+    test_database.py         what is stored: hashed passwords, encrypted card numbers
+    test_events.py           the broker's topics, and the events a change sends
 ```
 
 ## Run it
@@ -44,8 +50,9 @@ python3 -m venv .venv            # a private folder for this project's libraries
 source .venv/bin/activate        # use it (on Windows: .venv\Scripts\activate)
 pip install -r requirements.txt
 
-pytest                           # every test: 72 passed
+pytest                           # every test: 79 passed
 pytest -m smoke                  # the 5 quick smoke tests
+pytest -m "not database and not events"   # only the API tests (no Postgres or Kafka access needed)
 pytest tests/test_cards.py       # one file
 pytest -k lost                   # tests whose name contains "lost"
 pytest --lf                      # only the tests that failed last time
@@ -66,7 +73,14 @@ pytest --html=reports/report.html --self-contained-html   # with an HTML report
   confirming a card, a purchase reaching the transactions list) are waited for
   with the helpers in `helpers.py`, which give up after 10 seconds.
 
+- **Database and Kafka checks only where the API cannot show the fact.** They use
+  read-only database users, and start watching a topic before the action, so an
+  old event can never make a test pass.
+
 ## Another environment
 
 Every address in `config.py` can be changed with an environment variable, for
-example `export CARD_URL=https://...` before running `pytest`.
+example `export CARD_URL=https://...` before running `pytest`. The database and
+Kafka checks also need `DB_HOST`, `DB_PORT`, `DB_READONLY_PASSWORD` and
+`KAFKA_BOOTSTRAP`; where Postgres and Kafka are not reachable, skip those tests
+with `-m "not database and not events"`.

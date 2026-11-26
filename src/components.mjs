@@ -280,7 +280,7 @@ export function tryIt({ title = 'Try it on the live app', requests, foot = '' })
 /** The pytest node id of a suite file, as the runner wants it (relative to tests/api). */
 export const nodeFile = (suitePath) => suitePath.replace(/^tests\/api\//, '');
 
-/** A button that runs one test (or a whole file) on the live app and shows pytest's output below. */
+/** A button that runs one test (or a whole file) on the live app and shows its steps in the side panel. */
 export function runButton(nodeId, label = 'Run on the live app') {
   return `<button type="button" class="run-btn" data-run="${esc(nodeId)}" disabled title="pytest ${esc(nodeId)}">${runIcon}${esc(label)}</button>`;
 }
