@@ -1,4 +1,4 @@
-// The live lab in the browser: "Try it" panels, the reset button and the test runner.
+// The live lab in the browser: "Try it" panels, the reset button and the test run panel.
 // They all talk to /vm/*, which the site's Worker forwards to the live CardVault.
 // Nothing here runs unless the page has a lab element on it.
 (function () {
@@ -181,29 +181,30 @@
 
   // ------------------------------------------------------------ reset and status
 
-  function setupReset(btn) {
-    const msg = btn.parentElement.querySelector('.lab-reset-msg');
-    btn.addEventListener('click', async () => {
-      btn.disabled = true;
-      const started = performance.now();
-      if (msg) msg.textContent = 'Resetting every service…';
-      try {
-        const res = await labFetch('reset', { method: 'POST' });
-        const data = await res.json().catch(() => ({}));
-        const secs = ((performance.now() - started) / 1000).toFixed(1);
-        if (res.ok) {
-          vars = {};
-          saveVars();
-          if (msg) msg.textContent = `Back to the starting data (${secs} s). Saved tokens were cleared, so log in again.`;
-        } else if (msg) {
-          msg.textContent = res.status === 409 ? 'A test run is in progress. Try again when it finishes.' : (data.error || 'The reset did not finish.');
-        }
-      } catch (e) {
-        if (msg) msg.textContent = 'The live lab is not reachable right now.';
-      } finally {
-        btn.disabled = false;
+  async function doReset(btn, msg) {
+    btn.disabled = true;
+    const started = performance.now();
+    if (msg) msg.textContent = 'Resetting every service…';
+    try {
+      const res = await labFetch('reset', { method: 'POST' });
+      const data = await res.json().catch(() => ({}));
+      const secs = ((performance.now() - started) / 1000).toFixed(1);
+      if (res.ok) {
+        vars = {};
+        saveVars();
+        if (msg) msg.textContent = `Back to the starting data (${secs} s). Saved tokens were cleared, so log in again.`;
+      } else if (msg) {
+        msg.textContent = res.status === 409 ? 'A test run is in progress. Try again when it finishes.' : (data.error || 'The reset did not finish.');
       }
-    });
+    } catch (e) {
+      if (msg) msg.textContent = 'The live lab is not reachable right now.';
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  function setupReset(btn) {
+    btn.addEventListener('click', () => doReset(btn, btn.parentElement.querySelector('.lab-reset-msg')));
   }
 
   async function loadStatus(box) {
@@ -220,9 +221,177 @@
     }
   }
 
-  // ------------------------------------------------------------ test runner
+  // ------------------------------------------------------------ test runner: the side panel
 
+  // A Run button opens a panel on the right that shows each step of the test as it
+  // happens: every API request and response, database query and event.
+  const PHASES = { setup: 'Set-up: the fixtures prepare data', call: 'The test', teardown: 'Clean-up' };
   let running = false;
+  let current = null; // the node id shown in the panel
+  let panel = null;
+  let runButtons = [];
+
+  function pill(kind, text) { return el('span', { class: `pill ${kind}`, text }); }
+  const statusKind = (s) => (s < 300 ? 'ok' : s < 400 ? 'info' : 'bad');
+  const testName = (nodeId) => nodeId.split('::')[1] || `All tests in ${nodeId.replace(/^tests\//, '')}`;
+
+  function block(label, text, json = false) {
+    if (text === null || text === undefined || text === '') return null;
+    const pre = el('pre');
+    if (json) pre.innerHTML = jsonHtml(text); else pre.textContent = text;
+    return el('div', { class: 'tp-part' }, el('p', { class: 'tp-label', text: label }), pre);
+  }
+  const headerText = (h) => Object.entries(h || {}).map(([k, v]) => `${k}: ${v}`).join('\n');
+
+  function buildPanel() {
+    const node = el('aside', { class: 'tp', 'aria-label': 'Test run', hidden: '' });
+    node.innerHTML = `<div class="tp-head">
+<div class="tp-titles"><p class="tp-eyebrow">Test run on the live app <span class="tp-state"></span></p><h2 class="tp-title"></h2><p class="tp-file"></p></div>
+<button type="button" class="tp-close" aria-label="Close the panel">×</button></div>
+<div class="tp-bar"><button type="button" class="btn primary tp-again">Run again</button><button type="button" class="btn tp-reset">Reset the app</button><span class="tp-reset-msg muted" aria-live="polite"></span></div>
+<div class="tp-body" aria-live="polite"></div>`;
+    document.body.append(node);
+    node.querySelector('.tp-close').addEventListener('click', closePanel);
+    node.querySelector('.tp-again').addEventListener('click', () => current && runTest(current));
+    const resetBtn = node.querySelector('.tp-reset');
+    resetBtn.addEventListener('click', () => doReset(resetBtn, node.querySelector('.tp-reset-msg')));
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !node.hidden) closePanel(); });
+    return node;
+  }
+
+  function openPanel(nodeId) {
+    panel = panel || buildPanel();
+    panel.hidden = false;
+    document.documentElement.classList.add('tp-open');
+    panel.querySelector('.tp-title').textContent = testName(nodeId);
+    panel.querySelector('.tp-file').textContent = nodeId.split('::')[0];
+    panel.querySelector('.tp-close').focus({ preventScroll: true });
+  }
+
+  function closePanel() {
+    if (!panel) return;
+    panel.hidden = true;
+    document.documentElement.classList.remove('tp-open');
+  }
+
+  function setState(kind, text) {
+    const s = panel.querySelector('.tp-state');
+    s.textContent = '';
+    s.append(pill(kind, text));
+  }
+
+  // One run's view: tests, each with its phases and steps, then the raw pytest output.
+  function runView(body) {
+    const intro = el('p', { class: 'tp-intro', text: 'Each row is one real step the test took, in order. Open a row to see what was sent and what came back.' });
+    const tests = el('div', { class: 'tp-tests' });
+    const logPre = el('pre');
+    const log = el('details', { class: 'tp-log' }, el('summary', { text: 'pytest output' }), logPre);
+    body.append(intro, tests, log);
+    let test = null; // { list, phase, last, n }
+
+    function startTest(nodeId) {
+      const head = el('div', { class: 'tp-test-head' }, pill('run', 'running'), el('code', { text: nodeId.split('::')[1] || nodeId }));
+      const section = el('section', { class: 'tp-test' }, head);
+      tests.append(section);
+      test = { section, head, list: null, phase: null, last: null, n: 0 };
+    }
+
+    function listFor(phase) {
+      if (!test) startTest(current);
+      if (test.phase !== phase) {
+        test.section.append(el('p', { class: 'tp-phase', text: PHASES[phase] || phase }));
+        test.list = el('ol', { class: 'tp-steps' });
+        test.section.append(test.list);
+        test.phase = phase;
+        test.last = null;
+      }
+      return test.list;
+    }
+
+    function step(phase, kind, summaryKids, detailKids, key) {
+      const list = listFor(phase);
+      // Polling asks the same question several times: show it once, with a count.
+      if (key && test.last && test.last.key === key) {
+        test.last.count += 1;
+        const row = test.last.row;
+        row.querySelector('summary').replaceChildren(...summaryKids, el('span', { class: 'tp-count', text: `asked ${test.last.count} times` }));
+        row.querySelector('.tp-detail').replaceChildren(...detailKids.filter(Boolean));
+        return;
+      }
+      test.n += 1;
+      const details = el('details', { class: `tp-step ${kind}` },
+        el('summary', {}, ...summaryKids),
+        el('div', { class: 'tp-detail' }, ...detailKids.filter(Boolean)));
+      list.append(el('li', {}, details));
+      test.last = { key, row: details, count: 1 };
+    }
+
+    function onHttp(d) {
+      const summary = [el('span', { class: 'tp-m', text: d.method }), el('span', { class: 'tp-svc', text: d.service }), el('code', { class: 'tp-path', text: d.path })];
+      if (d.error) summary.push(pill('bad', 'no answer'));
+      else summary.push(pill(statusKind(d.status), String(d.status)));
+      summary.push(el('span', { class: 'tp-ms', text: `${d.ms} ms` }));
+      const detail = [
+        block('Request headers', headerText(d.request_headers)),
+        block('Request body', d.request_body, true),
+        d.error ? block('Error', d.error) : block(`Response · ${d.status} ${d.reason || ''}`, headerText(d.response_headers)),
+        block('Response body', d.response_body, true),
+      ];
+      step(d.phase, 'http', summary, detail, `${d.phase} ${d.method} ${d.service} ${d.path}`);
+    }
+
+    function onDb(d) {
+      const summary = [el('span', { class: 'tp-m db', text: 'SQL' }), el('span', { class: 'tp-svc', text: `${d.database} database` }),
+        el('code', { class: 'tp-path', text: d.sql.replace(/\s+/g, ' ') })];
+      if (d.error) summary.push(pill('bad', 'error'));
+      else summary.push(pill('ok', d.row ? '1 row' : 'no row'));
+      step(d.phase, 'db', summary, [
+        block('Query (read-only user)', d.sql),
+        block('Values for %s', (d.values || []).join('\n')),
+        d.error ? block('Error', d.error) : block('Row', JSON.stringify(d.row), true),
+      ]);
+    }
+
+    function onEvent(d) {
+      if (d.type === 'watch') {
+        step(d.phase, 'event', [el('span', { class: 'tp-m ev', text: 'KAFKA' }), el('span', { class: 'tp-svc', text: 'Start watching' }), el('code', { class: 'tp-path', text: d.topic })],
+          [el('p', { class: 'tp-note', text: 'From here on the test sees every new event on this topic. Older events are skipped.' })]);
+      } else if (d.type === 'topics') {
+        step(d.phase, 'event', [el('span', { class: 'tp-m ev', text: 'KAFKA' }), el('span', { class: 'tp-svc', text: 'List topics' }), pill('ok', `${d.topics.length} topics`)],
+          [block('Topics on the broker', d.topics.join('\n'))]);
+      } else {
+        const summary = [el('span', { class: 'tp-m ev', text: 'KAFKA' }), el('span', { class: 'tp-svc', text: d.found ? 'Event received' : 'No event' }),
+          el('code', { class: 'tp-path', text: `${d.topic} · ${d.field} = ${d.value}` }),
+          d.found ? pill('ok', 'matched') : pill('bad', 'timed out'), el('span', { class: 'tp-ms', text: `${d.ms} ms` })];
+        step(d.phase, 'event', summary, [d.found ? block('The event', d.event, true)
+          : el('p', { class: 'tp-note', text: `No event with ${d.field} = ${d.value} arrived on ${d.topic} in time.` })]);
+      }
+    }
+
+    function onOutcome(d) {
+      if (!test) startTest(d.nodeid);
+      const kind = d.outcome === 'passed' ? 'ok' : d.outcome === 'skipped' ? 'info' : 'bad';
+      const label = d.outcome === 'failed' && d.when !== 'call' ? `error in ${d.when}` : d.outcome;
+      test.head.replaceChildren(pill(kind, label), el('code', { text: d.nodeid.split('::')[1] || d.nodeid }), el('span', { class: 'tp-ms', text: `${d.seconds} s` }));
+      if (test.n === 0) test.section.append(el('p', { class: 'tp-note', text: 'This test made no API calls.' }));
+      if (d.message) test.section.append(el('div', { class: `tp-why ${kind}` }, el('p', { class: 'tp-label', text: d.outcome === 'failed' ? 'Why it failed' : 'Note' }), el('pre', { text: d.message })));
+      test = null;
+    }
+
+    return {
+      handle(d) {
+        if (d.type === 'log') { logPre.append(colourLine(d.line), '\n'); return; }
+        if (d.type === 'test') { startTest(d.nodeid); return; }
+        if (d.type === 'http') onHttp(d);
+        else if (d.type === 'db') onDb(d);
+        else if (d.type === 'watch' || d.type === 'event' || d.type === 'topics') onEvent(d);
+        else if (d.type === 'outcome') onOutcome(d);
+      },
+      logLine(line) { logPre.append(colourLine(line), '\n'); },
+      openLog() { log.open = true; intro.remove(); },
+    };
+  }
+
   function colourLine(line) {
     const span = el('span', { text: line });
     if (/\bPASSED\b|\d+ passed/.test(line) && !/failed|error/i.test(line)) span.className = 'run-pass';
@@ -230,56 +399,62 @@
     return span;
   }
 
-  async function runTest(nodeId, out, buttons) {
-    if (running) { out.hidden = false; out.textContent = 'A test is already running. Wait for it to finish.'; return; }
-    running = true;
-    buttons.forEach((b) => { b.disabled = true; });
-    out.hidden = false;
-    out.textContent = '';
-    out.classList.add('running');
-    const pre = el('pre');
-    out.append(pre);
-    try {
-      const res = await labFetch('run', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ node_id: nodeId }),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        pre.textContent = data.error || `The lab answered ${res.status}.`;
-        return;
-      }
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      for (;;) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop();
-        lines.forEach((l) => pre.append(colourLine(l), '\n'));
-        out.scrollTop = out.scrollHeight;
-      }
-      if (buffer) pre.append(colourLine(buffer));
-    } catch (e) {
-      pre.append('\nThe connection to the live lab was lost.');
-    } finally {
-      running = false;
-      out.classList.remove('running');
-      buttons.forEach((b) => { b.disabled = false; });
+  async function readLines(res, onLine) {
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    for (;;) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      lines.forEach(onLine);
     }
+    if (buffer) onLine(buffer);
   }
 
-  function outputFor(btn) {
-    const sel = btn.dataset.out;
-    if (sel) return document.querySelector(sel);
-    const host = btn.closest('.code, .run-host') || btn.parentElement;
-    let out = host.nextElementSibling;
-    if (!out || !out.classList.contains('run-out')) {
-      out = el('div', { class: 'run-out', 'aria-live': 'polite' });
-      host.after(out);
+  async function runTest(nodeId) {
+    current = nodeId;
+    openPanel(nodeId);
+    if (running) return;
+    const body = panel.querySelector('.tp-body');
+    body.textContent = '';
+    running = true;
+    runButtons.forEach((b) => { b.disabled = true; });
+    panel.querySelector('.tp-again').disabled = true;
+    setState('run', 'running');
+    const view = runView(body);
+    let exitCode = null;
+    try {
+      const post = (path) => labFetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ node_id: nodeId }) });
+      let res = await post('trace');
+      if (res.status === 404) {
+        // An older lab without step recording: show pytest's output instead.
+        res = await post('run');
+        if (res.ok) { view.openLog(); await readLines(res, view.logLine); setState('info', 'finished'); return; }
+      }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        body.append(el('p', { class: 'tp-why bad', text: data.error || `The lab answered ${res.status}.` }));
+        setState('bad', 'not run');
+        return;
+      }
+      await readLines(res, (line) => {
+        let d;
+        try { d = JSON.parse(line); } catch (e) { return; }
+        if (d.type === 'done') exitCode = d.exit_code;
+        else view.handle(d);
+      });
+      setState(exitCode === 0 ? 'ok' : 'bad', exitCode === 0 ? 'passed' : exitCode === null ? 'stopped' : 'failed');
+    } catch (e) {
+      body.append(el('p', { class: 'tp-why bad', text: 'The connection to the live lab was lost.' }));
+      setState('bad', 'stopped');
+    } finally {
+      running = false;
+      runButtons.forEach((b) => { b.disabled = false; });
+      panel.querySelector('.tp-again').disabled = false;
     }
-    return out;
   }
 
   // ------------------------------------------------------------ start
@@ -291,15 +466,15 @@
   document.querySelectorAll('[data-lab-reset]').forEach(setupReset);
   document.querySelectorAll('[data-lab-status]').forEach(loadStatus);
 
-  const runButtons = [...document.querySelectorAll('[data-run], [data-run-select]')];
+  runButtons = [...document.querySelectorAll('[data-run], [data-run-select]')];
   document.querySelectorAll('[data-run]').forEach((btn) => {
     btn.disabled = false;
-    btn.addEventListener('click', () => runTest(btn.dataset.run, outputFor(btn), runButtons));
+    btn.addEventListener('click', () => runTest(btn.dataset.run));
   });
   document.querySelectorAll('[data-run-select]').forEach((btn) => {
     const select = document.querySelector(btn.dataset.runSelect);
     btn.disabled = false;
-    btn.addEventListener('click', () => runTest(select.value, outputFor(btn), runButtons));
+    btn.addEventListener('click', () => runTest(select.value));
   });
 
   renderVars();

@@ -11,6 +11,10 @@ browser ──/vm/*──▶ Cloudflare Worker (signs in) ──▶ Caddy (basic
 - `server.py`: standard library only. Listens on 127.0.0.1:8790. Forwards customer API
   requests (paths under `/v1/` on the five services, nothing else), resets the stack with
   CardVault's `scripts/reset.sh`, lists the suite's tests and runs one test or file at a time.
+- `labtrace.py`: a pytest plugin the lab loads for `/vm/trace` (`-p labtrace`, on `PYTHONPATH`).
+  It wraps `requests`, the suite's `database.query_one` and `events.EventWatcher`, and writes one
+  JSON line per step (API call, query, event, test outcome) to a pipe the server reads. The site's
+  Run buttons open a side panel that draws those steps. Test keys are hidden and tokens shortened.
 - No password on the page (the owner's requirement): the Worker signs in for it. Caddy keeps
   basic auth on the lab's site, and the Worker sends those credentials from its secret
   `LAB_AUTH` ("user:password"), set in the Cloudflare dashboard (Workers, cardvault-learn,

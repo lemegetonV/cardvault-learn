@@ -9,6 +9,8 @@ Standard library only, so it needs nothing installed.
   POST /vm/reset          put every service back to its starting data
   GET  /vm/tests          the tests the runner can run
   POST /vm/run            run one test (or one file) and stream pytest's output
+  POST /vm/trace          the same run, streamed as JSON lines: each API call, database
+                          query and event the tests make (from labtrace.py), plus the output
 
 Settings (environment variables):
   CARDVAULT_DIR   the CardVault checkout that runs the stack (for scripts/reset.sh and .env)
@@ -19,6 +21,7 @@ Settings (environment variables):
 
 import json
 import os
+import queue
 import subprocess
 import threading
 import time
@@ -31,6 +34,7 @@ CARDVAULT_DIR = Path(os.getenv("CARDVAULT_DIR", "/opt/cardvault"))
 SUITE_DIR = Path(os.getenv("SUITE_DIR", "/opt/cardvault-suite/tests/api"))
 SUITE_PYTHON = os.getenv("SUITE_PYTHON", str(SUITE_DIR / ".venv/bin/python"))
 PORT = int(os.getenv("LAB_PORT", "8790"))
+LAB_DIR = Path(__file__).resolve().parent
 
 # The customer-facing services, by the name the site uses.
 SERVICES = {
@@ -158,6 +162,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.reset()
         if self.path == "/vm/run":
             return self.run_test(body)
+        if self.path == "/vm/trace":
+            return self.run_trace(body)
         self.send_json(404, {"error": "not found"})
 
     def health(self):
@@ -261,6 +267,74 @@ class Handler(BaseHTTPRequestHandler):
         finally:
             self.close_connection = True
             busy.release()
+
+
+    def run_trace(self, req):
+        """Run a test with labtrace.py and stream every step as one JSON object per line."""
+        node_id = str(req.get("node_id", ""))
+        if not runnable(node_id):
+            return self.send_json(400, {"error": f"{node_id!r} is not a test in the suite"})
+        if not busy.acquire(blocking=False):
+            return self.send_json(409, {"error": "another test run or a reset is in progress, try again shortly"})
+        process = None
+        read_end, write_end = os.pipe()
+        try:
+            self.send_response(200)
+            self.send_header("Content-Type", "application/x-ndjson; charset=utf-8")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("X-Accel-Buffering", "no")
+            self.send_header("Connection", "close")
+            self.end_headers()
+            env = suite_env()
+            env["PYTHONPATH"] = str(LAB_DIR)
+            env["LAB_TRACE_FD"] = str(write_end)
+            command = [SUITE_PYTHON, "-m", "pytest", node_id, "--tb=short", "--color=no",
+                       "-p", "no:cacheprovider", "-p", "labtrace"]
+            process = subprocess.Popen(command, cwd=SUITE_DIR, env=env, pass_fds=(write_end,),
+                                       stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            os.close(write_end)
+            write_end = None
+            lines = queue.Queue()
+
+            def pump(stream, kind):
+                for raw in stream:
+                    text = raw.decode("utf-8", "replace").rstrip("\n")
+                    lines.put(text if kind == "trace" else json.dumps({"type": "log", "line": text}))
+                lines.put(None)
+
+            trace_stream = os.fdopen(read_end, "rb")
+            read_end = None
+            for stream, kind in ((process.stdout, "log"), (trace_stream, "trace")):
+                threading.Thread(target=pump, args=(stream, kind), daemon=True).start()
+            timer = threading.Timer(RUN_TIMEOUT, process.kill)
+            timer.start()
+            try:
+                self.send_line(json.dumps({"type": "start", "node_id": node_id}))
+                open_streams = 2
+                while open_streams:
+                    line = lines.get()
+                    if line is None:
+                        open_streams -= 1
+                    elif line.strip():
+                        self.send_line(line)
+                process.wait()
+                self.send_line(json.dumps({"type": "done", "exit_code": process.returncode}))
+            finally:
+                timer.cancel()
+                trace_stream.close()
+        except (BrokenPipeError, ConnectionResetError):
+            if process and process.poll() is None:
+                process.kill()  # the page was closed mid-run
+        finally:
+            for fd in (read_end, write_end):
+                if fd is not None:
+                    os.close(fd)
+            self.close_connection = True
+            busy.release()
+
+    def send_line(self, line):
+        self.wfile.write(line.encode() + b"\n")
+        self.wfile.flush()
 
 
 if __name__ == "__main__":
