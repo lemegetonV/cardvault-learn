@@ -2,15 +2,12 @@
 // They all talk to /vm/*, which the site's Worker forwards to the live CardVault.
 // Nothing here runs unless the page has a lab element on it.
 (function () {
-  const AUTH_KEY = 'cv-lab-auth';
   const VARS_KEY = 'cv-lab-vars';
   const store = {
     get(key) { try { return sessionStorage.getItem(key); } catch (e) { return null; } },
     set(key, value) { try { sessionStorage.setItem(key, value); } catch (e) { /* not remembered */ } },
     del(key) { try { sessionStorage.removeItem(key); } catch (e) { /* nothing to do */ } },
   };
-  let memoryAuth = null;
-  const getAuth = () => memoryAuth || store.get(AUTH_KEY);
 
   const el = (tag, attrs = {}, ...kids) => {
     const node = document.createElement(tag);
@@ -23,84 +20,10 @@
     return node;
   };
 
-  // ------------------------------------------------------------ password
+  // ------------------------------------------------------------ talking to the lab
 
-  class Locked extends Error {}
-
-  async function labFetch(path, options = {}) {
-    const headers = new Headers(options.headers || {});
-    const auth = getAuth();
-    if (auth) headers.set('Authorization', `Basic ${auth}`);
-    const res = await fetch(`/vm/${path}`, { ...options, headers });
-    if (res.status === 401) {
-      memoryAuth = null;
-      store.del(AUTH_KEY);
-      refreshLockState();
-      throw new Locked('locked');
-    }
-    return res;
-  }
-
-  let dialog;
-  function unlockDialog() {
-    if (dialog) return dialog;
-    dialog = el('dialog', { class: 'lab-dialog', 'aria-labelledby': 'lab-dialog-title' });
-    dialog.innerHTML = `<form method="dialog">
-<h2 id="lab-dialog-title">Unlock the live lab</h2>
-<p>The lab sends real requests to the CardVault running on the server, so it has a password. Use the one for your CardVault tools.</p>
-<label>Username<input name="user" autocomplete="username" required></label>
-<label>Password<input name="pass" type="password" autocomplete="current-password" required></label>
-<p class="lab-dialog-msg" aria-live="polite"></p>
-<div class="lab-dialog-actions"><button type="submit" class="btn primary">Unlock</button><button type="button" class="btn" data-cancel>Cancel</button></div>
-</form>`;
-    document.body.append(dialog);
-    return dialog;
-  }
-
-  /** Resolves once the lab is unlocked; rejects if the reader cancels. */
-  function ensureUnlocked() {
-    if (getAuth()) return Promise.resolve();
-    const d = unlockDialog();
-    const form = d.querySelector('form');
-    const msg = d.querySelector('.lab-dialog-msg');
-    msg.textContent = '';
-    return new Promise((resolve, reject) => {
-      const cleanup = () => { form.onsubmit = null; d.querySelector('[data-cancel]').onclick = null; };
-      d.querySelector('[data-cancel]').onclick = () => { cleanup(); d.close(); reject(new Locked('cancelled')); };
-      form.onsubmit = async (event) => {
-        event.preventDefault();
-        const auth = btoa(unescape(encodeURIComponent(`${form.user.value}:${form.pass.value}`)));
-        msg.textContent = 'Checking…';
-        try {
-          const res = await fetch('/vm/health', { headers: { Authorization: `Basic ${auth}` } });
-          if (res.status === 401) { msg.textContent = 'That username or password is not right.'; return; }
-          if (!res.ok) { msg.textContent = 'The live lab is not reachable right now. Try again later.'; return; }
-          memoryAuth = auth;
-          store.set(AUTH_KEY, auth);
-          form.pass.value = '';
-          cleanup();
-          d.close();
-          refreshLockState();
-          document.querySelectorAll('[data-lab-status]').forEach(loadStatus);
-          resolve();
-        } catch (e) {
-          msg.textContent = 'The live lab is not reachable right now. Try again later.';
-        }
-      };
-      d.showModal();
-      form.user.focus();
-    });
-  }
-
-  function refreshLockState() {
-    const unlocked = Boolean(getAuth());
-    document.querySelectorAll('[data-lab-lock]').forEach((node) => {
-      node.textContent = unlocked ? 'Unlocked' : 'Locked';
-      node.classList.toggle('on', unlocked);
-    });
-    document.querySelectorAll('[data-lab-unlock]').forEach((b) => { b.hidden = unlocked; });
-    document.querySelectorAll('[data-lab-lockout]').forEach((b) => { b.hidden = !unlocked; });
-  }
+  // The site's Worker adds the lab's key, so the page needs no password.
+  const labFetch = (path, options = {}) => fetch(`/vm/${path}`, options);
 
   // ------------------------------------------------------------ saved values ({{token}} and friends)
 
@@ -201,7 +124,6 @@
         const at = line.indexOf(':');
         if (at > 0) headerMap[line.slice(0, at).trim()] = line.slice(at + 1).trim();
       });
-      try { await ensureUnlocked(); } catch (e) { result.hidden = true; return; }
       send.disabled = true;
       send.textContent = 'Sending…';
       try {
@@ -233,9 +155,7 @@
         }
       } catch (e) {
         result.classList.add('error');
-        result.textContent = e instanceof Locked
-          ? 'The lab is locked again. Press Send to unlock it.'
-          : 'The live lab is not reachable right now. Try again later.';
+        result.textContent = 'The live lab is not reachable right now. Try again later.';
       } finally {
         send.disabled = false;
         send.textContent = 'Send';
@@ -264,7 +184,6 @@
   function setupReset(btn) {
     const msg = btn.parentElement.querySelector('.lab-reset-msg');
     btn.addEventListener('click', async () => {
-      try { await ensureUnlocked(); } catch (e) { return; }
       btn.disabled = true;
       const started = performance.now();
       if (msg) msg.textContent = 'Resetting every service…';
@@ -280,7 +199,7 @@
           msg.textContent = res.status === 409 ? 'A test run is in progress. Try again when it finishes.' : (data.error || 'The reset did not finish.');
         }
       } catch (e) {
-        if (msg) msg.textContent = e instanceof Locked ? 'The lab is locked. Press Reset to unlock it.' : 'The live lab is not reachable right now.';
+        if (msg) msg.textContent = 'The live lab is not reachable right now.';
       } finally {
         btn.disabled = false;
       }
@@ -288,7 +207,6 @@
   }
 
   async function loadStatus(box) {
-    if (!getAuth()) { box.innerHTML = '<span class="muted">Unlock the lab to see whether each service is up.</span>'; return; }
     box.innerHTML = '<span class="muted">Checking…</span>';
     try {
       const res = await labFetch('health');
@@ -298,7 +216,7 @@
         box.append(el('span', { class: `svc-dot ${state === 'up' ? 'up' : 'down'}`, text: name, title: state }));
       }
     } catch (e) {
-      box.innerHTML = '<span class="muted">Unlock the lab to see whether each service is up.</span>';
+      box.innerHTML = '<span class="muted">The live lab is not reachable right now.</span>';
     }
   }
 
@@ -314,7 +232,6 @@
 
   async function runTest(nodeId, out, buttons) {
     if (running) { out.hidden = false; out.textContent = 'A test is already running. Wait for it to finish.'; return; }
-    try { await ensureUnlocked(); } catch (e) { return; }
     running = true;
     buttons.forEach((b) => { b.disabled = true; });
     out.hidden = false;
@@ -345,7 +262,7 @@
       }
       if (buffer) pre.append(colourLine(buffer));
     } catch (e) {
-      pre.append(e instanceof Locked ? 'The lab is locked. Press Run to unlock it.' : '\nThe connection to the live lab was lost.');
+      pre.append('\nThe connection to the live lab was lost.');
     } finally {
       running = false;
       out.classList.remove('running');
@@ -372,13 +289,6 @@
 
   document.querySelectorAll('.tryit-req').forEach(setupRequest);
   document.querySelectorAll('[data-lab-reset]').forEach(setupReset);
-  document.querySelectorAll('[data-lab-unlock]').forEach((b) => b.addEventListener('click', () => {
-    ensureUnlocked().catch(() => {});
-  }));
-  document.querySelectorAll('[data-lab-lockout]').forEach((b) => b.addEventListener('click', () => {
-    memoryAuth = null; store.del(AUTH_KEY); refreshLockState();
-    document.querySelectorAll('[data-lab-status]').forEach(loadStatus);
-  }));
   document.querySelectorAll('[data-lab-status]').forEach(loadStatus);
 
   const runButtons = [...document.querySelectorAll('[data-run], [data-run-select]')];
@@ -393,5 +303,4 @@
   });
 
   renderVars();
-  refreshLockState();
 }());

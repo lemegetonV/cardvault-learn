@@ -708,23 +708,12 @@ code, pre, .ex-lines { font-variant-ligatures: none; font-feature-settings: "lig
 .run-pass { color: #6fdc9c; }
 .run-fail { color: #ff8b80; }
 
-.lab-dialog { border: 1px solid var(--line); border-radius: var(--radius); padding: 24px; max-width: min(26rem, calc(100vw - 32px)); background: var(--surface); color: var(--ink); }
-.lab-dialog::backdrop { background: rgb(10 20 16 / 0.45); }
-.lab-dialog h2 { margin: 0 0 8px; font: 700 1.25rem/1.2 var(--font-display); }
-.lab-dialog p { font-size: 0.9375rem; color: var(--ink-2); }
-.lab-dialog label { display: block; margin-top: 12px; font-size: 0.875rem; font-weight: 600; }
-.lab-dialog input { display: block; width: 100%; margin-top: 4px; font: 1rem var(--font-body); padding: 9px 11px; border: 1px solid var(--line); border-radius: 8px; background: var(--paper); color: var(--ink); }
-.lab-dialog-msg { min-height: 1.4em; margin: 10px 0 0; color: var(--stop) !important; }
-.lab-dialog-actions { display: flex; gap: 10px; margin-top: 12px; }
 
 .lab-frame { max-width: 64rem; }
 .lab-card { margin: 0 0 24px; padding: 22px 24px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
 .lab-card h2 { margin: 0 0 8px; font: 700 1.25rem/1.25 var(--font-display); }
 .lab-card > p { color: var(--ink-2); }
 .lab-card .tryit { margin: 16px 0 0; }
-.lab-card-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.lab-lock { font: 600 0.75rem var(--font-mono); padding: 3px 10px; border-radius: 999px; background: var(--mock-soft); color: var(--mock); }
-.lab-lock.on { background: var(--accent-soft); color: var(--accent-strong); }
 .lab-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 12px; }
 .lab-row select { flex: 1 1 18rem; }
 .lab-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; font-size: 0.875rem; font-weight: 600; }

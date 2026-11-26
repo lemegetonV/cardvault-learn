@@ -47,9 +47,9 @@ export function labPage() {
 </div>
 
 <section class="lab-card">
-<div class="lab-card-head"><h2>Lab access</h2><span class="lab-lock" data-lab-lock>Locked</span></div>
-<p>The lab changes real data on the server, so it is behind the password of your CardVault tools. The page remembers it until you close the tab.</p>
-<div class="lab-row"><button type="button" class="btn primary" data-lab-unlock>Unlock</button><button type="button" class="btn" data-lab-lockout hidden>Lock again</button><div class="svc-status" data-lab-status aria-live="polite"></div></div>
+<h2>Is the app up?</h2>
+<p>Each of the five services, as the server sees it right now.</p>
+<div class="lab-row"><div class="svc-status" data-lab-status aria-live="polite"></div></div>
 </section>
 
 <section class="lab-card">
