@@ -5,18 +5,17 @@ The site's Worker (`worker/index.js`) forwards those calls to this server, which
 machine that hosts CardVault.
 
 ```
-browser ──/vm/*──▶ Cloudflare Worker ──▶ Caddy ──▶ lab/server.py ──▶ CardVault services
+browser ──/vm/*──▶ Cloudflare Worker (signs in) ──▶ Caddy (basic auth) ──▶ lab/server.py ──▶ CardVault services
 ```
 
 - `server.py`: standard library only. Listens on 127.0.0.1:8790. Forwards customer API
   requests (paths under `/v1/` on the five services, nothing else), resets the stack with
   CardVault's `scripts/reset.sh`, lists the suite's tests and runs one test or file at a time.
-- No password: the page just works (the owner's requirement). What protects the server is
-  what the lab allows: only customer API paths, one test run at a time, and a reset that
-  only restores the starting data.
+- No password on the page (the owner's requirement): the Worker signs in for it. Caddy keeps
+  basic auth on the lab's site, and the Worker sends those credentials from its secret
+  `LAB_AUTH` ("user:password"), set in the Cloudflare dashboard (Workers, cardvault-learn,
+  Settings, Variables and Secrets). It is never in this repository or in the page.
 - The Worker reads `LAB_UPSTREAM` from `wrangler.jsonc` (`.dev.vars` overrides it locally).
-  If a `LAB_KEY` Worker secret is added later, the Worker sends it as `X-Lab-Key`, and Caddy
-  can then require it with `@nokey not header X-Lab-Key {$LAB_KEY}` / `respond @nokey 403`.
 
 ## Install on the server
 
@@ -24,12 +23,15 @@ browser ──/vm/*──▶ Cloudflare Worker ──▶ Caddy ──▶ lab/ser
 2. The suite: `/opt/cardvault-suite` is a CardVault checkout. Pull it, then give its tests a
    virtual environment: `cd /opt/cardvault-suite/tests/api && uv venv .venv && uv pip install --python .venv/bin/python -r requirements.txt`
 3. Install `cardvault-lab.service` (steps inside it) and stop the old runner unit if it exists.
-4. The Caddy site for the lab reverse-proxies to `127.0.0.1:8790` with `flush_interval -1`,
-   so test output streams:
+4. The Caddy site for the lab keeps `basic_auth` and reverse-proxies to `127.0.0.1:8790` with
+   `flush_interval -1`, so test output streams:
 
    ```
    run.140-245-206-220.sslip.io {
        import no_traversal
+       basic_auth {
+           <user> <bcrypt hash>
+       }
        reverse_proxy 127.0.0.1:8790 {
            flush_interval -1
        }

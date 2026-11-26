@@ -1,7 +1,8 @@
 // The site's Worker. Static pages are served straight from dist/; only /vm/* runs this code.
-// /vm/* is forwarded to the live lab on the server that hosts CardVault, with no password
-// (the owner's choice). LAB_UPSTREAM is set in wrangler.jsonc. If a LAB_KEY secret is ever
-// added to the Worker, it is sent as X-Lab-Key so the server can require it.
+// /vm/* is forwarded to the live lab on the server that hosts CardVault. The page never asks
+// for a password (the owner's requirement): the Worker signs in for it. LAB_UPSTREAM is set in
+// wrangler.jsonc; LAB_AUTH ("user:password" for the lab's Caddy site) is a Worker secret set in
+// the Cloudflare dashboard, so it is never in this repository or in the page.
 
 export default {
   async fetch(request, env) {
@@ -11,7 +12,7 @@ export default {
       return Response.json({ error: 'The live lab is not connected yet.' }, { status: 503 });
     }
     const headers = new Headers();
-    if (env.LAB_KEY) headers.set('X-Lab-Key', env.LAB_KEY);
+    if (env.LAB_AUTH) headers.set('Authorization', `Basic ${btoa(env.LAB_AUTH)}`);
     const type = request.headers.get('content-type');
     if (type) headers.set('Content-Type', type);
     let upstream;
