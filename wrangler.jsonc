@@ -5,6 +5,8 @@
   "name": "cardvault-learn",
   "main": "worker/index.js",
   "compatibility_date": "2026-11-01",
+  // Where /vm/* goes: the lab on the CardVault server. Its proxy asks for the lab password.
+  "vars": { "LAB_UPSTREAM": "https://run.140-245-206-220.sslip.io" },
   "assets": {
     "directory": "./dist",
     "binding": "ASSETS",

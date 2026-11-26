@@ -13,8 +13,8 @@ browser ──/vm/*──▶ Cloudflare Worker ──▶ Caddy (basic auth) ─�
   CardVault's `scripts/reset.sh`, lists the suite's tests and runs one test or file at a time.
 - The password is checked by Caddy, which already guards the server's tools. The Worker only
   passes the page's `Authorization` header through and holds no password.
-- The Worker needs the secret `LAB_UPSTREAM`: the HTTPS address of the Caddy site in front of
-  this server. Set it once with `npx wrangler secret put LAB_UPSTREAM`.
+- The Worker reads `LAB_UPSTREAM` (in `wrangler.jsonc`): the HTTPS address of the Caddy site
+  in front of this server. For local work, `.dev.vars` overrides it.
 
 ## Install on the server
 

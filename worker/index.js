@@ -1,7 +1,7 @@
 // The site's Worker. Static pages are served straight from dist/; only /vm/* runs this code.
 // /vm/* is forwarded to the live lab on the server that hosts CardVault. The lab's own
 // proxy checks the password the page sends, so this Worker holds no password itself.
-// LAB_UPSTREAM (the lab's address) is a Worker secret, set once with `wrangler secret put`.
+// LAB_UPSTREAM (the lab's address) is set in wrangler.jsonc.
 
 const FORWARD_HEADERS = ['authorization', 'content-type', 'accept'];
 
