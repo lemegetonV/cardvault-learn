@@ -6,7 +6,7 @@ export default {
   youWill: 'You will be able to name every file in the framework, say why it exists, and trace one test run from start to finish.',
   body: `
 <h2>Every file and its job</h2>
-<p>The whole framework lives in <code>tests/api/</code> in the CardVault repository. It has about ten small files around the tests.</p>
+<p>The whole framework lives in <code>tests/api/</code> in the CardVault repository. It has a dozen small files around the tests.</p>
 ${tree([
   ['tests/api/', 0, ''],
   ['requirements.txt', 1, 'The libraries to install: pytest, requests, pytest-html'],
@@ -24,13 +24,18 @@ ${tree([
   ['card_network_api.py', 2, 'Make and settle purchases through the simulator'],
   ['data/', 1, ''],
   ['demo_customers.py', 2, 'What we know in advance about alice: the expected values'],
-  ['tests/', 1, 'The tests themselves, one file per feature (54 tests)'],
-  ['test_login.py', 2, '9 tests: sign-in, wrong passwords, tokens, lockout'],
+  ['schemas.py', 2, 'JSON Schemas: the shape a card and an error must have'],
+  ['files/', 2, 'A receipt picture and a fake one, for dispute uploads'],
+  ['tests/', 1, 'The tests themselves, one file per feature (72 tests)'],
+  ['test_login.py', 2, '10 tests: sign-in, wrong passwords, tokens, refresh, lockout'],
   ['test_cards.py', 2, '9 tests: listing cards and changing them'],
   ['test_wallet.py', 2, '15 tests: eligibility rules, add, remove, opt out'],
   ['test_purchases.py', 2, '6 tests: approvals, declines, settlement'],
-  ['test_transactions.py', 2, '9 tests: the history, CSV export, disputes'],
+  ['test_transactions.py', 2, '11 tests: the history, CSV export, disputes and receipts'],
   ['test_profile.py', 2, '6 tests: contact details and verification'],
+  ['test_response_shape.py', 2, '3 tests: responses checked against a JSON Schema'],
+  ['test_security.py', 2, '5 tests: other customers’ data, forged tokens, protected fields'],
+  ['test_api_behaviours.py', 2, '7 tests: pages, idempotency keys, version checks, rate limits'],
 ], 'tests/api')}
 
 <h2>Three layers</h2>
@@ -75,7 +80,7 @@ ${sequence({
     { id: 's', label: 'Cards service', kind: 'bank' },
   ],
   steps: [
-    { from: 'p', to: 'p', label: 'read pytest.ini, find tests', kind: 'self', note: 'pytest reads `pytest.ini`, looks in `tests/`, and collects every `test_` function: 54 of them.' },
+    { from: 'p', to: 'p', label: 'read pytest.ini, find tests', kind: 'self', note: 'pytest reads `pytest.ini`, looks in `tests/`, and collects every `test_` function: 72 of them.' },
     { from: 'p', to: 'f', label: 'alice_token?', note: 'The first test asks for `alice_token`. pytest runs that fixture in `conftest.py`, which logs alice in through `AuthApi`.' },
     { from: 'f', to: 'p', label: 'token', kind: 'reply', note: 'The fixture returns her token. Its scope is the whole session, so later tests reuse it without logging in again.' },
     { from: 'p', to: 't', label: 'run the test', note: 'pytest calls the test function and passes the token in.' },
@@ -93,8 +98,8 @@ ${sequence({
 ${terminal([
   ['cd tests/api', ''],
   ['pip install -r requirements.txt', ''],
-  ['pytest', '============================= 54 passed in 21.14s ============================='],
-  ['pytest -m smoke', '======================= 5 passed, 49 deselected in 3.50s ======================='],
+  ['pytest', '============================= 72 passed in 23.91s ============================='],
+  ['pytest -m smoke', '======================= 5 passed, 67 deselected in 3.42s ======================='],
   ['pytest tests/test_cards.py', '(only the card tests)'],
   ['pytest -k lost', '(only tests with "lost" in their name)'],
 ], 'Terminal')}

@@ -15,12 +15,19 @@ class ProfileApi:
             f"{self.base_url}/v1/profile", headers=self.headers, timeout=config.TIMEOUT
         )
 
-    def update_profile(self, changes):
-        """changes is a dictionary such as {"email": "new@example.com"}."""
+    def update_profile(self, changes, version=None):
+        """changes is a dictionary such as {"email": "new@example.com"}.
+
+        version is the profile version you last read. With it, the service refuses
+        the change if someone else changed the profile in the meantime.
+        """
+        headers = dict(self.headers)
+        if version is not None:
+            headers["If-Match"] = str(version)
         return requests.patch(
             f"{self.base_url}/v1/profile",
             json=changes,
-            headers=self.headers,
+            headers=headers,
             timeout=config.TIMEOUT,
         )
 
