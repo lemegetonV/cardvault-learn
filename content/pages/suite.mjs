@@ -49,8 +49,9 @@ function fileSection(p) {
     return `<section class="sf" data-path="${esc(p)}"><div class="code">${head}<p class="sf-binary">A small file the upload tests send (${size} bytes). It is not text, so it is not shown.</p></div></section>`;
   }
   let src = readFileSync(full, 'utf8').replace(/\s+$/, '');
-  // The local test key is not shown on the site.
-  src = src.replace(/(TEST_KEY = os\.getenv\("TEST_KEY", )"[^"]*"\)/, '$1"…")');
+  // The local test key and database password are not shown on the site.
+  src = src.replace(/(TEST_KEY = os\.getenv\("TEST_KEY", )"[^"]*"\)/, '$1"…")')
+    .replace(/(DB_READONLY_PASSWORD = os\.getenv\("DB_READONLY_PASSWORD", )"[^"]*"\)/, '$1"…")');
   let runs = '';
   if (isTestFile(p)) {
     const tests = testsIn(p);

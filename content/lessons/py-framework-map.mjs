@@ -6,14 +6,16 @@ export default {
   youWill: 'You will be able to name every file in the framework, say why it exists, and trace one test run from start to finish.',
   body: `
 <h2>Every file and its job</h2>
-<p>The whole framework lives in <code>tests/api/</code> in the CardVault repository. It has a dozen small files around the tests.</p>
+<p>The whole framework lives in <code>tests/api/</code> in the CardVault repository. It has about fifteen small files around the tests.</p>
 ${tree([
   ['tests/api/', 0, ''],
-  ['requirements.txt', 1, 'The libraries to install: pytest, requests, pytest-html'],
-  ['pytest.ini', 1, 'pytest’s settings: where the tests are, and the `smoke` label'],
+  ['requirements.txt', 1, 'The libraries to install: pytest, requests, pytest-html, and the database and Kafka readers'],
+  ['pytest.ini', 1, 'pytest’s settings: where the tests are, and the `smoke`, `database` and `events` labels'],
   ['config.py', 1, 'Every service address and shared setting, in one place'],
   ['conftest.py', 1, '**Fixtures**: set-up that tests ask for by name, such as a logged-in customer'],
   ['helpers.py', 1, 'Create a fresh customer; wait for changes that finish later'],
+  ['database.py', 1, 'Read one row from a service’s database, as a read-only user'],
+  ['events.py', 1, 'List Kafka topics; watch a topic for one event'],
   ['api/', 1, 'One class per service. Each method sends one API call'],
   ['auth_api.py', 2, 'Log in, who am I'],
   ['cards_api.py', 2, 'List cards, report lost, reissue, close'],
@@ -26,7 +28,7 @@ ${tree([
   ['demo_customers.py', 2, 'What we know in advance about alice: the expected values'],
   ['schemas.py', 2, 'JSON Schemas: the shape a card and an error must have'],
   ['files/', 2, 'A receipt picture and a fake one, for dispute uploads'],
-  ['tests/', 1, 'The tests themselves, one file per feature (72 tests)'],
+  ['tests/', 1, 'The tests themselves, one file per feature (79 tests)'],
   ['test_login.py', 2, '10 tests: sign-in, wrong passwords, tokens, refresh, lockout'],
   ['test_cards.py', 2, '9 tests: listing cards and changing them'],
   ['test_wallet.py', 2, '15 tests: eligibility rules, add, remove, opt out'],
@@ -36,13 +38,15 @@ ${tree([
   ['test_response_shape.py', 2, '3 tests: responses checked against a JSON Schema'],
   ['test_security.py', 2, '5 tests: other customers’ data, forged tokens, protected fields'],
   ['test_api_behaviours.py', 2, '7 tests: pages, idempotency keys, version checks, rate limits'],
+  ['test_database.py', 2, '4 tests: stored data the API cannot show, read from the database'],
+  ['test_events.py', 2, '3 tests: the Kafka broker and the events the services send'],
 ], 'tests/api')}
 
 <h2>Three layers</h2>
 <p>The files fall into three layers, and each layer only talks to the one below it.</p>
 ${table(['Layer', 'Files', 'Answers the question'], [
   ['Tests', '`tests/test_*.py`', 'What should be true? (the checks)'],
-  ['Support', '`conftest.py`, `helpers.py`, `data/`', 'What does a test need before it starts?'],
+  ['Support', '`conftest.py`, `helpers.py`, `database.py`, `events.py`, `data/`', 'What does a test need before it starts, or to look behind the API?'],
   ['API clients', '`api/*.py`, `config.py`', 'How do we talk to each service?'],
 ])}
 <p>Because of this split, a test reads like a description of behaviour. If the Cards service changes an address, you change one line in <code>cards_api.py</code> or <code>config.py</code>, and no test changes at all.</p>
@@ -80,7 +84,7 @@ ${sequence({
     { id: 's', label: 'Cards service', kind: 'bank' },
   ],
   steps: [
-    { from: 'p', to: 'p', label: 'read pytest.ini, find tests', kind: 'self', note: 'pytest reads `pytest.ini`, looks in `tests/`, and collects every `test_` function: 72 of them.' },
+    { from: 'p', to: 'p', label: 'read pytest.ini, find tests', kind: 'self', note: 'pytest reads `pytest.ini`, looks in `tests/`, and collects every `test_` function: 79 of them.' },
     { from: 'p', to: 'f', label: 'alice_token?', note: 'The first test asks for `alice_token`. pytest runs that fixture in `conftest.py`, which logs alice in through `AuthApi`.' },
     { from: 'f', to: 'p', label: 'token', kind: 'reply', note: 'The fixture returns her token. Its scope is the whole session, so later tests reuse it without logging in again.' },
     { from: 'p', to: 't', label: 'run the test', note: 'pytest calls the test function and passes the token in.' },
@@ -98,8 +102,8 @@ ${sequence({
 ${terminal([
   ['cd tests/api', ''],
   ['pip install -r requirements.txt', ''],
-  ['pytest', '============================= 72 passed in 23.91s ============================='],
-  ['pytest -m smoke', '======================= 5 passed, 67 deselected in 3.42s ======================='],
+  ['pytest', '============================= 79 passed in 26.44s ============================='],
+  ['pytest -m smoke', '======================= 5 passed, 74 deselected in 3.60s ======================='],
   ['pytest tests/test_cards.py', '(only the card tests)'],
   ['pytest -k lost', '(only tests with "lost" in their name)'],
 ], 'Terminal')}

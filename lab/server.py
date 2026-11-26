@@ -74,7 +74,7 @@ def path_allowed(path):
 
 
 def suite_env():
-    """Point the suite at this machine's services, with its test key."""
+    """Point the suite at this machine's services, database and Kafka, with its keys."""
     env = dict(os.environ)
     stack_env = read_env_file(CARDVAULT_DIR / ".env")
     env.update(
@@ -84,10 +84,15 @@ def suite_env():
         TRANSACTIONS_URL=SERVICES["transactions"],
         PROFILE_URL=SERVICES["profile"],
         CARD_NETWORK_URL="http://127.0.0.1:8102",
+        DB_HOST="127.0.0.1",
+        DB_PORT="5432",
+        KAFKA_BOOTSTRAP="127.0.0.1:19092",
         PYTHONDONTWRITEBYTECODE="1",
     )
     if stack_env.get("TEST_KEY"):
         env["TEST_KEY"] = stack_env["TEST_KEY"]
+    if stack_env.get("READONLY_DB_PASSWORD"):
+        env["DB_READONLY_PASSWORD"] = stack_env["READONLY_DB_PASSWORD"]
     return env
 
 

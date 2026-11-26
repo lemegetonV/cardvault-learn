@@ -5,7 +5,7 @@ Interview prep built around [CardVault](https://github.com/lemegetonV/cardvault)
 Three tracks of short lessons:
 
 1. **Know the app**: the product, its screens, its services and how to explain the architecture.
-2. **API testing with Python and pytest**: Python from zero, then a small, readable framework, then the topics interviewers ask about (schemas, auth, security, pagination and idempotency, flaky tests, mocks and contracts).
+2. **API testing with Python and pytest**: Python from zero, then a small, readable framework, then the topics interviewers ask about (schemas, auth, security, pagination and idempotency, flaky tests, database checks, Kafka events, mocks and contracts).
 3. **UI testing with TypeScript and Playwright**: TypeScript from zero, then a Playwright framework.
 
 ## Run it locally

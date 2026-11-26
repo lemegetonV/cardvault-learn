@@ -15,7 +15,7 @@ ${table(['Output', 'Made by', 'Read by'], [
 
 ${terminal([['pytest --html=reports/report.html --self-contained-html --junitxml=reports/junit.xml', `...
 - Generated html report: file:///.../tests/api/reports/report.html -
-============================= 72 passed in 23.91s ==============================`]], 'Terminal')}
+============================= 79 passed in 26.44s ==============================`]], 'Terminal')}
 <p><code>--self-contained-html</code> puts everything in one file, so it can be attached to a CI run or sent to someone.</p>
 
 <h2>Reading a failure in the report</h2>
