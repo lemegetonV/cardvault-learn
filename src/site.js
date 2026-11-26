@@ -10,6 +10,27 @@
     });
   }
 
+  // Light/dark switch. Starts from the browser's setting; a click is remembered.
+  const themeBtn = document.querySelector('.theme-btn');
+  if (themeBtn) {
+    const root = document.documentElement;
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const current = () => root.dataset.theme || (media.matches ? 'dark' : 'light');
+    const label = () => {
+      const next = current() === 'dark' ? 'light' : 'dark';
+      themeBtn.setAttribute('aria-label', `Switch to ${next} mode`);
+      themeBtn.title = `Switch to ${next} mode`;
+    };
+    themeBtn.addEventListener('click', () => {
+      const next = current() === 'dark' ? 'light' : 'dark';
+      root.dataset.theme = next;
+      try { localStorage.setItem('theme', next); } catch (e) { /* private mode: not remembered */ }
+      label();
+    });
+    media.addEventListener('change', label);
+    label();
+  }
+
   // Step-through sequence diagrams
   document.querySelectorAll('.stepper').forEach((fig) => {
     const data = JSON.parse(fig.querySelector('.steps-data').textContent);
