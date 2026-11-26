@@ -4,6 +4,8 @@ import { site, tracks, lessonUrl } from '../content/site.mjs';
 
 const brandMark = `<svg class="brand-mark" viewBox="0 0 30 20" aria-hidden="true"><rect x="0.75" y="0.75" width="28.5" height="18.5" rx="3.5" fill="none" stroke="currentColor" stroke-width="1.5"/><rect x="4.5" y="6" width="6.5" height="5" rx="1.2" fill="var(--event)"/><path d="M4.5 15h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>`;
 
+const themeButton = `<button class="theme-btn" type="button" aria-label="Switch to dark mode" title="Switch to dark mode"><svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg><svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>`;
+
 const navItems = [
   ['home', '/', 'Start'],
   ...tracks.map((t) => [t.id, `/#${t.id}`, t.short]),
@@ -24,6 +26,7 @@ export function page({ title, description = site.description, active = '', body,
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500..700&family=Inter:wght@400;500;600;650&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="/assets/styles.css">
+<script>try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t;}catch(e){}</script>
 ${head}
 </head>
 <body>
@@ -31,6 +34,7 @@ ${head}
 <a class="brand" href="/">${brandMark}<span>CardVault</span><small>Learn</small></a>
 <button class="menu-btn" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
 <nav class="site-nav" id="site-nav" aria-label="Main">${nav}</nav>
+${themeButton}
 </div></header>
 <main id="main">
 ${body}
