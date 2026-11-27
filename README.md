@@ -6,7 +6,7 @@ Three tracks of short lessons:
 
 1. **Know the app**: the product, its screens, its services and how to explain the architecture.
 2. **API testing with Python and pytest**: Python from zero, then a small, readable framework, then the topics interviewers ask about (schemas, auth, security, pagination and idempotency, flaky tests, database checks, Kafka events, mocks and contracts), reporting with pytest-html and Allure, load testing with Locust, and live coding practice.
-3. **UI testing with TypeScript and Playwright**: TypeScript from zero, then a Playwright framework.
+3. **UI testing with TypeScript and Playwright**: TypeScript from zero, every core Playwright concept shown on the CardVault web app, then a Playwright framework, CI and interview practice. The tests it quotes live in CardVault's `tests/ui`.
 
 ## Run it locally
 

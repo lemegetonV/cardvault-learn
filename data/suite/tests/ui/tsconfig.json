@@ -1,0 +1,14 @@
+{
+  // Settings for the TypeScript checker (npm run typecheck).
+  // Playwright runs .ts files by itself; this file only makes the checker strict.
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "commonjs",
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "types": ["node"]
+  },
+  "exclude": ["node_modules", "playwright-report", "test-results"]
+}
