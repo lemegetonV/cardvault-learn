@@ -30,7 +30,7 @@ ${table(['Digits', 'Example', 'Expected', 'Why'], [
   ['15', '`+123456789012345`', 'Accepted', 'The highest allowed'],
   ['16', '`+1234567890123456`', 'Refused', 'One above the highest'],
 ])}
-<p>The suite keeps all of these cases, partitions and boundaries together, in one data file, and runs them with one test. You will meet that test in <a href="/learn/py-test-data/">Test data</a>:</p>
+<p>The suite keeps all of these cases, partitions and boundaries together, in one data file, and runs them with one test. You met that test in <a href="/learn/py-test-data/">Test data</a>:</p>
 ${code({ title: 'tests/api/data/contact_details.json', lang: 'json', src: `
   {"case": "phone with 16 digits, one too many", "changes": {"phone": "+1234567890123456"}, "expected_status": 422},
   {"case": "phone with 15 digits, the most allowed", "changes": {"phone": "+123456789012345"}, "expected_status": 200},
@@ -49,7 +49,7 @@ ${table(['Product', 'Status', 'Used in 90 days', 'Email verified', 'Phone verifi
   ['Credit', 'Active', 'Yes', 'No', 'Yes', '`EMAIL_NOT_VERIFIED`'],
   ['Credit', 'Active', 'Yes', 'Yes', 'No', '`PHONE_NOT_VERIFIED`'],
 ])}
-<p>Five yes-or-no conditions make 32 combinations. You do not need all 32. Each row above changes one condition from the eligible row, so each proves that one condition is checked. When the rule says which reason wins if several fail, a few rows with two failures check that order too. Each row becomes one case in <a href="/learn/py-parametrize/">Many cases with parametrize</a>.</p>
+<p>The full rule has three more conditions (the card has not expired, the customer has not opted out of the wallet, and has not removed this card), left out here to keep the table short. Even five yes-or-no conditions make 32 combinations. You do not need all 32. Each row above changes one condition from the eligible row, so each proves that one condition is checked. When the rule says which reason wins if several fail, a few rows with two failures check that order too. Each row becomes one case in <a href="/learn/py-parametrize/">Many cases with parametrize</a>.</p>
 
 <h2>State transition testing</h2>
 <p>A card moves between statuses: active, lost, closed. What you may do depends on where it is now. <strong>State transition testing</strong> draws the statuses and the allowed moves between them, then tests each allowed move and a few forbidden ones: reporting an active card lost works, while reporting a closed card lost is refused with <code>409</code>. The state tests in <a href="/learn/py-negative-tests/">Positive and negative tests</a> come from this kind of picture.</p>

@@ -8,7 +8,7 @@ Run it, with CardVault running on your computer:
     cd tests/perf
     pip install -r requirements.txt
     locust                    # then open http://localhost:8089 and press Start
-    locust --headless --users 10 --spawn-rate 2 --run-time 30s
+    locust --headless --users 10 --spawn-rate 5 --run-time 30s
 
 At the end of a run, check_budgets (at the bottom) makes the run fail if it was too
 slow or had errors, so a CI job can use it as a pass or fail check.

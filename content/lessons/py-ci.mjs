@@ -90,7 +90,7 @@ ${code({ lang: 'yaml', title: '.github/workflows/api-tests.yml', src: `
           retention-days: 14
 ` })}
 <ul>
-<li>The load test, from <a href="/learn/py-perf-pass-fail/">Pass or fail: budgets and CI</a>, has no <code>if:</code>, so it runs only when the tests passed. There is no point timing a broken app.</li>
+<li>The load test, which the Locust lessons cover in <a href="/learn/py-perf-pass-fail/">Pass or fail: budgets and CI</a>, has no <code>if:</code>, so it runs only when the tests passed. There is no point timing a broken app.</li>
 <li><code>if: always()</code> on the other steps makes them run even after a failure, which is exactly when you need the reports.</li>
 <li><code>run: |</code> starts a block of several commands, one per line.</li>
 <li>An <strong>artifact</strong> is a file a CI run keeps after the machine is gone. This one is a ZIP of the <code>reports/</code> folder: the pytest-html report, <code>junit.xml</code>, the Allure report, the load test report and the app’s logs. You download it from the run’s page.</li>

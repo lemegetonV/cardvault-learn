@@ -2,7 +2,7 @@ import { code, interview, keyIdea, testerEye, table, sequence } from '../../src/
 
 export default {
   minutes: 12,
-  lede: 'Almost every test needs something ready before it starts: a logged-in customer, a card, a token. pytest’s answer is the fixture, a function that prepares that thing and hands it to any test that asks for it by name. This lesson reads the suite’s two fixtures in conftest.py.',
+  lede: 'Almost every test needs something ready before it starts: a logged-in customer, a card, a token. pytest’s answer is the fixture, a function that prepares that thing and hands it to any test that asks for it by name. This lesson reads the suite’s three fixtures in conftest.py.',
   youWill: 'You will be able to explain what a fixture is, how a test asks for one, what scope means, and how a fixture would clean up after a test.',
   body: `
 <h2>Asking by name</h2>
@@ -16,7 +16,7 @@ def test_get_one_card(customer):
 <p>The test never calls <code>customer()</code> itself. Seeing the name <code>customer</code> in the brackets is enough for pytest. The <code>@</code> line above a function is a <strong>decorator</strong>: it gives the function extra behaviour, here registering it with pytest.</p>
 
 <h2>conftest.py</h2>
-<p><code>conftest.py</code> is a file name pytest knows. It loads it automatically, and every test in that folder and below can use its fixtures without an <code>import</code>. The suite has two.</p>
+<p><code>conftest.py</code> is a file name pytest knows. It loads it automatically, and every test in that folder and below can use its fixtures without an <code>import</code>. The suite has three. Here are the first two; the third, which cleans up after itself, comes later in this lesson.</p>
 ${code({ title: 'tests/api/conftest.py', src: `
 @pytest.fixture(scope="session")
 def alice_token():
@@ -104,7 +104,7 @@ def test_alice_can_refresh_her_session(alice_session):
     assert AuthApi().me(response.json()["access_token"]).status_code == 200
 ` })}
 <p>If an assert fails, pytest still runs the code after <code>yield</code>, and still reports the original failure. If the set-up itself fails, before <code>yield</code>, there is nothing to undo, so the tear-down is skipped.</p>
-<p>Most tests in the suite need no tear-down at all, because every test that changes data owns a throwaway customer that nothing else uses. Clean-up matters for shared things, like alice. Notice also that a fixture can ask for another fixture, just as a test can.</p>
+<p>Most tests in the suite need no tear-down at all, because every test that changes data owns a throwaway customer that nothing else uses. Clean-up matters for shared things, like alice. A fixture can also ask for another fixture by naming it as a parameter, just as a test can.</p>
 
 ${keyIdea('<p>A fixture prepares what a test needs and is requested by name. Scope sets how often it runs: per test for anything a test may change, once per session for read-only things that are slow to make.</p>')}
 

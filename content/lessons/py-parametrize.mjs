@@ -71,7 +71,7 @@ def test_recently_used_credit_and_debit_cards_may_join(product):
 
 ${keyIdea('<p>Parametrize turns one test function into many tests, one per row of data. Use it when tests differ only in their inputs and expected results, and give every row a readable id.</p>')}
 
-${testerEye('<p>This is <strong>data-driven testing</strong>. Rows can also come from a file, such as a CSV, read into a list before the decorator. Keep the rows visible in the test when there are only a few, because the data is the test.</p>')}
+${testerEye('<p>This is <strong>data-driven testing</strong>. Rows can also come from a file, read into a list before the decorator, as the contact-details test in <a href="/learn/py-test-data/">Test data</a> does with JSON. Keep the rows visible in the test when there are only a few, because the data is the test.</p>')}
 
 ${interview({
   say: `<p>“I use pytest.mark.parametrize for data-driven tests. The wallet has a list of eligibility rules, so one test function takes the card set-up and the expected rejection reason, with one row per rule and readable ids. pytest reports each row as its own test, so a failure names the exact rule.”</p>`,

@@ -26,8 +26,8 @@ ${table(['Cause', 'What you tend to see', 'Evidence that settles it'], [
 <p>Keep more than one explanation in mind until the evidence rules the others out. “It is probably flaky” is a guess; <a href="/learn/py-flaky-and-parallel/">Flaky tests, waits and parallel runs</a> covers how to prove it.</p>
 
 <h2>Following one failure</h2>
-<p>Here is the failure from the logging lesson, as it appears in a CI report:</p>
-${terminal([['(from the report of a CI run)', `FAILED tests/test_fail_demo.py::test_a_new_phone_number_is_saved
+<p>Here is the failure from the logging lesson, as it appears in the test report:</p>
+${terminal([['pytest tests/test_fail_demo.py', `FAILED tests/test_fail_demo.py::test_a_new_phone_number_is_saved
 E   assert 422 == 200
 ------------------------------ Captured log call -------------------------------
 05:59:29 PATCH http://localhost:8005/v1/profile -> 422 in 3 ms

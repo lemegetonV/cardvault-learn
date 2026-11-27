@@ -126,7 +126,7 @@ ${interview({
   qa: [
     ['Cursor or offset pagination?', '<p>Offset (page 3 of 20) is simple but can skip or repeat items when data changes between requests. A cursor marks the last item seen, so pages stay consistent. CardVault uses cursors.</p>'],
     ['What is the difference between PUT and PATCH?', '<p>PUT replaces the whole resource with the body, so a field left out is reset. PATCH changes only the fields sent. To test PATCH, change one field and read the record back to check the others did not move.</p>'],
-    ['Which HTTP methods are idempotent?', '<p>By definition GET, PUT and DELETE are; POST is not. That is why APIs add idempotency keys to POST actions such as payments.</p>'],
+    ['Which HTTP methods are idempotent?', '<p>By definition GET, HEAD, OPTIONS, PUT and DELETE are; POST is not, and PATCH is not guaranteed to be. That is why APIs add idempotency keys to POST actions such as payments.</p>'],
     ['What is optimistic locking?', '<p>Each record carries a version. An update must send the version it was based on, and the server rejects it with 412 or 409 if the record changed since, instead of overwriting.</p>'],
   ],
 })}

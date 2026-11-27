@@ -107,7 +107,7 @@ ${terminal([
   ['cd tests/api', ''],
   ['pip install -r requirements.txt', ''],
   ['pytest', '============================= 93 passed in 30.52s ============================='],
-  ['pytest -m smoke', '======================= 5 passed, 74 deselected in 3.60s ======================='],
+  ['pytest -m smoke', '======================= 5 passed, 88 deselected in 3.72s ======================='],
   ['pytest tests/test_cards.py', '(only the card tests)'],
   ['pytest -k lost', '(only tests with "lost" in their name)'],
 ], 'Terminal')}
