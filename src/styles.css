@@ -795,8 +795,59 @@ code, pre, .ex-lines { font-variant-ligatures: none; font-feature-settings: "lig
 .tp-why.bad pre { background: var(--surface); color: var(--ink); }
 .tp-why.info { background: var(--mock-soft); }
 p.tp-why { font-size: 0.875rem; }
+.tp-why.ok { background: var(--accent-soft); }
+.tp-why.ok pre { background: var(--surface); color: var(--ink); }
+.pf-live, .pf-results { margin: 0 0 16px; }
+.pf-bar { height: 8px; border-radius: 999px; background: var(--line-soft); overflow: hidden; margin: 4px 0 12px; }
+.pf-bar span { display: block; width: 0; height: 100%; background: var(--accent); transition: width 0.6s ease; }
+.pf-nums { display: grid; grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr)); gap: 8px; margin: 0; }
+.pf-num { display: flex; flex-direction: column-reverse; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+.pf-num dt { font-size: 0.75rem; color: var(--muted); }
+.pf-num dd { margin: 0; font: 650 1rem var(--font-mono); }
+.pf-table { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+.pf-table table { width: 100%; border-collapse: collapse; font-size: 0.8125rem; }
+.pf-table th, .pf-table td { padding: 6px 10px; text-align: right; white-space: nowrap; border-bottom: 1px solid var(--line-soft); }
+.pf-table th:first-child, .pf-table td:first-child { text-align: left; }
+.pf-table th { font: 600 0.6875rem var(--font-mono); text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.pf-table tr:last-child td { border-bottom: 0; }
+.pf-total td { font-weight: 700; background: var(--line-soft); }
 .tp-log { margin-top: 18px; }
 .tp-log summary { cursor: pointer; font-size: 0.8125rem; color: var(--muted); }
 .tp-log pre { margin: 8px 0 0; padding: 12px 14px; max-height: 24rem; overflow: auto; border-radius: 10px; background: #121a17; color: #dfe8e3; font: 400 0.75rem/1.6 var(--font-mono); white-space: pre-wrap; overflow-wrap: anywhere; }
 @media (max-width: 40rem) { .tp { box-shadow: none; border-left: 0; } }
 .tp-path, .tp-test-head code { background: none; padding: 0; border: 0; }
+
+/* ---------------------------------------------------------------- interview drill */
+.dr-tools { display: flex; flex-wrap: wrap; align-items: end; gap: 10px 12px; margin: 0 0 24px; }
+.dr-tools label { display: grid; gap: 4px; min-width: 0; max-width: 100%; font-size: 0.8125rem; color: var(--muted); }
+.dr-tools select { width: 100%; max-width: 100%; min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; font-size: 0.875rem; }
+.dr-lesson { margin: 0 0 28px; }
+.dr-lesson h2 { margin: 0 0 10px; font-size: 1.125rem; }
+.dr-lesson h2 small { margin-left: 6px; font: 500 0.75rem var(--font-mono); color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.dr-say { margin: 0 0 8px; }
+.dr-say summary { cursor: pointer; font-size: 0.875rem; color: var(--muted); }
+.dr-from { margin: 8px 0 0; font-size: 0.8125rem; color: var(--muted); }
+.dr-card { margin: 0 0 28px; padding: 20px 22px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.dr-card[hidden], #dr-list[hidden], .dr-lesson[hidden], .dr-card-a[hidden] { display: none; }
+.dr-card-q { margin: 4px 0 14px; font: 650 1.25rem/1.4 var(--font-display); }
+.dr-card-a { margin: 0 0 14px; padding: 12px 14px; border-radius: 10px; background: var(--accent-soft); }
+.dr-card-a > :first-child { margin-top: 0; }
+.dr-card-a > :last-child { margin-bottom: 0; }
+.dr-card-bar { display: flex; flex-wrap: wrap; gap: 8px; }
+.dr-lesson.interview { margin: 0 0 20px; padding: 18px 20px; }
+.dr-say .say { margin-top: 10px; }
+.drill-frame { max-width: 54rem; }
+
+/* ---------------------------------------------------------------- practice: tasks, hints, solutions */
+.callout.task { background: var(--surface); border: 2px solid var(--accent); }
+.callout.task .label { color: var(--accent-strong); }
+.reveal { margin: 14px 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.reveal > summary { cursor: pointer; padding: 12px 18px; font-weight: 600; list-style-position: inside; }
+.reveal.solution > summary { color: var(--accent-strong); }
+.reveal[open] > summary { border-bottom: 1px solid var(--line-soft); }
+.reveal-body { padding: 4px 18px 16px; }
+.reveal-body > :last-child { margin-bottom: 0; }
+.reveal-body .code { margin: 14px 0; }
+.article blockquote.script { margin: 24px 0; padding: 18px 22px; border-left: 4px solid var(--accent); border-radius: 0 var(--radius) var(--radius) 0; background: var(--accent-soft); font-size: 1.0625rem; line-height: 1.7; }
+.article blockquote.script p { margin: 0 0 12px; }
+.article blockquote.script p:last-child { margin: 0; }

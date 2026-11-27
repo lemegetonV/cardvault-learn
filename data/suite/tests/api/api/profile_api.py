@@ -1,8 +1,7 @@
 """Calls to the Profile service (profile-service), made as one logged-in customer."""
 
-import requests
-
 import config
+from api.client import http
 
 
 class ProfileApi:
@@ -11,9 +10,7 @@ class ProfileApi:
         self.headers = {"Authorization": f"Bearer {token}"}
 
     def get_profile(self):
-        return requests.get(
-            f"{self.base_url}/v1/profile", headers=self.headers, timeout=config.TIMEOUT
-        )
+        return http.get(f"{self.base_url}/v1/profile", headers=self.headers, timeout=config.TIMEOUT)
 
     def update_profile(self, changes, version=None):
         """changes is a dictionary such as {"email": "new@example.com"}.
@@ -24,7 +21,7 @@ class ProfileApi:
         headers = dict(self.headers)
         if version is not None:
             headers["If-Match"] = str(version)
-        return requests.patch(
+        return http.patch(
             f"{self.base_url}/v1/profile",
             json=changes,
             headers=headers,
@@ -34,7 +31,7 @@ class ProfileApi:
     def send_code(self, channel):
         """channel is "EMAIL" or "PHONE"."""
         body = {"channel": channel}
-        return requests.post(
+        return http.post(
             f"{self.base_url}/v1/profile/verify/send",
             json=body,
             headers=self.headers,
@@ -43,7 +40,7 @@ class ProfileApi:
 
     def verify(self, channel, code):
         body = {"channel": channel, "code": code}
-        return requests.post(
+        return http.post(
             f"{self.base_url}/v1/profile/verify",
             json=body,
             headers=self.headers,

@@ -1,5 +1,10 @@
 """Profile: contact details and verifying them (profile-service)."""
 
+import json
+from pathlib import Path
+
+import pytest
+
 from api.profile_api import ProfileApi
 from api.wallet_api import WalletApi
 from data.demo_customers import TEST_VERIFICATION_CODE
@@ -31,6 +36,24 @@ def test_an_invalid_email_is_refused(customer):
 
     assert response.status_code == 422
     assert response.json()["error_code"] == "VALIDATION_ERROR"
+
+
+# The cases live in a JSON file, so adding one is a new line of data, not a new test.
+# Path(__file__).parent is the folder this file is in; ".." goes up one, to tests/api.
+CONTACT_CASES_FILE = Path(__file__).parent / ".." / "data" / "contact_details.json"
+CONTACT_CASES = json.loads(CONTACT_CASES_FILE.read_text())
+
+
+# ids= gives each case a readable name in the results, such as [phone without the +].
+@pytest.mark.parametrize("case", CONTACT_CASES, ids=[case["case"] for case in CONTACT_CASES])
+def test_contact_details_are_checked(case):
+    someone = create_logged_in_customer(cards=[])
+
+    response = ProfileApi(someone["token"]).update_profile(case["changes"])
+
+    assert response.status_code == case["expected_status"], response.text
+    if case["expected_status"] == 422:
+        assert response.json()["error_code"] == "VALIDATION_ERROR"
 
 
 def test_verify_the_phone_with_a_code():

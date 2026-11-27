@@ -2,6 +2,7 @@
 
 import pytest
 
+import config
 from api.cards_api import CardsApi
 from data.demo_customers import ALICE
 
@@ -15,6 +16,15 @@ def test_alice_has_her_four_cards(alice_token):
     # Turn the list into {last4: product}, to compare with what we expect.
     found = {card["last4"]: card["product"] for card in cards}
     assert found == ALICE["cards"]
+
+
+def test_the_card_list_answers_quickly(alice_token):
+    response = CardsApi(alice_token).list_cards()
+
+    # elapsed is the time from sending the request until the response headers arrived.
+    seconds = response.elapsed.total_seconds()
+    assert response.status_code == 200
+    assert seconds < config.MAX_RESPONSE_SECONDS, f"took {seconds:.2f} s"
 
 
 def test_every_card_has_the_fields_the_app_shows(alice_token):

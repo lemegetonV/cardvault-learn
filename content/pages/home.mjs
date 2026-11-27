@@ -28,10 +28,10 @@ export function homePage() {
 
 <div class="how">
 <div><b>1</b><p><strong>Know the app.</strong> What it does, its screens, its services, and how to explain the architecture.</p></div>
-<div><b>2</b><p><strong>API testing.</strong> Python from zero, then a small pytest framework, file by file.</p></div>
+<div><b>2</b><p><strong>API testing.</strong> Python from zero, then a small pytest framework, file by file, reports, a Locust load test and live coding practice.</p></div>
 <div><b>3</b><p><strong>UI testing.</strong> TypeScript from zero, then a Playwright framework for the web app.</p></div>
 </div>
-<p class="how-note">Each lesson is a short read and ends with how to say it in an interview.</p>
+<p class="how-note">Each lesson is a short read and ends with how to say it in an interview. The <a href="/drill/">Interview drill</a> collects every one of those questions in one place.</p>
 
 ${tracks.map(trackSection).join('')}
 </div>`;

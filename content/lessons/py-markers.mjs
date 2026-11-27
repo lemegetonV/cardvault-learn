@@ -2,7 +2,7 @@ import { code, terminal, interview, keyIdea, testerEye, table } from '../../src/
 
 export default {
   minutes: 9,
-  lede: 'A full run takes about 26 seconds today, and real suites take far longer. Most of the time you want only part of it: the quick checks after a deploy, one file you are working on, or only the tests that just failed. This lesson shows how to choose.',
+  lede: 'A full run takes about 30 seconds today, and real suites take far longer. Most of the time you want only part of it: the quick checks after a deploy, one file you are working on, or only the tests that just failed. This lesson shows how to choose.',
   youWill: 'You will be able to label tests with markers, and run a subset of the suite by label, file, name or last result.',
   body: `
 <h2>Labels on tests</h2>
@@ -19,7 +19,7 @@ markers =
 ` })}
 
 <h2>Running by label</h2>
-${terminal([['pytest -m smoke', `collecting ... collected 79 items / 74 deselected / 5 selected
+${terminal([['pytest -m smoke', `collecting ... collected 93 items / 88 deselected / 5 selected
 
 tests/test_cards.py::test_alice_has_her_four_cards PASSED                [ 20%]
 tests/test_login.py::test_login_with_correct_password_returns_a_token PASSED [ 40%]
@@ -27,7 +27,7 @@ tests/test_purchases.py::test_a_purchase_is_approved_and_the_money_is_held PASSE
 tests/test_transactions.py::test_a_purchase_appears_in_the_transactions_list PASSED [ 80%]
 tests/test_wallet.py::test_add_a_card_to_the_wallet PASSED               [100%]
 
-======================= 5 passed, 74 deselected in 3.60s =======================`]], 'Terminal')}
+======================= 5 passed, 88 deselected in 3.72s =======================`]], 'Terminal')}
 <p><strong>Deselected</strong> means collected but not run because of your choice. Marker expressions can combine labels, such as <code>-m "smoke and not slow"</code>.</p>
 
 <h2>Other ways to choose</h2>

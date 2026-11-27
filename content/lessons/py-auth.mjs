@@ -1,9 +1,9 @@
 import { code, interview, keyIdea, testerEye, table, sequence, tryIt } from '../../src/components.mjs';
 
 export default {
-  minutes: 13,
+  minutes: 16,
   lede: 'Two questions guard every API call: who are you, and are you allowed to do this? They sound alike, interviewers love to ask about the difference, and they fail in different ways. This lesson covers both, with CardVault’s tokens as the example.',
-  youWill: 'You will be able to explain authentication and authorisation, how access and refresh tokens work, and how the suite tests each.',
+  youWill: 'You will be able to explain authentication and authorisation, how access and refresh tokens work, how the suite tests each, and how cookies and OAuth 2.0 fit in.',
   body: `
 <h2>Two different questions</h2>
 ${table(['', 'Authentication', 'Authorisation'], [
@@ -71,6 +71,39 @@ def test_customer_cannot_change_another_customers_card():
 ` })}
 <p><code>make_owner_and_intruder()</code> is a small function at the top of the file that creates both customers and returns them as a pair; <code>owner, intruder = ...</code> unpacks the pair into two names. CardVault answers 404 rather than 403, so an intruder cannot even learn that the card ID exists. The last line matters most: it checks with the owner’s token that nothing changed.</p>
 
+<h2>Tokens in a browser: cookies</h2>
+<p>The suite sends the access token itself, in the <code>Authorization</code> header. A web page could do the same, but then the token would sit where the page’s JavaScript can read it, and any script injected into the page could steal it. CardVault’s web app avoids that. When a customer logs in, the web app’s own server keeps the tokens in <strong>cookies</strong>: small values the browser stores and sends back automatically with every request to the same site. The cookies are marked <code>HttpOnly</code>, which means page scripts cannot read them. Every call from the page goes to the web app’s server, which adds the token and passes the call on to the right service.</p>
+${table(['', 'Token in a header', 'Token in an HttpOnly cookie'], [
+  ['Who sends it', 'The caller’s code, on every request', 'The browser, automatically'],
+  ['Readable by page scripts', 'Yes, if the page stores it', 'No'],
+  ['Typical user', 'Programs, mobile apps, API tests', 'Web pages'],
+  ['Extra risk to test', 'Leaks in logs or storage', 'Forged requests from other sites, so state-changing calls need an anti-forgery check'],
+])}
+<p>For an API tester the difference is mostly where the token comes from: an API test logs in and sets the header, while a UI test logs in through the page and the browser handles the cookie.</p>
+
+<h2>OAuth 2.0 in one picture</h2>
+<p>CardVault has its own login, but interviewers often ask about <strong>OAuth 2.0</strong>, the standard way to let one application act for a user at another without ever seeing the user’s password. “Sign in with” buttons and bank data-sharing apps use it. The most common form, the <strong>authorization code flow</strong>, goes like this:</p>
+${sequence({
+  id: 'oauth-code',
+  label: 'The OAuth 2.0 authorization code flow (general, not CardVault)',
+  actors: [
+    { id: 'u', label: 'user’s browser', kind: 'plain' },
+    { id: 'app', label: 'the app', kind: 'plain' },
+    { id: 'as', label: 'authorization server', kind: 'plain' },
+    { id: 'api', label: 'the API', kind: 'plain' },
+  ],
+  steps: [
+    { from: 'u', to: 'app', label: 'Sign in with…', note: 'The user wants the app to use their data held somewhere else.' },
+    { from: 'app', to: 'u', label: 'go to the login page', kind: 'reply', note: 'The app sends the browser to the authorization server, saying which app it is and what access it wants (the scopes).' },
+    { from: 'u', to: 'as', label: 'log in, approve', note: 'The user types their password at the authorization server only, never into the app, and approves the access.' },
+    { from: 'as', to: 'u', label: 'back to the app with a code', kind: 'reply', note: 'The browser returns to the app carrying a one-time code.' },
+    { from: 'app', to: 'as', label: 'swap code for tokens', note: 'The app’s server exchanges the code, plus its own secret, for an access token and usually a refresh token.' },
+    { from: 'app', to: 'api', label: 'call with Bearer token', note: 'From here it looks like CardVault: the access token goes in the Authorization header.' },
+  ],
+  caption: 'The user’s password goes only to the authorization server. The app ends up with a token limited to the access the user approved.',
+})}
+<p>Things a tester checks in an OAuth set-up: a code works only once and expires quickly, a token is refused for a scope it was not given, and an expired or revoked token gets 401. Once the token exists, API tests use it exactly as the CardVault suite uses its access token.</p>
+
 <h2>Roles, API keys and Basic auth</h2>
 <p>CardVault’s customers all have the same rights, so its rule is ownership. Many systems also have <strong>roles</strong>, such as customer, support agent and admin, and need tests that each role can do only its own actions. Two other ways of authenticating come up often. An <strong>API key</strong> is a long secret string sent in a header, common for program-to-program calls. <strong>Basic auth</strong> sends a username and password in the <code>Authorization</code> header on every request, encoded but not encrypted, so it is only safe over HTTPS. requests supports it with <code>auth=("user", "password")</code>.</p>
 
@@ -83,6 +116,7 @@ ${interview({
   qa: [
     ['401 or 403?', '<p>401 means the caller is not authenticated: no token or a bad one. 403 means authenticated but not allowed. Some APIs return 404 for other people’s resources to hide that they exist.</p>'],
     ['Why have refresh tokens at all?', '<p>So access tokens can be short-lived, limiting the damage if one leaks, while the user stays logged in. Rotation means a stolen refresh token is detected the moment both parties use it.</p>'],
+    ['What is OAuth 2.0 for?', '<p>Letting one application act for a user at another service without seeing the user’s password. The user logs in at the authorization server, the app receives a code and swaps it for a token limited to the approved scopes, then calls the API with that token.</p>'],
     ['How would you test role-based access?', '<p>A table of roles against actions, with a test per cell: each role is allowed exactly its own actions and refused the rest, including the data of other users with the same role.</p>'],
   ],
 })}

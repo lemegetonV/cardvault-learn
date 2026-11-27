@@ -5,9 +5,8 @@ new customer, so they never disturb each other or the demo customers.
 This endpoint exists only in test environments and needs the test key.
 """
 
-import requests
-
 import config
+from api.client import http
 
 
 class CustomersApi:
@@ -27,7 +26,7 @@ class CustomersApi:
             "email_verified": email_verified,
             "phone_verified": phone_verified,
         }
-        return requests.post(
+        return http.post(
             f"{self.base_url}/test/customers",
             json=body,
             headers=self.headers,

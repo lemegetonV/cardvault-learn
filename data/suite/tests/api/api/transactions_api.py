@@ -1,8 +1,7 @@
 """Calls to the Transactions service (wallet-txn-service), made as one logged-in customer."""
 
-import requests
-
 import config
+from api.client import http
 
 
 class TransactionsApi:
@@ -17,7 +16,7 @@ class TransactionsApi:
             params["status"] = status
         if card_id:
             params["card_id"] = card_id
-        return requests.get(
+        return http.get(
             f"{self.base_url}/v1/wallet/transactions",
             params=params,
             headers=self.headers,
@@ -25,7 +24,7 @@ class TransactionsApi:
         )
 
     def get_transaction(self, txn_id):
-        return requests.get(
+        return http.get(
             f"{self.base_url}/v1/wallet/transactions/{txn_id}",
             headers=self.headers,
             timeout=config.TIMEOUT,
@@ -33,7 +32,7 @@ class TransactionsApi:
 
     def export_csv(self):
         """The same list as a CSV file (text, not JSON)."""
-        return requests.get(
+        return http.get(
             f"{self.base_url}/v1/wallet/transactions/export",
             headers=self.headers,
             timeout=config.TIMEOUT,
@@ -51,7 +50,7 @@ class TransactionsApi:
         files = {}
         if receipt_file:
             files["receipt"] = receipt_file
-        return requests.post(
+        return http.post(
             f"{self.base_url}/v1/wallet/transactions/{txn_id}/disputes",
             data=form,
             files=files,

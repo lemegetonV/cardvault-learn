@@ -26,24 +26,29 @@ print(greeter.hello())              # Hello, alice
 
 <h2>The Cards client</h2>
 ${code({ title: 'tests/api/api/cards_api.py', src: `
+import config
+from api.client import http
+
+
 class CardsApi:
     def __init__(self, token):
         self.base_url = config.CARD_URL
         self.headers = {"Authorization": f"Bearer {token}"}
 ...
     def get_card(self, card_id):
-        return requests.get(
+        return http.get(
             f"{self.base_url}/v1/cards/{card_id}", headers=self.headers, timeout=config.TIMEOUT
         )
 ...
     def close(self, card_id):
-        return requests.post(
+        return http.post(
             f"{self.base_url}/v1/cards/{card_id}/close",
             headers=self.headers,
             timeout=config.TIMEOUT,
         )
 ` })}
 <ul>
+<li><code>http</code> comes from <code>api/client.py</code>. It is a <code>requests.Session</code>: an object that sends requests exactly like <code>requests.get</code> and <code>requests.post</code>, but keeps connections open between calls and lets the suite add behaviour in one place. The suite uses it to log every call, as <a href="/learn/py-logging/">Logging every request and response</a> shows.</li>
 <li>The client is made with a customer’s token. <code>__init__</code> stores the service address from <a href="/learn/py-config/">config.py</a> and the <code>Authorization</code> header, so no method repeats them.</li>
 <li>Each method makes exactly one API call and <strong>returns the whole response</strong>. It does not check anything. Checking is the test’s job, so a test can look at the status code of a refusal as easily as at the body of a success.</li>
 <li>Method names say what the customer does (<code>close</code>), not how HTTP does it (<code>POST /v1/cards/{id}/close</code>).</li>
@@ -71,7 +76,7 @@ ${code({ title: 'tests/api/api/transactions_api.py', src: `
         files = {}
         if receipt_file:
             files["receipt"] = receipt_file
-        return requests.post(
+        return http.post(
             f"{self.base_url}/v1/wallet/transactions/{txn_id}/disputes",
             data=form,
             files=files,

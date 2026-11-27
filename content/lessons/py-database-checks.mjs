@@ -82,7 +82,7 @@ def test_reporting_a_card_lost_is_saved_in_the_database(customer):
     row = query_one("card", "SELECT status FROM cards WHERE card_id = %s", (card_id,))
     assert row["status"] == "LOST"
 ` })}
-<p><code>pytestmark</code> puts the <code>database</code> label from <a href="/learn/py-markers/">Markers</a> on every test in the file, so <code>pytest -m "not database and not events"</code> runs the 72 API-only tests on a machine that can reach the services but not the database. This first test could be made through the API too. It is here because it shows the pattern at its simplest: act through the API, then read the row.</p>
+<p><code>pytestmark</code> puts a label called <code>database</code> on every test in the file (labels, called markers, have their own lesson: <a href="/learn/py-markers/">Markers</a>), so <code>pytest -m "not database and not events"</code> runs the 86 API-only tests on a machine that can reach the services but not the database. This first test could be made through the API too. It is here because it shows the pattern at its simplest: act through the API, then read the row.</p>
 
 ${code({ title: 'tests/api/tests/test_database.py', src: `
 def test_passwords_are_stored_as_hashes_not_as_plain_text():
@@ -127,7 +127,7 @@ def test_a_refused_profile_update_writes_nothing():
     assert row["email"] == profile["email"]
     assert row["version"] == profile["version"]
 ` })}
-<p>A wrong version is refused with <code>412</code>, as in <a href="/learn/py-api-behaviours/">version checks</a>. The expected values come from the profile the test read before acting, so the check is “exactly what was there before”, whatever that was.</p>
+<p>The profile carries a version number, and an update that names the wrong version is refused with <code>412</code>; <a href="/learn/py-api-behaviours/">Pages, safe retries, versions and limits</a> explains version checks in full. The expected values come from the profile the test read before acting, so the check is “exactly what was there before”, whatever that was.</p>
 
 <h2>Things to watch</h2>
 <ul>

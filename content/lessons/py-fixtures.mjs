@@ -2,7 +2,7 @@ import { code, interview, keyIdea, testerEye, table, sequence } from '../../src/
 
 export default {
   minutes: 12,
-  lede: 'Almost every test needs something ready before it starts: a logged-in customer, a card, a token. pytest’s answer is the fixture, a function that prepares that thing and hands it to any test that asks for it by name. This lesson reads the suite’s two fixtures in conftest.py.',
+  lede: 'Almost every test needs something ready before it starts: a logged-in customer, a card, a token. pytest’s answer is the fixture, a function that prepares that thing and hands it to any test that asks for it by name. This lesson reads the suite’s three fixtures in conftest.py.',
   youWill: 'You will be able to explain what a fixture is, how a test asks for one, what scope means, and how a fixture would clean up after a test.',
   body: `
 <h2>Asking by name</h2>
@@ -16,7 +16,7 @@ def test_get_one_card(customer):
 <p>The test never calls <code>customer()</code> itself. Seeing the name <code>customer</code> in the brackets is enough for pytest. The <code>@</code> line above a function is a <strong>decorator</strong>: it gives the function extra behaviour, here registering it with pytest.</p>
 
 <h2>conftest.py</h2>
-<p><code>conftest.py</code> is a file name pytest knows. It loads it automatically, and every test in that folder and below can use its fixtures without an <code>import</code>. The suite has two.</p>
+<p><code>conftest.py</code> is a file name pytest knows. It loads it automatically, and every test in that folder and below can use its fixtures without an <code>import</code>. The suite has three. Here are the first two; the third, which cleans up after itself, comes later in this lesson.</p>
 ${code({ title: 'tests/api/conftest.py', src: `
 @pytest.fixture(scope="session")
 def alice_token():
@@ -79,16 +79,32 @@ ${sequence({
 })}
 
 <h2>Cleaning up afterwards</h2>
-<p>Some fixtures must undo their work, for example deleting a record they created. A fixture does that with <code>yield</code> instead of <code>return</code>. The code before <code>yield</code> is set-up, the yielded value goes to the test, and the code after it runs when the test ends, even if the test failed.</p>
-${code({ title: 'Example · a fixture that cleans up', src: `
+<p>Some fixtures must undo their work, for example deleting a record they created or ending a session they opened. A fixture does that with <code>yield</code> instead of <code>return</code>. The code before <code>yield</code> is set-up, the yielded value goes to the test, and the code after it, the <strong>tear-down</strong>, runs when the test ends, even if the test failed.</p>
+${code({ title: 'tests/api/conftest.py', src: `
 @pytest.fixture
-def lost_card(customer):
-    card_id = customer["new_card"]["card_id"]
-    CardsApi(customer["token"]).report_lost(card_id)
-    yield card_id                       # the test runs here
-    CardsApi(customer["token"]).reissue(card_id)   # tidy up afterwards
+def alice_session():
+    """A new login for alice that is logged out again after the test.
+...
+    """
+    login = AuthApi().login("alice", config.DEMO_PASSWORD)
+    assert login.status_code == 200, login.text
+    session = login.json()
+
+    yield session
+
+    AuthApi().logout(session["refresh_token"])
 ` })}
-<p>The suite has no clean-up step because every changing test owns a throwaway customer. Nothing it does can affect another test. Notice also that a fixture can ask for another fixture: <code>lost_card</code> names <code>customer</code>.</p>
+<p>Every login creates a session on the server, with a refresh token that stays valid for a week. A test that logs alice in again and again would leave a pile of open sessions behind. This fixture logs her out after the test, so it leaves nothing. A test asks for it like any other fixture:</p>
+${code({ title: 'tests/api/tests/test_login.py', src: `
+def test_alice_can_refresh_her_session(alice_session):
+    # alice_session logs alice out again after this test, even if it fails.
+    response = AuthApi().refresh(alice_session["refresh_token"])
+
+    assert response.status_code == 200
+    assert AuthApi().me(response.json()["access_token"]).status_code == 200
+` })}
+<p>If an assert fails, pytest still runs the code after <code>yield</code>, and still reports the original failure. If the set-up itself fails, before <code>yield</code>, there is nothing to undo, so the tear-down is skipped.</p>
+<p>Most tests in the suite need no tear-down at all, because every test that changes data owns a throwaway customer that nothing else uses. Clean-up matters for shared things, like alice. A fixture can also ask for another fixture by naming it as a parameter, just as a test can.</p>
 
 ${keyIdea('<p>A fixture prepares what a test needs and is requested by name. Scope sets how often it runs: per test for anything a test may change, once per session for read-only things that are slow to make.</p>')}
 

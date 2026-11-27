@@ -43,10 +43,10 @@ def wait_for_wallet_status(wallet_api, card_id, expected_status, timeout=10):
 <h2>Running tests in parallel</h2>
 <p>The <strong>pytest-xdist</strong> plugin starts several worker processes and shares the tests out among them. <code>-n 4</code> means four workers; <code>-n auto</code> means one per CPU core.</p>
 ${terminal([
-  ['pytest -q', '============================= 79 passed in 26.44s =============================='],
-  ['pytest -q -n 4', '============================= 79 passed in 12.38s =============================='],
+  ['pytest -q', '============================= 93 passed in 30.52s =============================='],
+  ['pytest -q -n 4', '============================= 93 passed in 12.44s =============================='],
 ], 'Terminal')}
-<p>On this machine four workers cut the run from about 26 seconds to about 12. CI uses <code>-n 4</code> too.</p>
+<p>On this machine four workers cut the run from about 30 seconds to about 12. CI uses <code>-n 4</code> too.</p>
 
 <h2>Why the suite is safe to run in parallel</h2>
 <p>Parallel runs expose every hidden dependency between tests, because tests now run at the same time and in a different order. The suite is safe because of rules you already know:</p>
@@ -61,7 +61,7 @@ ${keyIdea('<p>Flaky tests have causes: timing, shared data, left-over state, ord
 ${testerEye('<p>A good check before trusting a new test: run it many times in a row and in parallel, for example with a short shell loop around <code>pytest -n 4</code>. If it ever fails, find out why before merging.</p>')}
 
 ${interview({
-  say: `<p>“I treat flaky tests as bugs. The usual causes are timing, shared or left-over data, order dependence and the environment. My suite polls with a deadline instead of sleeping, gives every state-changing test its own customer, and makes remembered values unique. That isolation is also what lets us run with pytest-xdist on four workers, which took the run from 24 seconds to about 10. I only use reruns for a known external cause, and temporarily.”</p>`,
+  say: `<p>“I treat flaky tests as bugs. The usual causes are timing, shared or left-over data, order dependence and the environment. My suite polls with a deadline instead of sleeping, gives every state-changing test its own customer, and makes remembered values unique. That isolation is also what lets us run with pytest-xdist on four workers, which took the run from about 30 seconds to about 12. I only use reruns for a known external cause, and temporarily.”</p>`,
   qa: [
     ['How do you deal with a flaky test?', '<p>Reproduce it, by running it repeatedly, in parallel or in a different order. Find the cause: timing, data, order or environment. Fix the cause. Quarantine it only briefly, with a ticket, if it blocks others.</p>'],
     ['What do you need before running tests in parallel?', '<p>Independent tests: no shared mutable data, no order dependence, and set-up that is safe to run in several processes at once.</p>'],

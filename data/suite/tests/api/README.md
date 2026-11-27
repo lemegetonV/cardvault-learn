@@ -11,14 +11,17 @@ the services send each other through Kafka.
 ```
 tests/api/
   requirements.txt      the libraries to install
-  pytest.ini            pytest settings: where tests are, markers
+  pytest.ini            pytest settings: where tests are, markers, logging
   config.py             service addresses and shared settings
-  conftest.py           fixtures: alice's login, a fresh customer per test
+  envs/
+    stage.env             the addresses of another environment (TEST_ENV=stage)
+  conftest.py           fixtures: alice's login, a fresh customer per test, a session logged out after
   helpers.py            create a logged-in customer, wait for slow changes
   database.py           query_one(): read a row from a service's database (read-only user)
   events.py             EventWatcher: wait for an event on a Kafka topic; list_topics()
   api/                  one class per service, one method per API call
-    auth_api.py           login, who am I
+    client.py             the shared HTTP session; logs every request and response
+    auth_api.py           login, refresh, log out, who am I
     cards_api.py          list cards, report lost, reissue, close
     wallet_api.py         wallet status, add and remove cards, opt out
     transactions_api.py   list, detail, CSV export, disputes
@@ -27,6 +30,7 @@ tests/api/
     card_network_api.py   make and settle purchases (the card network simulator)
   data/
     demo_customers.py     what we expect about alice and other fixed values
+    contact_details.json  good and bad emails and phone numbers, one test case per line
     schemas.py            JSON Schemas: the shape a card and an error must have
     files/                a receipt picture and a fake one, for dispute uploads
   tests/                the tests, one file per feature
@@ -50,7 +54,7 @@ python3 -m venv .venv            # a private folder for this project's libraries
 source .venv/bin/activate        # use it (on Windows: .venv\Scripts\activate)
 pip install -r requirements.txt
 
-pytest                           # every test: 79 passed
+pytest                           # every test: 93 passed
 pytest -m smoke                  # the 5 quick smoke tests
 pytest -m "not database and not events"   # only the API tests (no Postgres or Kafka access needed)
 pytest tests/test_cards.py       # one file
@@ -58,7 +62,13 @@ pytest -k lost                   # tests whose name contains "lost"
 pytest --lf                      # only the tests that failed last time
 pytest -n 4                      # spread the tests over 4 processes (pytest-xdist)
 pytest --html=reports/report.html --self-contained-html   # with an HTML report
+pytest --alluredir=allure-results                        # results for an Allure report
+npx allure@3.33.0 generate allure-results --output allure-report   # build it (needs Node.js)
 ```
+
+The Allure report shows every API call of a test as a step, with the request and
+response bodies attached. The `api-tests` workflow builds both reports on every run
+and keeps them as a download for 14 days.
 
 ## Rules the tests follow
 
@@ -73,14 +83,28 @@ pytest --html=reports/report.html --self-contained-html   # with an HTML report
   confirming a card, a purchase reaching the transactions list) are waited for
   with the helpers in `helpers.py`, which give up after 10 seconds.
 
+- **Every call is logged.** All API classes send through one `requests.Session` in
+  `api/client.py`, which logs each request and response (tokens and passwords hidden).
+  pytest shows that log under a failing test and in the HTML report.
+
 - **Database and Kafka checks only where the API cannot show the fact.** They use
   read-only database users, and start watching a topic before the action, so an
   old event can never make a test pass.
 
 ## Another environment
 
-Every address in `config.py` can be changed with an environment variable, for
-example `export CARD_URL=https://...` before running `pytest`. The database and
-Kafka checks also need `DB_HOST`, `DB_PORT`, `DB_READONLY_PASSWORD` and
-`KAFKA_BOOTSTRAP`; where Postgres and Kafka are not reachable, skip those tests
-with `-m "not database and not events"`.
+Every setting in `config.py` can be changed with an environment variable, for
+example `export CARD_URL=https://...` before running `pytest`. To switch a whole
+environment at once, name it in `TEST_ENV`, and `config.py` reads its file in `envs/`:
+
+```bash
+export TEST_KEY=...  DB_READONLY_PASSWORD=...   # secrets never go in the file
+TEST_ENV=stage pytest
+```
+
+A variable you set yourself still wins over the file. Where Postgres and Kafka are
+not reachable, skip those tests with `-m "not database and not events"` (86 tests).
+
+## Load test
+
+A short Locust load test lives next door in `../perf/`; see its README.

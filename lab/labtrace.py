@@ -239,14 +239,22 @@ def pytest_runtest_teardown(item):
 
 
 def pytest_runtest_logreport(report):
-    ends_here = report.when == "call" or (report.when != "call" and not report.passed)
-    if not ends_here:
+    # One outcome per test, sent after its tear-down, so calls a fixture makes while
+    # cleaning up still belong to the test. The first phase that did not pass decides.
+    reports = state.setdefault("reports", [])
+    reports.append(report)
+    if report.when != "teardown":
         return
+    state["reports"] = []
+    deciding = next((r for r in reports if not r.passed), None)
+    if deciding is None:
+        deciding = next((r for r in reports if r.when == "call"), report)
     message = None
-    if report.failed:
-        crash = getattr(report.longrepr, "reprcrash", None)
-        message = crash.message if crash else str(report.longrepr)[-2000:]
-    elif report.skipped and isinstance(report.longrepr, tuple):
-        message = report.longrepr[2]
-    emit("outcome", nodeid=report.nodeid, when=report.when, outcome=report.outcome,
-         message=shorten(message) if message else None, seconds=round(report.duration, 2))
+    if deciding.failed:
+        crash = getattr(deciding.longrepr, "reprcrash", None)
+        message = crash.message if crash else str(deciding.longrepr)[-2000:]
+    elif deciding.skipped and isinstance(deciding.longrepr, tuple):
+        message = deciding.longrepr[2]
+    emit("outcome", nodeid=report.nodeid, when=deciding.when, outcome=deciding.outcome,
+         message=shorten(message) if message else None,
+         seconds=round(sum(r.duration for r in reports), 2))

@@ -1,7 +1,7 @@
 import { code, interview, keyIdea, testerEye, table } from '../../src/components.mjs';
 
 export default {
-  minutes: 10,
+  minutes: 12,
   lede: 'A test is only as good as its expected values, and only as reliable as its data. This lesson covers where the suite’s expected values come from, why tests that change things get a brand-new customer, and a real bug in the suite caused by data that was not unique.',
   youWill: 'You will be able to explain the suite’s test data rules: known data for reading, fresh data for changing, and unique values every run.',
   body: `
@@ -70,6 +70,45 @@ ${code({ title: 'tests/api/tests/test_login.py', src: `
 ` })}
 <p><code>uuid.uuid4()</code> makes a random ID, <code>.hex</code> writes it as letters and digits, and <code>[:8]</code> keeps the first eight characters. The same idea appears in the idempotency tests, which make a new random key each time.</p>
 
+<h2>Cases in a data file</h2>
+<p>Some tests are the same steps with different values: send these contact details, expect this status. When there are many such cases, the values can live in a file instead of the code. This is <strong>data-driven testing</strong>. Anyone can add a case by adding a line, and the file can be reviewed, or even produced, by someone who does not read Python.</p>
+${code({ title: 'tests/api/data/contact_details.json', lang: 'json', src: `
+[
+  {"case": "email with no @", "changes": {"email": "jane.example.com"}, "expected_status": 422},
+  {"case": "email with a space", "changes": {"email": "jane doe@example.com"}, "expected_status": 422},
+...
+  {"case": "phone with 15 digits, the most allowed", "changes": {"phone": "+123456789012345"}, "expected_status": 200},
+...
+]
+` })}
+<p>Each line is one case: a readable name, the change to send, and the status the rule says to expect. The cases come from the techniques in <a href="/learn/py-test-design/">Test design techniques</a>. One test reads the file and runs once per case:</p>
+${code({ title: 'tests/api/tests/test_profile.py', src: `
+# The cases live in a JSON file, so adding one is a new line of data, not a new test.
+# Path(__file__).parent is the folder this file is in; ".." goes up one, to tests/api.
+CONTACT_CASES_FILE = Path(__file__).parent / ".." / "data" / "contact_details.json"
+CONTACT_CASES = json.loads(CONTACT_CASES_FILE.read_text())
+
+
+# ids= gives each case a readable name in the results, such as [phone without the +].
+@pytest.mark.parametrize("case", CONTACT_CASES, ids=[case["case"] for case in CONTACT_CASES])
+def test_contact_details_are_checked(case):
+    someone = create_logged_in_customer(cards=[])
+
+    response = ProfileApi(someone["token"]).update_profile(case["changes"])
+
+    assert response.status_code == case["expected_status"], response.text
+    if case["expected_status"] == 422:
+        assert response.json()["error_code"] == "VALIDATION_ERROR"
+` })}
+<ul>
+<li><code>Path</code> comes from <code>pathlib</code>, Python’s module for file paths. <code>/</code> joins parts of a path, so the line builds the path to the JSON file whatever folder pytest was started from.</li>
+<li><code>read_text()</code> reads the whole file as text, and <code>json.loads</code> turns that text into Python: here, a list of dictionaries.</li>
+<li><code>@pytest.mark.parametrize</code> runs the test once per item in the list. <a href="/learn/py-parametrize/">Many cases with parametrize</a> explains it fully; for now, read it as “for each case in the file”.</li>
+<li><code>[case["case"] for case in CONTACT_CASES]</code> is a <strong>list comprehension</strong>: a short way to build a list. It makes the list of names, so a failure reads <code>test_contact_details_are_checked[phone with spaces]</code>.</li>
+<li>Each case gets a new customer, because accepted changes really change the profile.</li>
+</ul>
+<p>JSON suits this suite because Python reads it with no extra library. Teams also use CSV files, which open in a spreadsheet, or YAML. The pattern is the same: the file holds the values, the test holds the steps.</p>
+
 <h2>Files are data too</h2>
 <p>Test files live beside the other data: <code>data/files/receipt.png</code> is a real tiny picture, and <code>not_a_picture.png</code> is plain text with a picture’s name. The JSON Schemas in <code>data/schemas.py</code> come later, in <a href="/learn/py-response-shape/">Checking the shape of a response</a>.</p>
 
@@ -82,7 +121,8 @@ ${interview({
   qa: [
     ['Where do your expected values come from?', '<p>From requirements and from data I control: the known demo data, or the data the test itself created. Never from copying the current response, because that only proves the app returns what it returned.</p>'],
     ['How do you keep tests from affecting each other?', '<p>Shared data is read-only. Anything that changes state gets fresh data per test, and remembered values are made unique.</p>'],
-    ['How do you clean up test data?', '<p>Either delete what you created in a fixture’s tear-down, or use throwaway data that nothing else depends on and let the environment reset clear it. This suite uses throwaway customers.</p>'],
+    ['How do you clean up test data?', '<p>Either delete what you created in a fixture’s tear-down, or use throwaway data that nothing else depends on and let the environment reset clear it. This suite uses throwaway customers, and a <code>yield</code> fixture that logs the shared demo customer out after use.</p>'],
+    ['Have you done data-driven testing?', '<p>Yes: the contact-details test reads its cases from a JSON file, each with a name, the input and the expected status, and runs once per case with parametrize. Adding a case is one line of data.</p>'],
   ],
 })}
 `,

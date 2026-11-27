@@ -28,6 +28,23 @@ def alice_token():
 
 
 @pytest.fixture
+def alice_session():
+    """A new login for alice that is logged out again after the test.
+
+    Everything before "yield" is set-up. The test runs at the "yield" and gets the
+    login response. Everything after it is clean-up, and pytest runs it even when
+    the test fails, so no session is left behind.
+    """
+    login = AuthApi().login("alice", config.DEMO_PASSWORD)
+    assert login.status_code == 200, login.text
+    session = login.json()
+
+    yield session
+
+    AuthApi().logout(session["refresh_token"])
+
+
+@pytest.fixture
 def customer():
     """A brand-new customer for one test, logged in.
 

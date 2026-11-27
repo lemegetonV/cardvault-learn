@@ -1,6 +1,6 @@
 // The Live lab page: unlock, send any customer request, run a test, reset the app.
 import { page } from '../../src/layout.mjs';
-import { esc, labRequest, nodeFile } from '../../src/components.mjs';
+import { esc, labRequest, nodeFile, perfButton } from '../../src/components.mjs';
 import { lessonUrl } from '../site.mjs';
 import { suiteFiles, testsIn, isTestFile } from './suite.mjs';
 
@@ -64,6 +64,12 @@ export function labPage() {
 <h2>Run a test</h2>
 <p>Runs one test, or a whole file, from <a href="/suite/">the API suite</a> against the live app. A panel opens beside the page and shows each step as the test takes it: every API request with its response, and any database query or Kafka event, in order. One run happens at a time. Tests that change data make their own new customer, so a run leaves alice as she was.</p>
 <div class="lab-row run-host"><select id="lab-test" aria-label="Test to run">${groups}</select><button type="button" class="run-btn" data-run-select="#lab-test" disabled><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 3v10l8-5z" fill="currentColor"/></svg>Run</button></div>
+</section>
+
+<section class="lab-card">
+<h2>Run the load test</h2>
+<p>Runs the suite’s Locust load test, <code>tests/perf/locustfile.py</code>, against the live app: 5 simulated customers log in and browse for 20 seconds. The panel shows the totals as they grow, then a table of response times per request and whether the run met its budgets. The size is fixed and small because the server is shared; <a href="${lessonUrl('py-perf-running')}">Running Locust</a> shows how to run bigger tests on your own computer.</p>
+<div class="lab-row run-host">${perfButton('Run the load test')}</div>
 </section>
 
 <section class="lab-card">
