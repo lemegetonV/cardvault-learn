@@ -3,7 +3,7 @@
 export const site = {
   name: 'CardVault Learn',
   description: 'Interview prep for QA and SDET roles: understand the CardVault app, then learn to test it with pytest and Playwright.',
-  cardvaultCommit: '991fbdc',
+  cardvaultCommit: '7e126d8',
   cardvaultRepo: 'https://github.com/lemegetonV/cardvault',
 };
 
