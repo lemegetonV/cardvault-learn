@@ -11,6 +11,9 @@ Standard library only, so it needs nothing installed.
   POST /vm/run            run one test (or one file) and stream pytest's output
   POST /vm/trace          the same run, streamed as JSON lines: each API call, database
                           query and event the tests make (from labtrace.py), plus the output
+  POST /vm/perf           run the suite's Locust load test, small and fixed (5 users for
+                          20 seconds), streamed as JSON lines: the running totals every
+                          few seconds, then the final results per kind of request
 
 Settings (environment variables):
   CARDVAULT_DIR   the CardVault checkout that runs the stack (for scripts/reset.sh and .env)
@@ -22,7 +25,9 @@ Settings (environment variables):
 import json
 import os
 import queue
+import re
 import subprocess
+import tempfile
 import threading
 import time
 import urllib.error
@@ -49,6 +54,11 @@ REQUEST_HEADERS = {"authorization", "content-type", "accept", "idempotency-key",
 MAX_BODY = 64 * 1024
 MAX_RESPONSE = 256 * 1024
 RUN_TIMEOUT = 180
+
+# The load test is fixed and small, because the server is shared. The page cannot change it.
+LOCUSTFILE = SUITE_DIR.parent / "perf" / "locustfile.py"
+PERF_USERS = 5
+PERF_SECONDS = 20
 
 # One reset or test run at a time, so they never trip over each other.
 busy = threading.Lock()
@@ -119,6 +129,68 @@ def runnable(node_id):
     return node_id in ids or node_id in files or node_id in functions
 
 
+# Locust prints a table every few seconds. Its last line holds the totals so far:
+#          Aggregated     58     0(0.00%) |     14       5     123      8 |    2.92        0.00
+AGGREGATED = re.compile(
+    r"^\s+Aggregated\s+(?P<requests>\d+)\s+(?P<failures>\d+)\([^)]*\)\s+\|"
+    r"\s+\d+\s+\d+\s+\d+\s+(?P<median>\d+)\s+\|\s+(?P<rps>[\d.]+)"
+)
+TABLE_START = ("Type ", "--------", "GET ", "POST ", "PATCH ", "PUT ", "DELETE ",
+               "Response time percentiles", "Error report", "# occurrences")
+
+
+def is_table_line(line):
+    return line.startswith(TABLE_START) or line.startswith(" " * 9)
+
+
+def percentile(response_times, share):
+    """response_times maps a time in ms to how many requests took it (Locust's own rounding)."""
+    total = sum(response_times.values())
+    if not total:
+        return None
+    seen = 0
+    for ms in sorted(response_times):
+        seen += response_times[ms]
+        if seen >= total * share:
+            return round(ms)
+    return round(max(response_times))
+
+
+def final_stats(path):
+    """Locust's final results, one row per kind of request plus a row for all of them."""
+    if not path.exists():
+        return []
+    entries = json.loads(path.read_text())
+    rows = []
+    together = {"requests": 0, "failures": 0, "max": 0, "times": {}}
+    for entry in entries:
+        times = {float(ms): count for ms, count in entry["response_times"].items()}
+        rows.append({
+            "method": entry["method"],
+            "name": entry["name"],
+            "requests": entry["num_requests"],
+            "failures": entry["num_failures"],
+            "median": percentile(times, 0.5),
+            "p95": percentile(times, 0.95),
+            "max": round(entry["max_response_time"] or 0),
+        })
+        together["requests"] += entry["num_requests"]
+        together["failures"] += entry["num_failures"]
+        together["max"] = max(together["max"], rows[-1]["max"])
+        for ms, count in times.items():
+            together["times"][ms] = together["times"].get(ms, 0) + count
+    rows.append({
+        "method": "",
+        "name": "All requests",
+        "requests": together["requests"],
+        "failures": together["failures"],
+        "median": percentile(together["times"], 0.5),
+        "p95": percentile(together["times"], 0.95),
+        "max": together["max"],
+    })
+    return rows
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "cardvault-lab"
 
@@ -164,6 +236,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.run_test(body)
         if self.path == "/vm/trace":
             return self.run_trace(body)
+        if self.path == "/vm/perf":
+            return self.run_perf()
         self.send_json(404, {"error": "not found"})
 
     def health(self):
@@ -329,6 +403,68 @@ class Handler(BaseHTTPRequestHandler):
             for fd in (read_end, write_end):
                 if fd is not None:
                     os.close(fd)
+            self.close_connection = True
+            busy.release()
+
+    def run_perf(self):
+        """Run the Locust load test and stream progress and results as JSON lines."""
+        if not LOCUSTFILE.exists():
+            return self.send_json(404, {"error": "the load test is not installed on this server"})
+        if not busy.acquire(blocking=False):
+            return self.send_json(409, {"error": "another test run or a reset is in progress, try again shortly"})
+        process = None
+        try:
+            self.send_response(200)
+            self.send_header("Content-Type", "application/x-ndjson; charset=utf-8")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("X-Accel-Buffering", "no")
+            self.send_header("Connection", "close")
+            self.end_headers()
+            with tempfile.TemporaryDirectory() as folder:
+                results = Path(folder) / "stats.json"
+                shown = (f"locust --headless --users {PERF_USERS} --spawn-rate {PERF_USERS} "
+                         f"--run-time {PERF_SECONDS}s")
+                command = [SUITE_PYTHON, "-m", "locust", "-f", str(LOCUSTFILE), "--headless",
+                           "--users", str(PERF_USERS), "--spawn-rate", str(PERF_USERS),
+                           "--run-time", f"{PERF_SECONDS}s", "--json-file", str(results)[:-5]]
+                self.send_line(json.dumps({"type": "start", "command": shown,
+                                           "users": PERF_USERS, "seconds": PERF_SECONDS}))
+                env = suite_env()
+                env["PYTHONUNBUFFERED"] = "1"  # print each stats table as soon as it is made
+                started = time.monotonic()
+                process = subprocess.Popen(command, cwd=LOCUSTFILE.parent, env=env,
+                                           stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                timer = threading.Timer(PERF_SECONDS + 60, process.kill)
+                timer.start()
+                last_count = None
+                try:
+                    for raw in process.stdout:
+                        line = raw.decode("utf-8", "replace").rstrip("\n")
+                        total = AGGREGATED.match(line)
+                        if total:
+                            count = int(total["requests"])
+                            if count != last_count:
+                                last_count = count
+                                self.send_line(json.dumps({
+                                    "type": "tick",
+                                    "second": round(time.monotonic() - started),
+                                    "requests": count,
+                                    "failures": int(total["failures"]),
+                                    "median": int(total["median"]),
+                                    "rps": float(total["rps"]),
+                                }))
+                        elif line.strip() and not is_table_line(line):
+                            self.send_line(json.dumps({"type": "log", "line": line}))
+                    process.wait()
+                finally:
+                    timer.cancel()
+                rows = final_stats(results)
+                self.send_line(json.dumps({"type": "stats", "rows": rows}))
+                self.send_line(json.dumps({"type": "done", "exit_code": process.returncode}))
+        except (BrokenPipeError, ConnectionResetError):
+            if process and process.poll() is None:
+                process.kill()  # the page was closed mid-run
+        finally:
             self.close_connection = True
             busy.release()
 

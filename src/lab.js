@@ -228,6 +228,7 @@
   const PHASES = { setup: 'Set-up: the fixtures prepare data', call: 'The test', teardown: 'Clean-up' };
   let running = false;
   let current = null; // the node id shown in the panel
+  let again = null; // what "Run again" runs
   let panel = null;
   let runButtons = [];
 
@@ -252,19 +253,20 @@
 <div class="tp-body" aria-live="polite"></div>`;
     document.body.append(node);
     node.querySelector('.tp-close').addEventListener('click', closePanel);
-    node.querySelector('.tp-again').addEventListener('click', () => current && runTest(current));
+    node.querySelector('.tp-again').addEventListener('click', () => again && again());
     const resetBtn = node.querySelector('.tp-reset');
     resetBtn.addEventListener('click', () => doReset(resetBtn, node.querySelector('.tp-reset-msg')));
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !node.hidden) closePanel(); });
     return node;
   }
 
-  function openPanel(nodeId) {
+  function openPanel(title, file, eyebrow = 'Test run on the live app') {
     panel = panel || buildPanel();
     panel.hidden = false;
     document.documentElement.classList.add('tp-open');
-    panel.querySelector('.tp-title').textContent = testName(nodeId);
-    panel.querySelector('.tp-file').textContent = nodeId.split('::')[0];
+    panel.querySelector('.tp-eyebrow').firstChild.textContent = `${eyebrow} `;
+    panel.querySelector('.tp-title').textContent = title;
+    panel.querySelector('.tp-file').textContent = file;
     panel.querySelector('.tp-close').focus({ preventScroll: true });
   }
 
@@ -415,9 +417,10 @@
   }
 
   async function runTest(nodeId) {
+    if (running) { openPanel(panel.querySelector('.tp-title').textContent, panel.querySelector('.tp-file').textContent); return; }
     current = nodeId;
-    openPanel(nodeId);
-    if (running) return;
+    again = () => runTest(nodeId);
+    openPanel(testName(nodeId), nodeId.split('::')[0]);
     const body = panel.querySelector('.tp-body');
     body.textContent = '';
     running = true;
@@ -457,19 +460,114 @@
     }
   }
 
+  // ------------------------------------------------------------ the load test (Locust)
+
+  const PERF_FILE = 'tests/perf/locustfile.py';
+
+  function perfView(body, seconds) {
+    body.append(el('p', { class: 'tp-intro', text: `Locust starts simulated customers who log in and browse, and measures every request. This run is kept small because the server is shared, so it shows how a load test works, not how much load CardVault can take.` }));
+    const bar = el('div', { class: 'pf-bar' }, el('span'));
+    const nums = el('dl', { class: 'pf-nums' });
+    const live = el('section', { class: 'pf-live' }, el('p', { class: 'tp-label', text: 'While it runs' }), bar, nums);
+    const results = el('section', { class: 'pf-results' });
+    const logPre = el('pre');
+    const log = el('details', { class: 'tp-log' }, el('summary', { text: 'Locust output' }), logPre);
+    body.append(live, results, log);
+    let verdict = null;
+
+    function showNums(pairs) {
+      nums.replaceChildren(...pairs.map(([k, v]) => el('div', { class: 'pf-num' }, el('dt', { text: k }), el('dd', { text: v }))));
+    }
+    showNums([['seconds', '0'], ['requests', '0'], ['failures', '0'], ['median', '–'], ['requests/s', '–']]);
+
+    return {
+      handle(d) {
+        if (d.type === 'log') {
+          logPre.append(colourLine(d.line), '\n');
+          if (/^(PASSED|FAILED):/.test(d.line)) verdict = d.line;
+        } else if (d.type === 'tick') {
+          bar.firstChild.style.width = `${Math.min(100, (d.second / seconds) * 100)}%`;
+          showNums([['seconds', `${d.second} of ${seconds}`], ['requests', String(d.requests)], ['failures', String(d.failures)], ['median', d.requests ? `${d.median} ms` : '–'], ['requests/s', String(d.rps)]]);
+        } else if (d.type === 'stats') {
+          bar.firstChild.style.width = '100%';
+          const head = el('tr', {}, ...['Request', 'Count', 'Failed', 'Median', '95%', 'Slowest'].map((t) => el('th', { text: t })));
+          const rows = d.rows.map((r) => el('tr', { class: r.method ? '' : 'pf-total' },
+            el('td', { text: r.method ? `${r.method} ${r.name}` : r.name }),
+            el('td', { text: String(r.requests) }),
+            el('td', { text: String(r.failures) }),
+            el('td', { text: r.median === null ? '–' : `${r.median} ms` }),
+            el('td', { text: r.p95 === null ? '–' : `${r.p95} ms` }),
+            el('td', { text: `${r.max} ms` })));
+          results.append(el('p', { class: 'tp-label', text: 'Results' }),
+            el('div', { class: 'pf-table' }, el('table', {}, el('thead', {}, head), el('tbody', {}, ...rows))));
+          if (verdict) {
+            const ok = verdict.startsWith('PASSED');
+            results.append(el('div', { class: `tp-why ${ok ? 'ok' : 'bad'}` },
+              el('p', { class: 'tp-label', text: ok ? 'Within the budgets' : 'Over a budget' }),
+              el('pre', { text: verdict })));
+          }
+          results.append(el('p', { class: 'tp-note', text: 'The budgets in the locustfile: 95% of requests faster than 500 ms, and at most 1% failed. Logging in is the slowest request because checking a password is slow by design.' }));
+        }
+      },
+    };
+  }
+
+  async function runPerf() {
+    if (running) { openPanel(panel.querySelector('.tp-title').textContent, panel.querySelector('.tp-file').textContent); return; }
+    current = null;
+    again = runPerf;
+    openPanel('5 customers for 20 seconds', PERF_FILE, 'Load test on the live app');
+    const body = panel.querySelector('.tp-body');
+    body.textContent = '';
+    running = true;
+    runButtons.forEach((b) => { b.disabled = true; });
+    panel.querySelector('.tp-again').disabled = true;
+    setState('run', 'running');
+    let exitCode = null;
+    try {
+      const res = await labFetch('perf', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        body.append(el('p', { class: 'tp-why bad', text: data.error || `The lab answered ${res.status}.` }));
+        setState('bad', 'not run');
+        return;
+      }
+      let view = null;
+      await readLines(res, (line) => {
+        let d;
+        try { d = JSON.parse(line); } catch (e) { return; }
+        if (d.type === 'start') view = perfView(body, d.seconds);
+        else if (d.type === 'done') exitCode = d.exit_code;
+        else if (view) view.handle(d);
+      });
+      setState(exitCode === 0 ? 'ok' : 'bad', exitCode === 0 ? 'passed' : exitCode === null ? 'stopped' : 'failed');
+    } catch (e) {
+      body.append(el('p', { class: 'tp-why bad', text: 'The connection to the live lab was lost.' }));
+      setState('bad', 'stopped');
+    } finally {
+      running = false;
+      runButtons.forEach((b) => { b.disabled = false; });
+      panel.querySelector('.tp-again').disabled = false;
+    }
+  }
+
   // ------------------------------------------------------------ start
 
-  const hasLab = document.querySelector('[data-tryit], [data-lab-reset], [data-run], [data-lab-status], [data-run-select]');
+  const hasLab = document.querySelector('[data-tryit], [data-lab-reset], [data-run], [data-lab-status], [data-run-select], [data-perf]');
   if (!hasLab) return;
 
   document.querySelectorAll('.tryit-req').forEach(setupRequest);
   document.querySelectorAll('[data-lab-reset]').forEach(setupReset);
   document.querySelectorAll('[data-lab-status]').forEach(loadStatus);
 
-  runButtons = [...document.querySelectorAll('[data-run], [data-run-select]')];
+  runButtons = [...document.querySelectorAll('[data-run], [data-run-select], [data-perf]')];
   document.querySelectorAll('[data-run]').forEach((btn) => {
     btn.disabled = false;
     btn.addEventListener('click', () => runTest(btn.dataset.run));
+  });
+  document.querySelectorAll('[data-perf]').forEach((btn) => {
+    btn.disabled = false;
+    btn.addEventListener('click', runPerf);
   });
   document.querySelectorAll('[data-run-select]').forEach((btn) => {
     const select = document.querySelector(btn.dataset.runSelect);
