@@ -298,6 +298,8 @@ figcaption strong { color: var(--ink-2); }
 .d .dot { fill: var(--accent); }
 .d .dot-event { fill: var(--event); }
 .d .dot-stop { fill: var(--stop); }
+.d .dot-miss { fill: var(--paper); stroke: var(--muted); stroke-width: 1.5; }
+.d .dot-hit { fill: var(--accent); }
 .d .ln-stop { fill: none; stroke: var(--stop); stroke-width: 1.75; }
 
 /* ---------- Step-through sequence diagrams ---------- */

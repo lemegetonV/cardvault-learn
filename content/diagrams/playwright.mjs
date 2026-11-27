@@ -61,3 +61,51 @@ export function locatorLadder() {
   });
   return svg(W, H, 'Try locators from the top. The top three find things the way a user does. A test id is a stable fallback. CSS and XPath depend on the page structure and break when it changes.', b);
 }
+
+/** A web-first assertion checks again and again until the page matches or time runs out. */
+export function retryTimeline() {
+  const W = 820, H = 230;
+  const x0 = 60, x1 = 780; // 0 s to 5 s
+  const at = (s) => x0 + (x1 - x0) * (s / 5);
+  let b = '';
+  b += `<path class="ln-faint" d="M${x0} 120 H${x1}"/>`;
+  [0, 1, 2, 3, 4, 5].forEach((s) => {
+    b += `<path class="ln-faint" d="M${at(s)} 114 V126"/>`;
+    b += text(at(s), 146, `${s} s`, 't-mono');
+  });
+  b += text(x1, 170, 'timeout: it would fail here', 't-sm t-stop', 'end');
+  // The page: loading, then the badge appears.
+  b += box(x0, 30, at(1.4) - x0, 40, 'Loading…', { kind: 'plain', cls: 't-sm' });
+  b += box(at(1.4), 30, x1 - at(1.4), 40, 'Badge shows ENROLLED', { kind: 'bank', cls: 't-sm' });
+  b += text(x0, 22, 'What the page shows', 't-sm t-muted', 'start');
+  // The checks.
+  [0, 0.3, 0.7, 1.2].forEach((s) => { b += `<circle class="dot-miss" cx="${at(s)}" cy="120" r="6"/>`; });
+  b += `<circle class="dot-hit" cx="${at(1.6)}" cy="120" r="7"/>`;
+  b += text(at(0.6), 104, 'not yet… not yet…', 't-sm t-muted');
+  b += text(at(1.6), 104, 'matches: pass', 't-sm t-accent');
+  b += text(x0, 204, 'Each dot is one check. The test moves on at the first match, not after a fixed time.', 't-sm t-muted', 'start');
+  return svg(W, H, 'The assertion checks the page several times. The first checks see the loading text and fail quietly. The check after the badge appears passes, and the test moves on. If nothing matched for 5 seconds, the assertion would fail.', b);
+}
+
+/** A fixed pause against waiting for the thing that matters. */
+export function sleepVsWait() {
+  const W = 820, H = 250;
+  const x0 = 170, x1 = 790;
+  const at = (s) => x0 + (x1 - x0) * (s / 4);
+  let b = '';
+  b += text(20, 30, 'Time', 't-sm t-muted', 'start');
+  [0, 1, 2, 3, 4].forEach((s) => { b += text(at(s), 30, `${s} s`, 't-mono'); });
+  const lane = (y, label, ready, stop, cls, note) => {
+    let l = text(20, y + 26, label, 't-md', 'start');
+    l += `<path class="ln-faint" d="M${x0} ${y + 20} H${x1}"/>`;
+    l += `<rect class="box-plain" x="${x0}" y="${y + 6}" width="${at(ready) - x0}" height="28" rx="6"/>`;
+    l += text(x0 + 10, y + 25, 'rows loading', 't-mono', 'start');
+    l += `<rect class="${cls}" x="${at(stop) - 3}" y="${y}" width="6" height="40" rx="3"/>`;
+    l += text(at(Math.max(ready, stop)) + 12, y + 26, note, `t-sm ${cls === 'box-stop' ? 't-stop' : 't-accent'}`, 'start');
+    return l;
+  };
+  b += lane(50, 'Sleep 2 s, quick day', 0.8, 2, 'box-bank', 'passes, 1.2 s wasted');
+  b += lane(110, 'Sleep 2 s, slow day', 2.6, 2, 'box-stop', 'checked at 2 s: fails');
+  b += lane(170, 'Wait for 20 rows', 2.6, 2.6, 'box-bank', 'goes on when they arrive');
+  return svg(W, H, 'A fixed two-second sleep wastes time on a quick day and checks too early on a slow day. Waiting for the rows goes on the moment they arrive, whatever the day.', b);
+}
