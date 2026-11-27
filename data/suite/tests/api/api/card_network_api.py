@@ -5,9 +5,8 @@ approve. In tests we ask the simulator to do the same, so we can make
 purchases whenever a test needs one.
 """
 
-import requests
-
 import config
+from api.client import http
 
 
 class CardNetworkApi:
@@ -22,7 +21,7 @@ class CardNetworkApi:
         decision: APPROVED or DECLINED.
         """
         body = {"token_ref": token_ref, "amount": amount, "merchant_name": merchant_name}
-        return requests.post(
+        return http.post(
             f"{self.base_url}/v1/test/purchases",
             json=body,
             headers=self.headers,
@@ -31,7 +30,7 @@ class CardNetworkApi:
 
     def settle(self, trace_id):
         """Tell the bank the purchase is final (the shop gets paid)."""
-        return requests.post(
+        return http.post(
             f"{self.base_url}/v1/test/purchases/{trace_id}/settle",
             headers=self.headers,
             timeout=config.TIMEOUT,

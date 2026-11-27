@@ -1,8 +1,7 @@
 """Calls to the Wallet service (enrollment-service), made as one logged-in customer."""
 
-import requests
-
 import config
+from api.client import http
 
 # The version of the wallet terms a customer accepts when adding a card.
 TERMS_VERSION = "2026-01"
@@ -15,12 +14,10 @@ class WalletApi:
 
     def get_wallet(self):
         """Every card of the customer, with whether it may join and its wallet status."""
-        return requests.get(
-            f"{self.base_url}/v1/wallet", headers=self.headers, timeout=config.TIMEOUT
-        )
+        return http.get(f"{self.base_url}/v1/wallet", headers=self.headers, timeout=config.TIMEOUT)
 
     def get_card(self, card_id):
-        return requests.get(
+        return http.get(
             f"{self.base_url}/v1/wallet/cards/{card_id}",
             headers=self.headers,
             timeout=config.TIMEOUT,
@@ -28,7 +25,7 @@ class WalletApi:
 
     def add_card(self, card_id):
         body = {"terms_version": TERMS_VERSION}
-        return requests.post(
+        return http.post(
             f"{self.base_url}/v1/wallet/cards/{card_id}",
             json=body,
             headers=self.headers,
@@ -36,13 +33,13 @@ class WalletApi:
         )
 
     def remove_card(self, card_id):
-        return requests.delete(
+        return http.delete(
             f"{self.base_url}/v1/wallet/cards/{card_id}",
             headers=self.headers,
             timeout=config.TIMEOUT,
         )
 
     def opt_out(self):
-        return requests.post(
+        return http.post(
             f"{self.base_url}/v1/wallet/opt-out", headers=self.headers, timeout=config.TIMEOUT
         )

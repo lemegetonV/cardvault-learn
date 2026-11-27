@@ -72,6 +72,26 @@ def test_refresh_gives_new_tokens_and_the_old_refresh_token_stops_working():
     assert reused.json()["error_code"] == "REFRESH_TOKEN_REUSED"
 
 
+def test_alice_can_refresh_her_session(alice_session):
+    # alice_session logs alice out again after this test, even if it fails.
+    response = AuthApi().refresh(alice_session["refresh_token"])
+
+    assert response.status_code == 200
+    assert AuthApi().me(response.json()["access_token"]).status_code == 200
+
+
+def test_after_logout_the_refresh_token_is_refused():
+    someone = create_logged_in_customer(cards=[])
+    login = AuthApi().login(someone["username"], someone["password"]).json()
+
+    logout = AuthApi().logout(login["refresh_token"])
+
+    assert logout.status_code == 204
+    refused = AuthApi().refresh(login["refresh_token"])
+    assert refused.status_code == 401
+    assert refused.json()["error_code"] == "REFRESH_TOKEN_INVALID"
+
+
 def test_me_tells_who_is_logged_in(alice_token):
     response = AuthApi().me(alice_token)
 

@@ -1,8 +1,7 @@
 """Calls to the Cards service (card-service), made as one logged-in customer."""
 
-import requests
-
 import config
+from api.client import http
 
 
 class CardsApi:
@@ -16,7 +15,7 @@ class CardsApi:
         requests leaves out any query parameter whose value is None.
         """
         params = {"limit": limit, "cursor": cursor}
-        return requests.get(
+        return http.get(
             f"{self.base_url}/v1/cards",
             params=params,
             headers=self.headers,
@@ -24,7 +23,7 @@ class CardsApi:
         )
 
     def get_card(self, card_id):
-        return requests.get(
+        return http.get(
             f"{self.base_url}/v1/cards/{card_id}", headers=self.headers, timeout=config.TIMEOUT
         )
 
@@ -34,21 +33,21 @@ class CardsApi:
         headers = dict(self.headers)  # a copy, so the shared headers stay unchanged
         if idempotency_key:
             headers["Idempotency-Key"] = idempotency_key
-        return requests.post(
+        return http.post(
             f"{self.base_url}/v1/cards/{card_id}/report-lost",
             headers=headers,
             timeout=config.TIMEOUT,
         )
 
     def reissue(self, card_id):
-        return requests.post(
+        return http.post(
             f"{self.base_url}/v1/cards/{card_id}/reissue",
             headers=self.headers,
             timeout=config.TIMEOUT,
         )
 
     def close(self, card_id):
-        return requests.post(
+        return http.post(
             f"{self.base_url}/v1/cards/{card_id}/close",
             headers=self.headers,
             timeout=config.TIMEOUT,

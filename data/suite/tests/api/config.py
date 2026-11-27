@@ -2,13 +2,29 @@
 
 Each value is read from an environment variable if one is set, otherwise the
 default after the comma is used. The defaults point at CardVault running on
-your own computer, so the tests work with no extra set-up. To run against
-another environment, set the variables first, for example:
+your own computer, so the tests work with no extra set-up.
 
-    export CARD_URL=https://cards.example.test
+To run against another environment, name it in TEST_ENV:
+
+    TEST_ENV=stage pytest
+
+That reads the settings in envs/stage.env first. A variable you set yourself
+still wins over the file, and secrets such as TEST_KEY never go in the file.
 """
 
 import os
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# python-dotenv copies each NAME=value line of the file into the environment
+# variables. override=False keeps any variable that is already set.
+TEST_ENV = os.getenv("TEST_ENV", "local")
+if TEST_ENV != "local":
+    env_file = Path(__file__).parent / "envs" / f"{TEST_ENV}.env"
+    if not env_file.exists():
+        raise SystemExit(f"TEST_ENV={TEST_ENV}, but there is no file {env_file}")
+    load_dotenv(env_file, override=False)
 
 # One address per backend service. Each service runs on its own port.
 AUTH_URL = os.getenv("AUTH_URL", "http://localhost:8001")
@@ -38,3 +54,6 @@ KAFKA_BOOTSTRAP = os.getenv("KAFKA_BOOTSTRAP", "127.0.0.1:19092")
 
 # How many seconds to wait for a response before giving up.
 TIMEOUT = 10
+
+# The slowest a simple read may be before a test calls it too slow.
+MAX_RESPONSE_SECONDS = float(os.getenv("MAX_RESPONSE_SECONDS", "1"))
