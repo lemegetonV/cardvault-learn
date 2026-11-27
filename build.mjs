@@ -4,11 +4,12 @@ import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { page, rail } from './src/layout.mjs';
-import { esc, excerptProblems } from './src/components.mjs';
+import { esc, excerptProblems, buildContext, interviewLog } from './src/components.mjs';
 import { site, allLessons, lessonUrl } from './content/site.mjs';
 import { homePage } from './content/pages/home.mjs';
 import { labPage } from './content/pages/lab.mjs';
 import { suitePage } from './content/pages/suite.mjs';
+import { drillPage } from './content/pages/drill.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
 const dist = path.join(root, 'dist');
@@ -34,7 +35,9 @@ const ready = lessons.filter((l) => l.ready && (!process.env.DRAFT || existsSync
 for (const [i, l] of ready.entries()) {
   const file = path.join(root, 'content/lessons', `${l.id}.mjs`);
   if (!existsSync(file)) { problems.push(`missing lesson file for ${l.id}`); continue; }
+  buildContext.lesson = l;
   const mod = (await import(pathToFileURL(file).href)).default;
+  buildContext.lesson = null;
   const prev = ready[i - 1]?.track === l.track ? ready[i - 1] : null;
   const next = ready[i + 1]?.track === l.track ? ready[i + 1] : null;
   const pager = `<nav class="pager" aria-label="Lessons">`
@@ -59,6 +62,7 @@ await out('', homePage());
 await out('learn', homePage());
 await out('lab', labPage());
 await out('suite', suitePage());
+await out('drill', drillPage(interviewLog));
 
 problems.push(...excerptProblems);
 

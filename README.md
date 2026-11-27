@@ -5,7 +5,7 @@ Interview prep built around [CardVault](https://github.com/lemegetonV/cardvault)
 Three tracks of short lessons:
 
 1. **Know the app**: the product, its screens, its services and how to explain the architecture.
-2. **API testing with Python and pytest**: Python from zero, then a small, readable framework, then the topics interviewers ask about (schemas, auth, security, pagination and idempotency, flaky tests, database checks, Kafka events, mocks and contracts).
+2. **API testing with Python and pytest**: Python from zero, then a small, readable framework, then the topics interviewers ask about (schemas, auth, security, pagination and idempotency, flaky tests, database checks, Kafka events, mocks and contracts), reporting with pytest-html and Allure, load testing with Locust, and live coding practice.
 3. **UI testing with TypeScript and Playwright**: TypeScript from zero, then a Playwright framework.
 
 ## Run it locally
@@ -29,6 +29,9 @@ The build stops with a list of problems if a lesson links to a lesson id that do
 | `content/diagrams/` | Hand-drawn SVG diagrams, as functions that return SVG strings |
 | `content/images/` | Screenshots of the real app |
 | `content/pages/home.mjs` | The home page |
+| `content/pages/drill.mjs` | The Interview drill page: every lesson's interview corner, collected at build time |
+| `content/pages/lab.mjs`, `src/lab.js`, `lab/server.py` | The Live lab: requests, test runs and the load test against the server copy of CardVault |
+| `data/suite/` | A copy of CardVault's `tests/api` and `tests/perf`, refreshed with `tools/export-suite.sh`; quoted excerpts are checked against it |
 | `src/components.mjs` | Building blocks: figures, screenshots, callouts, code, tables, the step-through diagram, the interview corner |
 | `src/styles.css`, `src/site.js` | The design and the little JavaScript the pages need |
 

@@ -83,12 +83,12 @@ export const realWorld = (html) => callout('real', 'In a real bank', html);
 
 // ---------------------------------------------------------------- Code, screenshots, interview corner
 
-// Excerpts titled with a suite path (tests/api/...) are checked against the copy in data/suite/.
+// Excerpts titled with a suite path (tests/api/... or tests/perf/...) are checked against the copy in data/suite/.
 export const excerptProblems = [];
 const SUITE = new URL('../data/suite/', import.meta.url);
 
 function checkExcerpt(title, src) {
-  const m = title.match(/^(tests\/api\/\S+)/);
+  const m = title.match(/^(tests\/(?:api|perf)\/\S+)/);
   if (!m) return;
   const file = new URL(m[1], SUITE);
   if (!existsSync(file)) { excerptProblems.push(`${m[1]} is not in data/suite`); return; }
@@ -142,7 +142,19 @@ export function shot({ src, alt, caption = '', phone = false }) {
  * "How to say it in an interview": a short spoken answer, then likely questions
  * whose model answers open on demand. qa: [[question, answerHtml], ...]
  */
+/** A block that stays closed until the reader opens it: a hint or a model solution. */
+export function reveal(label, html, kind = 'hint') {
+  return `<details class="reveal ${kind}"><summary>${md(label)}</summary><div class="reveal-body">${html}</div></details>`;
+}
+
+/** An exercise brief: what to build, before any hint. */
+export const task = (html, label = 'Your task') => callout('task', label, html);
+
+export const interviewLog = [];
+export const buildContext = { lesson: null };
+
 export function interview({ say, qa = [] }) {
+  if (buildContext.lesson) interviewLog.push({ lesson: buildContext.lesson, say, qa });
   const qs = qa.map(([q, a]) => `<details class="qa"><summary>${md(q)}</summary><div>${a}</div></details>`).join('');
   return `<section class="interview"><p class="label">How to say it in an interview</p>`
     + `<blockquote class="say">${say}</blockquote>`
@@ -283,5 +295,9 @@ export const nodeFile = (suitePath) => suitePath.replace(/^tests\/api\//, '');
 /** A button that runs one test (or a whole file) on the live app and shows its steps in the side panel. */
 export function runButton(nodeId, label = 'Run on the live app') {
   return `<button type="button" class="run-btn" data-run="${esc(nodeId)}" disabled title="pytest ${esc(nodeId)}">${runIcon}${esc(label)}</button>`;
+}
+/** A button that runs the suite's small Locust load test on the live app, results in the side panel. */
+export function perfButton(label = 'Run the load test on the live app') {
+  return `<button type="button" class="run-btn" data-perf disabled title="locust --headless --users 5 --run-time 20s">${runIcon}${esc(label)}</button>`;
 }
 const runIcon = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 3v10l8-5z" fill="currentColor"/></svg>';
