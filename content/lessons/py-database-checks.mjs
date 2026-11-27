@@ -82,7 +82,7 @@ def test_reporting_a_card_lost_is_saved_in_the_database(customer):
     row = query_one("card", "SELECT status FROM cards WHERE card_id = %s", (card_id,))
     assert row["status"] == "LOST"
 ` })}
-<p><code>pytestmark</code> puts the <code>database</code> label from <a href="/learn/py-markers/">Markers</a> on every test in the file, so <code>pytest -m "not database and not events"</code> runs the 72 API-only tests on a machine that can reach the services but not the database. This first test could be made through the API too. It is here because it shows the pattern at its simplest: act through the API, then read the row.</p>
+<p><code>pytestmark</code> puts the <code>database</code> label from <a href="/learn/py-markers/">Markers</a> on every test in the file, so <code>pytest -m "not database and not events"</code> runs the 86 API-only tests on a machine that can reach the services but not the database. This first test could be made through the API too. It is here because it shows the pattern at its simplest: act through the API, then read the row.</p>
 
 ${code({ title: 'tests/api/tests/test_database.py', src: `
 def test_passwords_are_stored_as_hashes_not_as_plain_text():

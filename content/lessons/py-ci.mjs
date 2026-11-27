@@ -1,9 +1,9 @@
 import { code, interview, keyIdea, testerEye, sequence } from '../../src/components.mjs';
 
 export default {
-  minutes: 11,
+  minutes: 12,
   lede: 'Tests that run only when someone remembers are not much protection. CI, continuous integration, runs the suite automatically on every change and blocks changes that break it. This lesson reads the suite’s GitHub Actions workflow step by step.',
-  youWill: 'You will be able to explain what the CI workflow does, when it runs, where its results go, and how scheduled runs, Docker and code-quality checks fit in.',
+  youWill: 'You will be able to explain what the CI workflow does, when it runs, how it publishes its reports, and how scheduled runs, Docker and code-quality checks fit in.',
   body: `
 <h2>What CI does</h2>
 <p><strong>CI</strong> is a service that watches the repository. When code changes, it starts a fresh machine, gets the code, runs the checks you describe, and reports green or red on the change. The suite uses <strong>GitHub Actions</strong>, which reads a workflow file from <code>.github/workflows/</code>.</p>
@@ -37,7 +37,7 @@ ${code({ lang: 'yaml', title: '.github/workflows/api-tests.yml', src: `
 
       - name: Run the tests
         working-directory: tests/api
-        run: pytest -n 4 --html=reports/report.html --self-contained-html --junitxml=reports/junit.xml
+        run: pytest -n 4 --html=reports/report.html --self-contained-html --junitxml=reports/junit.xml --alluredir=reports/allure-results
 ` })}
 
 ${sequence({
@@ -53,13 +53,51 @@ ${sequence({
     { from: 'r', to: 'r', label: 'checkout', kind: 'self', note: 'The runner downloads the repository at the change being tested.' },
     { from: 'r', to: 'a', label: 'start the app', note: 'CardVault starts on the runner itself, so every run tests a clean app with known data.' },
     { from: 'r', to: 'r', label: 'install, run pytest -n 4', kind: 'self', note: 'Python and the libraries are installed, then the suite runs in four processes.' },
-    { from: 'r', to: 'g', label: 'report + logs', kind: 'reply', note: 'The HTML report, the JUnit file and the app’s logs are uploaded, even when tests failed, and kept for 14 days.' },
+    { from: 'r', to: 'a', label: '30 s load test', note: 'If the tests passed, a short Locust load test checks the services stay fast under a little load.' },
+    { from: 'r', to: 'r', label: 'build Allure report', kind: 'self', note: 'Node.js is set up and the Allure tool turns the raw results into a report, pass or fail.' },
+    { from: 'r', to: 'g', label: 'reports + logs', kind: 'reply', note: 'All the reports and the app’s logs are uploaded, even when tests failed, and kept for 14 days.' },
     { from: 'g', to: 'g', label: 'green or red', kind: 'self', note: 'The pull request shows the result. A red check warns everyone not to merge.' },
   ],
   caption: 'The runner is thrown away afterwards, so every run starts from nothing.',
 })}
 
-<p>Two details matter. The upload steps carry <code>if: always()</code>, so the evidence is saved even when the tests fail, which is exactly when you need it. And the app runs on the runner, so the result does not depend on a shared environment that someone else may have changed.</p>
+<h2>Publishing the reports</h2>
+<p>After the tests, the workflow builds the reports and keeps them:</p>
+${code({ lang: 'yaml', title: '.github/workflows/api-tests.yml', src: `
+      - name: Run a short load test (Locust)
+        working-directory: tests/perf
+        run: |
+          pip install -r requirements.txt
+          locust --headless --users 10 --spawn-rate 5 --run-time 30s --only-summary --html ../api/reports/load-test.html
+
+      - name: Set up Node.js (for the Allure report tool)
+        if: always()
+        uses: actions/setup-node@v5
+        with:
+          node-version: "22"
+
+      - name: Build the Allure report
+        if: always()
+        working-directory: tests/api
+        run: npx --yes allure@3.33.0 generate reports/allure-results --output reports/allure-report
+...
+      - name: Upload the report
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: api-test-report
+          path: tests/api/reports/
+          retention-days: 14
+` })}
+<ul>
+<li>The load test, from <a href="/learn/py-perf-pass-fail/">Pass or fail: budgets and CI</a>, has no <code>if:</code>, so it runs only when the tests passed. There is no point timing a broken app.</li>
+<li><code>if: always()</code> on the other steps makes them run even after a failure, which is exactly when you need the reports.</li>
+<li><code>run: |</code> starts a block of several commands, one per line.</li>
+<li>An <strong>artifact</strong> is a file a CI run keeps after the machine is gone. This one is a ZIP of the <code>reports/</code> folder: the pytest-html report, <code>junit.xml</code>, the Allure report, the load test report and the app’s logs. You download it from the run’s page.</li>
+</ul>
+<p>Teams that want reports in a browser without downloading often publish the Allure report to a web page, such as GitHub Pages, which also makes it easy to keep Allure’s history between runs.</p>
+
+<p>One more detail matters: the app runs on the runner, so the result does not depend on a shared environment that someone else may have changed.</p>
 
 <h2>Scheduled runs</h2>
 <p>Teams often also run a suite on a timetable, for example every night against a shared test environment. GitHub Actions does that with a <code>schedule</code> trigger written in cron format:</p>
@@ -81,7 +119,7 @@ ${keyIdea('<p>CI runs the suite on every change, on a fresh machine with a fresh
 ${testerEye('<p>A test suite is only useful if people trust it. Keep CI fast and reliable, and treat a flaky test as a bug to fix, not a reason to rerun until green.</p>')}
 
 ${interview({
-  say: `<p>“The suite runs in GitHub Actions on every pull request and every push to main. The workflow checks out the code, starts the application on the runner, installs the test dependencies, runs pytest in parallel with an HTML and a JUnit report, and uploads the reports and the service logs as artifacts even on failure. A nightly scheduled run is a common addition, and the same commands work in Jenkins or GitLab.”</p>`,
+  say: `<p>“The suite runs in GitHub Actions on every pull request and every push to main. The workflow checks out the code, starts the application on the runner, installs the test dependencies, runs pytest in parallel, then a 30-second Locust load test, builds the pytest-html, JUnit and Allure reports, and uploads them with the service logs as one artifact, even on failure. A nightly scheduled run is a common addition, and the same commands work in Jenkins or GitLab.”</p>`,
   qa: [
     ['What triggers your pipeline?', '<p>Pull requests and pushes to main, plus a manual trigger. A schedule trigger can add nightly runs.</p>'],
     ['Why upload reports with if: always()?', '<p>Because later steps are normally skipped after a failure, and a failure is exactly when you need the report and logs.</p>'],

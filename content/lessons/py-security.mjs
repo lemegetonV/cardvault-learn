@@ -1,7 +1,7 @@
 import { code, interview, keyIdea, testerEye, table, realWorld } from '../../src/components.mjs';
 
 export default {
-  minutes: 11,
+  minutes: 13,
   lede: 'Security testing sounds like a specialist job, and deep penetration testing is. But a handful of security checks belong in every API suite, because they are cheap to write and catch the most common serious flaws. This lesson maps the industry’s top ten list to tests you can write in pytest.',
   youWill: 'You will be able to name the OWASP API Security Top 10 in plain words, and explain the four checks the CardVault suite makes.',
   body: `
@@ -58,6 +58,26 @@ def test_customer_cannot_mark_their_own_email_as_verified():
 <h2>4. Limits on what one caller can ask for</h2>
 <p>Two tests check limits. Asking for a page of 101 cards is refused, because the documented maximum is 100. Asking for a second verification code within 30 seconds gets <code>429 Too Many Requests</code>. Both are in <a href="/learn/py-api-behaviours/">the next lesson</a>.</p>
 
+<h2>CORS, from a tester’s point of view</h2>
+<p>Browsers have a safety rule called the <strong>same-origin policy</strong>: a page loaded from one site may send requests to another site, but may not read the answers unless that other site agrees. <strong>CORS</strong> (cross-origin resource sharing) is how a server agrees: it answers with an <code>Access-Control-Allow-Origin</code> header naming the sites whose pages may read its responses.</p>
+<p>CardVault’s services send no such header, so a page on another website cannot read card data through a customer’s browser. The CardVault web app does not need CORS at all, because its pages only talk to the web app’s own address, and its server calls the services. A test can check the services stay that way:</p>
+${code({ title: 'Example · a CORS check', src: `
+def test_another_website_is_not_allowed_to_read_the_cards(alice_token):
+    response = http.get(
+        f"{config.CARD_URL}/v1/cards",
+        headers={"Authorization": f"Bearer {alice_token}", "Origin": "https://another-site.example"},
+        timeout=config.TIMEOUT,
+    )
+
+    assert response.status_code == 200
+    assert "Access-Control-Allow-Origin" not in response.headers
+` })}
+<p>It calls the shared <code>http</code> session from <code>api/client.py</code> directly, because no client method sets an <code>Origin</code> header. The <code>Origin</code> header is what a browser adds to say which site the page came from. This test passes against CardVault running locally. Two points are worth saying in an interview:</p>
+<ul>
+<li><strong>CORS is enforced only by browsers.</strong> requests, curl and Postman ignore it, which is why the request above still gets 200. CORS protects users’ browsers; it never replaces the token and ownership checks above.</li>
+<li><strong>What to look for</strong> when an API does allow other sites: the list of allowed origins should be exact, and an answer that echoes back any <code>Origin</code> it is sent, or uses <code>*</code> together with cookies, is a finding.</li>
+</ul>
+
 <h2>What else a security-minded tester tries</h2>
 <ul>
 <li><strong>Injection</strong>: text such as <code>' OR 1=1 --</code> or <code>&lt;script&gt;</code> in every text field, checking it is stored and shown as plain text and never run.</li>
@@ -76,6 +96,7 @@ ${interview({
   qa: [
     ['What is BOLA or IDOR, and how do you test it?', '<p>Reaching another user’s object by changing its ID in the request. Log in as two users, have one request the other’s resource, and check for 403 or 404 and that nothing changed.</p>'],
     ['What is mass assignment?', '<p>Sending extra fields the user may not set, such as a role or a verified flag, hoping the server saves them. The test sends one and reads the record back to confirm it was ignored.</p>'],
+    ['Does CORS protect an API?', '<p>Only from pages in a browser. CORS decides which other sites’ pages may read a response; tools such as curl or requests ignore it completely. Real protection still comes from authentication and authorisation on every request.</p>'],
     ['Why should an unknown username get the same error as a wrong password?', '<p>Different errors would let an attacker find out which usernames exist, which makes guessing passwords much easier.</p>'],
   ],
 })}

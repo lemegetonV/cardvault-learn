@@ -43,8 +43,8 @@ def wait_for_wallet_status(wallet_api, card_id, expected_status, timeout=10):
 <h2>Running tests in parallel</h2>
 <p>The <strong>pytest-xdist</strong> plugin starts several worker processes and shares the tests out among them. <code>-n 4</code> means four workers; <code>-n auto</code> means one per CPU core.</p>
 ${terminal([
-  ['pytest -q', '============================= 79 passed in 26.44s =============================='],
-  ['pytest -q -n 4', '============================= 79 passed in 12.38s =============================='],
+  ['pytest -q', '============================= 93 passed in 30.52s =============================='],
+  ['pytest -q -n 4', '============================= 93 passed in 12.44s =============================='],
 ], 'Terminal')}
 <p>On this machine four workers cut the run from about 26 seconds to about 12. CI uses <code>-n 4</code> too.</p>
 

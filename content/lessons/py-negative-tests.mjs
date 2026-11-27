@@ -62,7 +62,7 @@ def test_a_purchase_of_exactly_the_available_amount_is_approved():
 
     assert response.json()["decision"] == "APPROVED"
 ` })}
-<p>Mistakes cluster at limits: a <code>&lt;</code> written where <code>&lt;=</code> was meant. Testing exactly 10,000 and 10,001 cents catches that, where a test at 5,000 and 50,000 would not. The same thinking gave the wallet test its <code>89</code> days for the 90-day rule.</p>
+<p>This is <a href="/learn/py-test-design/">boundary value analysis</a> applied to money. Testing exactly 10,000 and 10,001 cents catches a <code>&lt;</code> written where <code>&lt;=</code> was meant, where a test at 5,000 and 50,000 would not. The same thinking gave the wallet test its <code>89</code> days for the 90-day rule.</p>
 
 <h2>State: what is allowed depends on status</h2>
 ${code({ title: 'tests/api/tests/test_cards.py', src: `

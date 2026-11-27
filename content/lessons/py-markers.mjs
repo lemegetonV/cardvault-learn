@@ -19,7 +19,7 @@ markers =
 ` })}
 
 <h2>Running by label</h2>
-${terminal([['pytest -m smoke', `collecting ... collected 79 items / 74 deselected / 5 selected
+${terminal([['pytest -m smoke', `collecting ... collected 93 items / 88 deselected / 5 selected
 
 tests/test_cards.py::test_alice_has_her_four_cards PASSED                [ 20%]
 tests/test_login.py::test_login_with_correct_password_returns_a_token PASSED [ 40%]

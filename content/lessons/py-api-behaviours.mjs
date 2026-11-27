@@ -1,9 +1,9 @@
 import { code, interview, keyIdea, testerEye, table, tryIt } from '../../src/components.mjs';
 
 export default {
-  minutes: 14,
+  minutes: 16,
   lede: 'Most real APIs share four behaviours: long lists come back in pages, a request can be repeated safely, an update cannot silently overwrite someone else’s change, and callers who ask too often are slowed down. CardVault has all four, and each needs its own kind of test.',
-  youWill: 'You will be able to explain pagination, idempotency keys, version checks with If-Match, and rate limits, and how the suite tests each.',
+  youWill: 'You will be able to explain pagination, idempotency keys, version checks with If-Match, and rate limits, how the suite tests each, and when to use PUT, PATCH, HEAD and OPTIONS.',
   body: `
 <h2>Four behaviours at a glance</h2>
 ${table(['Behaviour', 'The problem', 'CardVault’s answer', 'Status when refused'], [
@@ -94,6 +94,29 @@ def test_asking_for_a_second_code_too_soon_is_refused():
 ` })}
 <p>A well-behaved client waits the number of seconds the error gives, then tries again. Testing what happens after the wait would need a 30-second pause, so the suite does not; that is a deliberate gap.</p>
 
+<h2>One more: the method itself</h2>
+<p>Interviewers often ask about HTTP methods beyond GET and POST. Four come up most:</p>
+${table(['Method', 'What it means', 'Idempotent'], [
+  ['`PUT`', 'Replace the whole resource with the body sent. A field left out is cleared or reset', 'Yes'],
+  ['`PATCH`', 'Change only the fields sent; everything else stays as it is', 'Not by definition; depends on the API'],
+  ['`HEAD`', 'Like GET, but the answer has only the headers, no body. Used to check that something exists or has changed', 'Yes'],
+  ['`OPTIONS`', 'Ask which methods a resource supports. Browsers send it before some cross-site requests (see CORS in the security lesson)', 'Yes'],
+])}
+<p>CardVault’s profile is changed with <code>PATCH</code>: <code>ProfileApi.update_profile({"email": ...})</code> sends only the email, and the phone number stays as it was. It has no <code>PUT</code>, so a whole-profile replace cannot wipe a field by accident. A test can check that an unsupported method is refused cleanly:</p>
+${code({ title: 'Example · an unsupported method', src: `
+def test_put_is_not_allowed_on_the_profile(alice_token):
+    response = http.put(
+        f"{config.PROFILE_URL}/v1/profile",
+        json={},
+        headers={"Authorization": f"Bearer {alice_token}"},
+        timeout=config.TIMEOUT,
+    )
+
+    assert response.status_code == 405
+    assert response.json()["error_code"] == "METHOD_NOT_ALLOWED"
+` })}
+<p><code>405 Method Not Allowed</code> is the right answer; a 500 would mean the server did not expect the request at all. The HTTP standard also says a 405 answer must carry an <code>Allow</code> header listing the methods the resource supports. CardVault’s says <code>Allow: GET</code>, although <code>PATCH</code> works too, which is the kind of small mismatch with a standard a careful tester notes. <code>HEAD</code> and <code>OPTIONS</code> also get 405 from CardVault’s services, which is allowed: not every API supports them.</p>
+
 ${keyIdea('<p>Pagination: no item lost or repeated across pages. Idempotency: the same key replays, a reused key on a new request fails. Version checks: a stale version gets 412 and changes nothing. Rate limits: too soon gets 429 with a time to wait.</p>')}
 
 ${testerEye('<p>For each behaviour, test both sides: the allowed case and the refused one, and check that a refusal changed nothing.</p>')}
@@ -102,6 +125,7 @@ ${interview({
   say: `<p>“Beyond CRUD I test the cross-cutting behaviours. For cursor pagination I walk all pages and check nothing is lost or duplicated, plus the page-size limit. For idempotency I send the same Idempotency-Key twice and check the replayed answer, and that a key reused on a different request is rejected. For concurrency, an If-Match with a stale version must get 412 and change nothing. And rate limits must return 429 with a retry-after value.”</p>`,
   qa: [
     ['Cursor or offset pagination?', '<p>Offset (page 3 of 20) is simple but can skip or repeat items when data changes between requests. A cursor marks the last item seen, so pages stay consistent. CardVault uses cursors.</p>'],
+    ['What is the difference between PUT and PATCH?', '<p>PUT replaces the whole resource with the body, so a field left out is reset. PATCH changes only the fields sent. To test PATCH, change one field and read the record back to check the others did not move.</p>'],
     ['Which HTTP methods are idempotent?', '<p>By definition GET, PUT and DELETE are; POST is not. That is why APIs add idempotency keys to POST actions such as payments.</p>'],
     ['What is optimistic locking?', '<p>Each record carries a version. An update must send the version it was based on, and the server rejects it with 412 or 409 if the record changed since, instead of overwriting.</p>'],
   ],
