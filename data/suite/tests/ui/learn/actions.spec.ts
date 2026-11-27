@@ -11,7 +11,8 @@ test.beforeEach(async ({ page }) => {
   await page.getByLabel('Password').fill(DEMO_PASSWORD);
   // press() types one key. Enter in a form field sends the form.
   await page.getByLabel('Password').press('Enter');
-  await page.getByRole('link', { name: 'Transactions' }).first().click();
+  // The wallet page has two Transactions links; use the one in the main navigation.
+  await page.getByRole('navigation', { name: 'Main' }).getByRole('link', { name: 'Transactions' }).click();
 });
 
 test('choose a status from the select box', async ({ page }) => {

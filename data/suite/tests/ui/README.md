@@ -25,12 +25,20 @@ tests/ui/
     actions.spec.ts       select, check, fill, press, click
     assertions.spec.ts    web-first assertions that wait and retry
     waiting.spec.ts       waiting for rows and server answers, never for the clock
+    forms.spec.ts         the dispute form: select, text area, file upload
+    helpers/
+      new-customer.ts     set-up: a brand-new customer with one purchase
+    files/
+      receipt.png         a small picture the upload test sends
     typescript/
+      basics.ts           values, types, arrays, objects, functions (no browser)
       async-await.ts      a tiny program that shows what await does
 ```
 
-Every test in `learn/` only reads data (it signs in as the demo customer alice
-and changes nothing), so the tests can run in any order and in parallel.
+Most tests in `learn/` only read data: they sign in as the demo customer alice
+and change nothing. The forms tests open a dispute, so each one first creates
+a brand-new customer with one purchase. That way every test can run in any
+order and in parallel.
 
 ## Run it
 
@@ -42,16 +50,21 @@ cd tests/ui
 npm install                      # the tools in package.json, once
 npx playwright install chromium  # the browser Playwright drives, once
 
-npx playwright test              # every test: 22 passed
+npx playwright test              # every test: 25 passed
 npx playwright test learn/first-test.spec.ts   # one file
 npx playwright test --headed     # watch the browser while it runs
 npx playwright test --ui         # UI mode: pick tests, watch them, step back in time
 npx playwright show-report       # open the HTML report of the last run
 npm run typecheck                # check the TypeScript without running anything
+node learn/typescript/basics.ts        # the TypeScript basics (no browser)
 node learn/typescript/async-await.ts   # the await example (no browser)
 ```
 
-To test another copy of the app, set `BASE_URL`:
+Run the commands from `tests/ui`: file paths in the tests, such as the receipt
+to upload, are relative to that folder.
+
+To test another copy of the app, set `BASE_URL` (and, for the forms tests, the
+service addresses and `TEST_KEY`; see `config.ts`):
 
 ```bash
 BASE_URL=https://cardvault.example.com npx playwright test

@@ -3,7 +3,7 @@
 export const site = {
   name: 'CardVault Learn',
   description: 'Interview prep for QA and SDET roles: understand the CardVault app, then learn to test it with pytest and Playwright.',
-  cardvaultCommit: 'd83f2db',
+  cardvaultCommit: '1ea4bea',
   cardvaultRepo: 'https://github.com/lemegetonV/cardvault',
 };
 
@@ -144,11 +144,11 @@ export const tracks = [
         blurb: 'What Playwright is, the TypeScript you need, and a first browser test.',
         lessons: [
           ['pw-what-is-playwright', 'What Playwright is', true],
-          ['pw-typescript-basics', 'The TypeScript you need, part 1', false],
+          ['pw-typescript-basics', 'The TypeScript you need, part 1', true],
           ['pw-async-await', 'The TypeScript you need, part 2: async and await', true],
-          ['pw-project', 'A Playwright project', false],
+          ['pw-project', 'A Playwright project', true],
           ['pw-first-test', 'Your first Playwright test', true],
-          ['pw-reading-failures', 'Reading a failure', false],
+          ['pw-reading-failures', 'Reading a failure', true],
         ],
       },
       {
@@ -156,11 +156,11 @@ export const tracks = [
         blurb: 'Locators, actions, assertions that wait, and forms.',
         lessons: [
           ['pw-locators', 'Locators: finding things on the page', true],
-          ['pw-narrowing', 'Narrowing a match', false],
-          ['pw-actions', 'Actions and auto-waiting', false],
-          ['pw-assertions', 'Web-first assertions', false],
-          ['pw-waiting', 'Waiting the right way', false],
-          ['pw-forms', 'Forms and uploads', false],
+          ['pw-narrowing', 'Narrowing a match', true],
+          ['pw-actions', 'Actions and auto-waiting', true],
+          ['pw-assertions', 'Web-first assertions', true],
+          ['pw-waiting', 'Waiting the right way', true],
+          ['pw-forms', 'Forms and uploads', true],
         ],
       },
       {
