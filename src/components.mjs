@@ -9,6 +9,7 @@ import sql from 'highlight.js/lib/languages/sql';
 import dockerfile from 'highlight.js/lib/languages/dockerfile';
 import plaintext from 'highlight.js/lib/languages/plaintext';
 import ini from 'highlight.js/lib/languages/ini';
+import typescript from 'highlight.js/lib/languages/typescript';
 
 
 import { readFileSync, existsSync } from 'node:fs';
@@ -23,6 +24,7 @@ hljs.registerLanguage('dockerfile', dockerfile);
 hljs.registerLanguage('text', plaintext);
 hljs.registerLanguage('toml', ini);
 hljs.registerLanguage('ini', ini);
+hljs.registerLanguage('typescript', typescript);
 
 export const esc = (s) => String(s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -83,12 +85,12 @@ export const realWorld = (html) => callout('real', 'In a real bank', html);
 
 // ---------------------------------------------------------------- Code, screenshots, interview corner
 
-// Excerpts titled with a suite path (tests/api/... or tests/perf/...) are checked against the copy in data/suite/.
+// Excerpts titled with a suite path (tests/api/..., tests/perf/... or tests/ui/...) are checked against the copy in data/suite/.
 export const excerptProblems = [];
 const SUITE = new URL('../data/suite/', import.meta.url);
 
 function checkExcerpt(title, src) {
-  const m = title.match(/^(tests\/(?:api|perf)\/\S+)/);
+  const m = title.match(/^(tests\/(?:api|perf|ui)\/\S+)/);
   if (!m) return;
   const file = new URL(m[1], SUITE);
   if (!existsSync(file)) { excerptProblems.push(`${m[1]} is not in data/suite`); return; }

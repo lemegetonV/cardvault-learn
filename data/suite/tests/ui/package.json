@@ -1,0 +1,16 @@
+{
+  "name": "cardvault-ui-tests",
+  "private": true,
+  "description": "Playwright tests for the CardVault web app",
+  "scripts": {
+    "test": "playwright test",
+    "learn": "playwright test --project=learn",
+    "report": "playwright show-report",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1",
+    "@types/node": "22.20.7",
+    "typescript": "5.9.3"
+  }
+}

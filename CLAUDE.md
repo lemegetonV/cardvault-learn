@@ -46,3 +46,9 @@ A learning site that prepares the owner for QA/SDET interviews: know the CardVau
 ## Refreshing CardVault facts
 
 Facts are pinned to `cardvaultCommit` in `content/site.mjs`. Run CardVault locally (`make up && make seed` in the cardvault repo), check the facts and retake screenshots, then update the commit.
+
+## Playwright track (plan approved by the owner, 2026-11-27)
+
+- Two parts in `content/site.mjs`: Part 1 teaches Playwright itself (modules 1 to 5), each concept shown on the CardVault web app with a small spec from CardVault's `tests/ui/learn/`; Part 2 (modules 6 to 8) is the CardVault framework, CI and interview practice. Plan doc: https://claude.ai/artifact/HTvgz61bBFJ4r4ziA6fxer
+- Code blocks titled `tests/ui/...` are checked against `data/suite/tests/ui` (refresh with `tools/export-suite.sh ../cardvault`). Use `lang: 'typescript'`.
+- Diagrams live in `content/diagrams/playwright.mjs`. Real terminal output only: run the suite and copy it.
