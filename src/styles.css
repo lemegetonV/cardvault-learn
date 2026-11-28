@@ -41,7 +41,8 @@
 
   --measure: 44rem;   /* prose: about 70 characters a line */
   --wide: 58rem;      /* code, tables, diagrams and screenshots */
-  --page: calc(15.5rem + 64px + var(--wide) + 40px); /* header, footer and pages share one width: rail, gap, article, gutters */
+  --toc: 0px;         /* the "On this page" column, only on very wide screens */
+  --page: calc(15.5rem + 64px + var(--wide) + 40px + var(--toc)); /* header, footer and pages share one width: rail, gap, article, contents, gutters */
   --radius: 14px;
   --header-h: 60px;
 }
@@ -859,3 +860,23 @@ p.tp-why { font-size: 0.875rem; }
 
 /* Phones: a slightly smaller lede so the first screen shows more than one paragraph. */
 @media (max-width: 600px) { .lede { font-size: 1.0625rem; } }
+
+/* "On this page": the lesson's sections, beside the article on very wide screens only. */
+.toc { display: none; }
+@media (min-width: 1600px) {
+  :root { --toc: calc(12rem + 64px); }
+  .lesson-frame { grid-template-columns: 15.5rem minmax(0, var(--wide)) 12rem; }
+  .toc { display: block; position: sticky; top: calc(var(--header-h) + 32px); align-self: start; max-height: calc(100vh - var(--header-h) - 48px); overflow: auto; font-size: 0.875rem; line-height: 1.4; }
+  .toc p { margin: 0 0 10px; font-weight: 600; color: var(--muted); font-size: 0.8125rem; }
+  .toc ol { list-style: none; margin: 0; padding: 0; border-left: 1px solid var(--line); }
+  .toc a { display: block; padding: 5px 0 5px 12px; margin-left: -1px; border-left: 2px solid transparent; color: var(--ink-2); text-decoration: none; }
+  .toc a:hover { color: var(--accent-strong); }
+  .toc a.here { color: var(--accent-strong); border-left-color: var(--accent); font-weight: 600; }
+}
+
+/* Screenshots open full size on click or tap. */
+.shot img { cursor: zoom-in; }
+.zoom { position: fixed; inset: 0; z-index: 50; background: rgb(0 0 0 / 0.78); display: flex; align-items: flex-start; justify-content: center; overflow: auto; padding: 24px 12px; cursor: zoom-out; }
+.zoom img { display: block; flex: none; max-width: none; width: 220vw; height: auto; border-radius: 8px; background: #fff; box-shadow: 0 12px 40px rgb(0 0 0 / 0.4); }
+@media (min-width: 900px) { .zoom { align-items: center; justify-content: center; } .zoom img { width: auto; max-width: 100%; } }
+@media (max-width: 899px) { .zoom { justify-content: flex-start; } }

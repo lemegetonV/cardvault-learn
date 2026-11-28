@@ -1,7 +1,7 @@
 import { code, terminal, interview, keyIdea, table, sequence, testerEye } from '../../src/components.mjs';
 
 export default {
-  minutes: 11,
+  minutes: 10,
   lede: 'Almost every line of a Playwright test starts with the word await. This lesson explains why: a browser takes time to do things, and JavaScript does not wait on its own. Once you understand promises and await, Playwright code stops looking strange.',
   youWill: 'You will be able to explain what a promise is, what async and await do, and which lines of a test need await.',
   body: `
@@ -35,8 +35,7 @@ withAwait();
 <p>Line by line:</p>
 <ol>
 <li><code>function loadHeading(): Promise&lt;string&gt;</code> declares a function. The part after the colon is its <strong>return type</strong>: it returns a promise that will one day hold a <code>string</code> (text). TypeScript reads <code>Promise&lt;string&gt;</code> as “a promise of a string”.</li>
-<li><code>new Promise((resolve) =&gt; { ... })</code> makes a promise by hand. You will rarely do this in tests; Playwright makes the promises for you. Here, <code>setTimeout</code> waits 500 milliseconds and then calls <code>resolve</code>, which fills the promise with the text <code>'Checkout wallet'</code>.</li>
-<li><code>(resolve) =&gt; { ... }</code> is an arrow function, as in the last lesson: the input in the brackets, the body after <code>=&gt;</code>.</li>
+<li><code>new Promise(...)</code> makes a promise by hand, which tests rarely need: Playwright makes the promises for you. Here, <code>setTimeout</code> waits 500 milliseconds and then calls <code>resolve</code>, which fills the promise with <code>'Checkout wallet'</code>.</li>
 <li>In <code>withoutAwait</code>, <code>heading</code> gets the promise itself, the ticket, not the text. <code>: void</code> means the function returns nothing.</li>
 <li>In <code>withAwait</code>, <code>await</code> pauses until the promise is filled, so <code>heading</code> holds the text. The function is marked <code>async</code>, and an <code>async</code> function always returns a promise itself, here <code>Promise&lt;void&gt;</code>: a promise of nothing, which only says “I have finished”.</li>
 </ol>

@@ -2,7 +2,7 @@ import { code, terminal, figure, interview, keyIdea, table, shot, testerEye } fr
 import { locatorLadder } from '../diagrams/playwright.mjs';
 
 export default {
-  minutes: 12,
+  minutes: 11,
   lede: 'Before a test can click a button or check a heading, it has to find it on the page. A locator is how you tell Playwright what to find. This lesson shows the five main ways, all on CardVault’s Cards page, and which one to reach for first.',
   youWill: 'You will be able to choose a locator for any element on a page and explain why role-based locators come first.',
   body: `
@@ -95,10 +95,7 @@ ${table(['Locator', 'Finds', 'In CardVault'], [
 
 ${keyIdea('<p>Prefer locators that find elements the way a user does: by role and name, by label, by text. Use a test id when those cannot single the element out. Leave CSS and XPath as a last resort, because they break when the page’s structure changes.</p>')}
 
-<h2>Let Playwright suggest one</h2>
-<p>Playwright can write locators for you. Run the code generator against the app, point at any element, and it shows the locator it would use, picked by the same order as above:</p>
-${terminal([['npx playwright codegen localhost:3000/login', '']], 'In tests/ui')}
-<p>A browser window opens next to a panel that records what you do as test code. The same “pick locator” tool is in UI mode. Treat its suggestion as a starting point and check that it describes the element the way you would.</p>
+<p>Playwright can also suggest a locator when you point at an element; <a href="/learn/pw-debugging/">debugging</a> shows where. Treat a suggestion as a starting point and check it describes the element the way you would.</p>
 
 ${testerEye('<p>Role-based locators test two things at once. If a developer turns a real button into a clickable <code>&lt;div&gt;</code>, a mouse user notices nothing, but a screen reader no longer announces a button, and <code>getByRole(\'button\')</code> fails. That failure is a real accessibility bug, found for free.</p>')}
 

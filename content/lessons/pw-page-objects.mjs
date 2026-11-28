@@ -1,4 +1,5 @@
-import { code, interview, table, keyIdea, testerEye } from '../../src/components.mjs';
+import { code, interview, table, keyIdea, testerEye, figure } from '../../src/components.mjs';
+import { classAnatomy } from '../diagrams/playwright.mjs';
 
 export default {
   minutes: 11,
@@ -47,6 +48,7 @@ export class LoginPage {
   }
 }
 ` })}
+${figure({ svg: classAnatomy(), caption: 'This is the first class in the track. Read it in three parts, top to bottom; the list below explains each piece of new syntax.' })}
 <ul>
 <li><strong>A class</strong> is a template for making objects that hold values and functions together. <code>export class LoginPage</code> defines one and lets other files import it. <code>new LoginPage(page)</code> makes an object from it.</li>
 <li><strong>Fields.</strong> <code>readonly username: Locator</code> declares a value every <code>LoginPage</code> object holds, with its type. <code>readonly</code> means it is set once and never replaced. <code>Page</code> and <code>Locator</code> are Playwright’s own types, imported on the first line.</li>
