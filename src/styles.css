@@ -909,3 +909,23 @@ p.tp-why { font-size: 0.875rem; }
 .zoom img { display: block; flex: none; max-width: none; width: 220vw; height: auto; border-radius: 8px; background: #fff; box-shadow: 0 12px 40px rgb(0 0 0 / 0.4); }
 @media (min-width: 900px) { .zoom { align-items: center; justify-content: center; } .zoom img { width: auto; max-width: 100%; } }
 @media (max-width: 899px) { .zoom { justify-content: flex-start; } }
+
+/* ---------- Lesson reading size (the owner, 2026-11-28): denser main column, so more fits on a screen.
+   The header, rail and contents keep their sizes. */
+.article { font-size: 1rem; line-height: 1.62; }
+.article h1 { font-size: clamp(1.8rem, 1.35rem + 1.3vw, 2.35rem); margin-bottom: 12px; }
+.article .lede { font-size: 1.0625rem; line-height: 1.55; margin-bottom: 14px; }
+.article .meta-row { font-size: 0.875rem; padding-bottom: 18px; }
+.article h2 { font-size: clamp(1.25rem, 1.1rem + 0.35vw, 1.4rem); margin: 38px 0 10px; }
+.article h3 { font-size: 1.075rem; margin: 26px 0 6px; }
+.article p { margin-bottom: 14px; }
+.article ul, .article ol { margin-bottom: 14px; }
+.article li { margin: 4px 0; }
+.article figure { margin: 22px 0; }
+.article .fig { padding: 16px; }
+.article figure:has(svg.d), .article .stepper-wrap { max-width: 50rem; }
+.article .callout { padding: 14px 18px; margin: 20px 0; }
+.article .shot .shot-frame { max-width: 46rem; }
+.article .shot.phone .shot-frame { max-width: 280px; }
+.article .shot-pair { max-width: 46rem; margin: 24px 0; }
+@media (max-width: 600px) { .article .lede { font-size: 1rem; } }
