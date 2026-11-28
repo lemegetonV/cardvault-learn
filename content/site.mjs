@@ -200,11 +200,11 @@ export const tracks = [
         title: 'The CardVault framework',
         blurb: 'The folder map first, then each part and why it exists.',
         lessons: [
-          ['pw-framework-map', 'The framework map', false],
-          ['pw-page-objects', 'Page objects', false],
-          ['pw-custom-fixtures', 'Custom fixtures', false],
-          ['pw-api-setup', 'API set-up for UI tests', false],
-          ['pw-test-data', 'Test data and config', false],
+          ['pw-framework-map', 'The framework map', true],
+          ['pw-page-objects', 'Page objects', true],
+          ['pw-custom-fixtures', 'Custom fixtures', true],
+          ['pw-api-setup', 'API set-up for UI tests', true],
+          ['pw-test-data', 'Test data and config', true],
         ],
       },
       {

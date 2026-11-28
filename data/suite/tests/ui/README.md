@@ -8,7 +8,9 @@ The suite grows in two parts, following the lessons on the learning site:
 
 1. `learn/`: one small, plain test file per Playwright lesson. No page objects
    and no helpers, so every line is visible.
-2. The CardVault framework (page objects, fixtures, journeys): coming next.
+2. `tests/`: the CardVault framework tests, built on page objects (`pages/`),
+   an API client for set-up (`api/`), custom fixtures (`fixtures.ts`) and test
+   data (`data/`). Journeys on desktop and phone come next.
 
 ## What is where
 
@@ -17,7 +19,25 @@ tests/ui/
   package.json          the tools (Playwright, TypeScript) and the npm scripts
   playwright.config.ts  the settings Playwright reads before every run
   tsconfig.json         settings for the TypeScript checker
+  visual.config.ts      settings for the screenshot tests only (run in Docker)
   config.ts             where the app is, and the demo password
+  fixtures.ts           Part 2: our own fixtures (page objects, api, a new customer)
+  pages/                Part 2: one page object per page
+    LoginPage.ts          sign in
+    WalletPage.ts         the Checkout wallet and its cards
+    CardsPage.ts          the Cards page
+    TransactionsPage.ts   the list, its filters
+    TransactionPage.ts    one transaction, and the dispute form
+  api/
+    CardVaultApi.ts       set-up through the services: customers, purchases
+  data/
+    test-data.ts          alice, her cards, the purchase, the receipt, unique names
+    files/receipt.png     the dispute receipt
+  tests/                Part 2: the framework tests
+    sign-in.spec.ts       signing in, right and wrong
+    cards.spec.ts         alice's cards (saved login, read only)
+    transactions.spec.ts  filtering; a new customer's purchase and dispute
+  visual/               screenshot tests and their saved pictures (npm run visual)
   learn/                Part 1: one small test file per lesson
     first-test.spec.ts    sign in and see the wallet
     locators.spec.ts      finding things: role, text, label, test id
@@ -38,6 +58,9 @@ tests/ui/
     api-requests.spec.ts  the request fixture; checking the page against the API
     saved-login.setup.ts  signs in once and saves the login (the setup project)
     saved-login.spec.ts   tests that start already signed in
+    debugging.spec.ts     test.step, and catching errors the page hides
+    reports.spec.ts       tags, annotations and an attached file in the report
+    parallel.spec.ts      parallel mode inside one file; which worker ran what
     helpers/
       new-customer.ts     set-up: a brand-new customer with a purchase, or with a card
     files/
@@ -62,13 +85,15 @@ cd tests/ui
 npm install                      # the tools in package.json, once
 npx playwright install chromium  # the browser Playwright drives, once
 
-npx playwright test              # every test: 61 passed (60 tests and the setup step)
+npx playwright test              # every test: 74 passed (73 tests and the setup step)
+npx playwright test --project=framework        # only the framework tests (and setup)
 npx playwright test learn/first-test.spec.ts   # one file
 npx playwright test --grep @smoke               # only the tests tagged @smoke
 npx playwright test --headed     # watch the browser while it runs
 npx playwright test --ui         # UI mode: pick tests, watch them, step back in time
 npx playwright show-report       # open the HTML report of the last run
 npm run typecheck                # check the TypeScript without running anything
+npm run visual                   # the screenshot tests, inside Playwright's Docker image
 node learn/typescript/basics.ts        # the TypeScript basics (no browser)
 node learn/typescript/async-await.ts   # the await example (no browser)
 ```
@@ -83,7 +108,16 @@ services directly, the service addresses and `TEST_KEY`; see `config.ts`):
 BASE_URL=https://cardvault.example.com npx playwright test
 ```
 
+## Screenshot tests
+
+A screenshot depends on the machine that takes it (fonts, operating system), so
+the tests in `visual/` have their own config and always run inside
+`mcr.microsoft.com/playwright:v1.65.1-noble`, locally and on CI. `npm run visual`
+needs Docker and CardVault on `localhost`; `npm run visual:update` saves new
+pictures after an intended change. The everyday `npx playwright test` leaves them out.
+
 ## CI
 
 `.github/workflows/ui-tests.yml` starts CardVault in the GitHub runner, runs the
-suite in Chromium and keeps the HTML report and the traces of failed tests.
+suite in Chromium, runs the screenshot tests in Playwright's Docker image, and
+keeps the HTML reports and the traces of failed tests.
