@@ -8,6 +8,7 @@ tests run, this plugin writes one JSON line per step to that pipe:
   {"type": "db", ...}        one database query and the row it returned
   {"type": "topics", ...}    the topic list read from Kafka
   {"type": "event", ...}     an event the test waited for (or did not get)
+  {"type": "assert", ...}    one assert line: the code, whether it held, and the values
   {"type": "outcome", ...}   how the test ended
 
 It changes nothing about how the tests behave: it wraps the calls, records them, and
@@ -17,6 +18,7 @@ passes the results through. Secrets are hidden and long values are shortened.
 import json
 import os
 import re
+import sys
 import time
 from urllib.parse import urlsplit
 
@@ -196,6 +198,61 @@ def patch_events():
     watcher.__init__ = init
     watcher.wait_for = wait_for
     events.list_topics = list_topics
+
+
+# ---------------------------------------------------------------- assert lines
+
+
+def assert_values(explanation, brief=False):
+    """pytest's explanation without "assert" in front: '200 == 200' plus any 'where' lines.
+
+    brief keeps only those lines, for an assert that held: the full comparison of two
+    equal values adds nothing there.
+    """
+    text = (explanation or "").strip()
+    if text.startswith("assert "):
+        text = text[len("assert "):]
+    if brief:
+        lines = text.splitlines()
+        text = "\n".join(lines[:1] + [line for line in lines[1:] if re.match(r"\s*\+\s+where ", line)])
+    return shorten(text)
+
+
+def calling_file(lineno):
+    """The file of the assert that just ran: the nearest frame outside pytest and this plugin."""
+    frame = sys._getframe(1)
+    while frame is not None:
+        name = frame.f_code.co_filename
+        if not any(part in name for part in ("/_pytest/", "/pluggy/", "labtrace.py")):
+            return os.path.basename(name)
+        frame = frame.f_back
+    return "?"
+
+
+def pytest_assertion_pass(item, lineno, orig, expl):
+    # Called for every assert that held, when the lab passes
+    # "-o enable_assertion_pass_hook=true". pytest gives the line, the code after
+    # "assert", and the values it compared.
+    emit("assert", passed=True, file=calling_file(lineno), line=lineno, code=f"assert {orig}",
+         values=assert_values(expl, brief=True))
+
+
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    yield
+    # An assert that did not hold: the last line in the traceback is the assert itself.
+    if call.excinfo is None or not call.excinfo.errisinstance(AssertionError):
+        return
+    entry = call.excinfo.traceback[-1]
+    try:
+        code = str(entry.statement).strip()
+    except Exception:  # noqa: BLE001  (no source available)
+        code = ""
+    if not code.startswith("assert"):
+        code = ""
+    message = str(call.excinfo.value)
+    emit("assert", passed=False, file=entry.path.name if hasattr(entry.path, "name") else str(entry.path),
+         line=entry.lineno + 1, code=code, values=assert_values(message))
 
 
 # ---------------------------------------------------------------- pytest hooks

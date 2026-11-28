@@ -3,6 +3,7 @@ import { esc } from '../../src/components.mjs';
 import { tracks, lessonUrl } from '../site.mjs';
 
 export function homePage() {
+  const code = { pytest: '/suite/', playwright: '/suite/ui/' };
   const trackSection = (t, i) => {
     let n = 0;
     const mods = t.modules.map((m) => {
@@ -15,7 +16,7 @@ export function homePage() {
       }).join('');
       return `<div class="module-card"><h3>${esc(m.title)}</h3><p>${esc(m.blurb)}</p><ol class="lesson-list">${items}</ol></div>`;
     }).join('');
-    return `<section class="track" id="${t.id}"><div class="track-head"><p class="eyebrow"><span class="chip">Track ${i + 1}</span></p><h2>${esc(t.title)}</h2><p>${esc(t.blurb)}</p></div><div class="modules">${mods}</div></section>`;
+    return `<section class="track" id="${t.id}"><div class="track-head"><p class="eyebrow"><span class="chip">Track ${i + 1}</span></p><h2>${esc(t.title)}</h2><p>${esc(t.blurb)}</p>${code[t.id] ? `<p class="track-code"><a href="${code[t.id]}">Browse the suite’s code, file by file</a></p>` : ''}</div><div class="modules">${mods}</div></section>`;
   };
 
   const body = `<div class="frame">
@@ -31,7 +32,7 @@ export function homePage() {
 <div><b>2</b><p><strong>API testing.</strong> Python from zero, then a small pytest framework, file by file, reports, a Locust load test and live coding practice.</p></div>
 <div><b>3</b><p><strong>UI testing.</strong> TypeScript from zero, every core Playwright concept, then a Playwright framework for the web app.</p></div>
 </div>
-<p class="how-note">Each lesson is a short read and ends with how to say it in an interview. The <a href="/drill/">Interview drill</a> collects every one of those questions in one place.</p>
+<p class="how-note">Each lesson is a short read and ends with how to say it in an interview. The <a href="/drill/">Interview drill</a> collects every one of those questions in one place, and <a href="/suite/">The code</a> shows every file of both test suites.</p>
 
 ${tracks.map(trackSection).join('')}
 </div>`;

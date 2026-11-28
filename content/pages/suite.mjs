@@ -1,30 +1,50 @@
-// The suite browser: every file of the API suite, with Run buttons for the tests.
+// The suite browsers: every file of the API suite (with Run buttons) and of the Playwright suite.
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { page } from '../../src/layout.mjs';
-import { esc, highlight, runButton, nodeFile } from '../../src/components.mjs';
+import { esc, highlight, runButton, nodeFile, uiTestsIn, uiNode, uiRunButton } from '../../src/components.mjs';
 import { lessonUrl } from '../site.mjs';
 
-const SUITE_ROOT = fileURLToPath(new URL('../../data/suite/tests/api/', import.meta.url));
+const DATA = fileURLToPath(new URL('../../data/suite/', import.meta.url));
 
-// Root files in reading order, then the folders.
-const ROOT_ORDER = ['README.md', 'requirements.txt', 'pytest.ini', 'config.py', 'conftest.py', 'helpers.py'];
-const SKIP = new Set(['.gitignore', '__pycache__', '.pytest_cache', '.venv']);
-const LANGS = { '.py': 'python', '.ini': 'ini', '.txt': 'text', '.md': 'text' };
+// The two suites. root is the folder inside data/suite; url is where its browser lives.
+export const SUITES = {
+  api: {
+    root: 'tests/api', url: '/suite/', route: 'suite',
+    order: ['README.md', 'requirements.txt', 'pytest.ini', 'config.py', 'conftest.py', 'helpers.py'],
+    langs: { '.py': 'python', '.ini': 'ini', '.txt': 'text', '.md': 'text' },
+    tab: 'API suite · pytest', chip: 'API suite', lang: 'Python and pytest', title: 'The API suite · CardVault Learn',
+    lede: `Every file of the API test suite that the Python lessons teach. Test files list their tests with a Run button, which runs that test on the live app and opens a panel with every API call it made, request and response. Start from <a href="${lessonUrl('py-framework-map')}">the framework map</a> if you want each file’s job first.`,
+  },
+  ui: {
+    root: 'tests/ui', url: '/suite/ui/', route: 'suite/ui',
+    order: ['README.md', 'package.json', 'package-lock.json', 'tsconfig.json', 'playwright.config.ts', 'visual.config.ts', 'config.ts', 'fixtures.ts'],
+    langs: { '.ts': 'typescript', '.json': 'json', '.md': 'text' },
+    tab: 'UI suite · Playwright', chip: 'UI suite', lang: 'TypeScript and Playwright', title: 'The Playwright suite · CardVault Learn',
+    lede: `Every file of the Playwright suite that the UI testing lessons teach. <code>learn/</code> holds one small spec per Part 1 lesson; <code>pages/</code>, <code>components/</code>, <code>api/</code>, <code>fixtures.ts</code> and <code>tests/</code> are the framework from Part 2. Test files list their tests with a Run button, which runs that test in a headless Chrome on the server, against the live app. A panel shows each action and check as it happens, then the screenshot, video and trace the run recorded. Start from <a href="${lessonUrl('pw-framework-map')}">the framework map</a> if you want each file’s job first.`,
+  },
+};
 
-/** Every file under tests/api, as suite paths like tests/api/tests/test_cards.py. */
-export function suiteFiles() {
+const SKIP = new Set(['.gitignore', '__pycache__', '.pytest_cache', '.venv', 'node_modules', '.auth', 'test-results', 'playwright-report']);
+
+const fullPath = (p) => path.join(DATA, p);
+
+/** Every file of a suite, as paths like tests/api/tests/test_cards.py, root files first. */
+export function suiteFiles(s = SUITES.api) {
+  const base = fullPath(s.root);
   const walk = (dir) => readdirSync(dir).filter((n) => !SKIP.has(n)).flatMap((n) => {
     const full = path.join(dir, n);
     return statSync(full).isDirectory() ? walk(full) : [full];
   });
-  const rel = walk(SUITE_ROOT).map((f) => `tests/api/${path.relative(SUITE_ROOT, f).split(path.sep).join('/')}`);
+  const rel = walk(base).map((f) => `${s.root}/${path.relative(base, f).split(path.sep).join('/')}`);
   const rank = (p) => {
-    const name = p.slice('tests/api/'.length);
-    const i = ROOT_ORDER.indexOf(name);
+    const name = p.slice(s.root.length + 1);
+    const i = s.order.indexOf(name);
     if (i >= 0) return [0, String(i).padStart(2, '0')];
-    return [1, name];
+    // Inside each folder, its files come before its subfolders.
+    const parts = name.split('/');
+    return [1, parts.map((x, j) => (j === parts.length - 1 ? '0' : '1') + x).join('/')];
   };
   return rel.sort((a, b) => {
     const [ga, ka] = rank(a), [gb, kb] = rank(b);
@@ -32,39 +52,51 @@ export function suiteFiles() {
   });
 }
 
-/** The test functions in a suite test file, in file order. */
+/** The test functions in an API suite test file, in file order. */
 export function testsIn(suitePath) {
-  const src = readFileSync(path.join(SUITE_ROOT, suitePath.slice('tests/api/'.length)), 'utf8');
-  return [...src.matchAll(/^def (test_\w+)\(/gm)].map((m) => m[1]);
+  return [...readFileSync(fullPath(suitePath), 'utf8').matchAll(/^def (test_\w+)\(/gm)].map((m) => m[1]);
 }
 
 export const isTestFile = (p) => /^tests\/api\/tests\/test_\w+\.py$/.test(p);
 
-function fileSection(p) {
-  const full = path.join(SUITE_ROOT, p.slice('tests/api/'.length));
+function fileSection(s, p) {
+  const full = fullPath(p);
   const ext = path.extname(p);
-  const head = `<div class="code-head"><span>${esc(p)}</span><span>${esc(LANGS[ext] || 'file')}</span></div>`;
-  if (!LANGS[ext]) {
+  const lang = s.langs[ext];
+  const head = `<div class="code-head"><span>${esc(p)}</span><span>${esc(lang || (ext === '.png' ? 'image' : 'file'))}</span></div>`;
+  if (ext === '.png') {
+    const what = p.includes('-snapshots/')
+      ? (p.includes('credit-card') ? 'The saved screenshot (baseline) that the visual test compares the card with. The pink bar is the masked part, which the comparison ignores.' : 'The saved screenshot (baseline) that the visual test compares the page with.')
+      : 'A small picture that the upload tests attach as a receipt.';
+    return `<section class="sf" data-path="${esc(p)}"><div class="code">${head}<figure class="sf-image"><img src="/suite-files/${esc(p)}" alt="${esc(what)}" loading="lazy"><figcaption>${esc(what)}</figcaption></figure></div></section>`;
+  }
+  if (!lang) {
     const size = statSync(full).size;
     return `<section class="sf" data-path="${esc(p)}"><div class="code">${head}<p class="sf-binary">A small file the upload tests send (${size} bytes). It is not text, so it is not shown.</p></div></section>`;
   }
   let src = readFileSync(full, 'utf8').replace(/\s+$/, '');
   // The local test key and database password are not shown on the site.
   src = src.replace(/(TEST_KEY = os\.getenv\("TEST_KEY", )"[^"]*"\)/, '$1"…")')
-    .replace(/(DB_READONLY_PASSWORD = os\.getenv\("DB_READONLY_PASSWORD", )"[^"]*"\)/, '$1"…")');
+    .replace(/(DB_READONLY_PASSWORD = os\.getenv\("DB_READONLY_PASSWORD", )"[^"]*"\)/, '$1"…")')
+    .replace(/(TEST_KEY = process\.env\.TEST_KEY \?\? )'[^']*'/, "$1'…'");
   let runs = '';
   if (isTestFile(p)) {
     const tests = testsIn(p);
     const items = tests.map((t) => `<li><code>${esc(t)}</code>${runButton(`${nodeFile(p)}::${t}`, 'Run')}</li>`).join('');
     runs = `<div class="sf-tests run-host"><div class="sf-tests-head"><b>${tests.length} test${tests.length === 1 ? '' : 's'} in this file</b>${runButton(nodeFile(p), 'Run the whole file')}</div><ul>${items}</ul></div>`;
   }
-  return `<section class="sf" data-path="${esc(p)}">${runs}<div class="code wide-ok">${head}<pre><code>${highlight(src, LANGS[ext])}</code></pre></div></section>`;
+  const uiTests = uiTestsIn(p);
+  if (uiTests.length) {
+    const items = uiTests.map((t) => `<li><code>${esc(t.title)}</code>${uiRunButton(uiNode(p, t.line), 'Run', t.title)}</li>`).join('');
+    runs = `<div class="sf-tests run-host"><div class="sf-tests-head"><b>${uiTests.length} test${uiTests.length === 1 ? '' : 's'} in this file</b>${uiRunButton(uiNode(p), 'Run the whole file')}</div><ul>${items}</ul></div>`;
+  }
+  return `<section class="sf" data-path="${esc(p)}">${runs}<div class="code wide-ok">${head}<pre><code>${highlight(src, lang)}</code></pre></div></section>`;
 }
 
-function treeNav(files) {
+function treeNav(s, files) {
   let lastDir = '';
   return files.map((p) => {
-    const rel = p.slice('tests/api/'.length);
+    const rel = p.slice(s.root.length + 1);
     const dir = rel.includes('/') ? rel.slice(0, rel.lastIndexOf('/') + 1) : '';
     const name = rel.slice(dir.length);
     let out = '';
@@ -72,8 +104,9 @@ function treeNav(files) {
       // Print each folder level that starts here.
       const parts = dir.split('/').filter(Boolean);
       const prev = lastDir.split('/').filter(Boolean);
+      let changed = false;
       parts.forEach((part, i) => {
-        if (prev[i] !== part) out += `<li class="st-dir" style="--d:${i}">${esc(part)}/</li>`;
+        if (changed || prev[i] !== part) { changed = true; out += `<li class="st-dir" style="--d:${i}">${esc(part)}/</li>`; }
       });
       lastDir = dir;
     }
@@ -82,17 +115,26 @@ function treeNav(files) {
   }).join('');
 }
 
-export function suitePage() {
-  const files = suiteFiles();
+/** The image files a suite browser shows, as [suite path, absolute source] pairs, for the build to copy. */
+export function suiteImages() {
+  return Object.values(SUITES).flatMap((s) => suiteFiles(s).filter((p) => p.endsWith('.png')).map((p) => [p, fullPath(p)]));
+}
+
+export function suitePage(key = 'api') {
+  const s = SUITES[key];
+  const files = suiteFiles(s);
+  const tabs = Object.entries(SUITES).map(([k, x]) =>
+    `<a href="${x.url}"${k === key ? ' aria-current="page"' : ''}>${esc(x.tab)}</a>`).join('');
   const body = `<div class="frame suite-frame">
 <div class="page-head">
-<p class="eyebrow"><span class="chip">API suite</span><span>Python and pytest</span></p>
+<nav class="suite-tabs" aria-label="Suites">${tabs}</nav>
+<p class="eyebrow"><span class="chip">${esc(s.chip)}</span><span>${esc(s.lang)}</span></p>
 <h1>The suite, file by file</h1>
-<p class="lede">Every file of the API test suite that the Python lessons teach. Test files list their tests with a Run button, which runs that test on the live app and opens a panel with every API call it made, request and response. Start from <a href="${lessonUrl('py-framework-map')}">the framework map</a> if you want each file’s job first.</p>
+<p class="lede">${s.lede}</p>
 </div>
 <div class="suite">
-<nav class="suite-tree" aria-label="Suite files"><p class="st-root">tests/api/</p><ul>${treeNav(files)}</ul></nav>
-<div class="suite-files">${files.map(fileSection).join('')}</div>
+<nav class="suite-tree" aria-label="Suite files"><p class="st-root">${esc(s.root)}/</p><ul>${treeNav(s, files)}</ul></nav>
+<div class="suite-files">${files.map((p) => fileSection(s, p)).join('')}</div>
 </div>
 </div>`;
   const scripts = `<script>
@@ -114,5 +156,5 @@ export function suitePage() {
   show();
 }());
 </script>`;
-  return page({ title: 'The API suite · CardVault Learn', active: 'suite', body, scripts });
+  return page({ title: s.title, active: 'suite', body, scripts });
 }
