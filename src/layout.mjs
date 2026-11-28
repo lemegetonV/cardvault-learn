@@ -9,6 +9,7 @@ const themeButton = `<button class="theme-btn" type="button" aria-label="Switch 
 const navItems = [
   ['home', '/', 'Start'],
   ...tracks.map((t) => [t.id, `/#${t.id}`, t.short]),
+  ['suite', '/suite/', 'The code'],
   ['drill', '/drill/', 'Interview drill'],
   ['lab', '/lab/', 'Live lab'],
 ];

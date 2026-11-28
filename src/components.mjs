@@ -109,14 +109,15 @@ export function code({ src, lang = 'python', title = '', note = '' }) {
   checkExcerpt(title, clean);
   const body = hljs.highlight(clean, { language: lang }).value;
   // A suite file gets a link to the full file, and a test file a Run button per test shown.
-  const suite = title.match(/^(tests\/api\/\S+)/);
+  const file = title.match(/^(tests\/(?:api|ui)\/\S+)/);
   let right = esc(note || (lang === 'text' ? '' : lang));
   let runs = '';
-  if (suite) {
-    right = `<a href="/suite/#${esc(suite[1])}">Full file</a>`;
-    if (/^tests\/api\/tests\/test_\w+\.py$/.test(suite[1])) {
+  if (file) {
+    const href = file[1].startsWith('tests/ui/') ? `/suite/ui/#${file[1]}` : `/suite/#${file[1]}`;
+    right = `<a href="${esc(href)}">Full file</a>`;
+    if (/^tests\/api\/tests\/test_\w+\.py$/.test(file[1])) {
       const names = [...clean.matchAll(/^def (test_\w+)\(/gm)].map((m) => m[1]);
-      runs = names.map((t) => runButton(`${nodeFile(suite[1])}::${t}`, names.length > 1 ? `Run ${t}` : 'Run this test on the live app')).join('');
+      runs = names.map((t) => runButton(`${nodeFile(file[1])}::${t}`, names.length > 1 ? `Run ${t}` : 'Run this test on the live app')).join('');
     }
   }
   return `<div class="code wide-ok"><div class="code-head"><span>${esc(title)}</span><span>${right}</span></div>`

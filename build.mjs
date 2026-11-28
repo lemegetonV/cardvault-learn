@@ -8,7 +8,7 @@ import { esc, excerptProblems, buildContext, interviewLog } from './src/componen
 import { site, allLessons, lessonUrl } from './content/site.mjs';
 import { homePage } from './content/pages/home.mjs';
 import { labPage } from './content/pages/lab.mjs';
-import { suitePage } from './content/pages/suite.mjs';
+import { suitePage, suiteImages } from './content/pages/suite.mjs';
 import { drillPage } from './content/pages/drill.mjs';
 
 const root = path.dirname(fileURLToPath(import.meta.url));
@@ -63,7 +63,12 @@ ${sections.toc}</div>`;
 await out('', homePage());
 await out('learn', homePage());
 await out('lab', labPage());
-await out('suite', suitePage());
+await out('suite', suitePage('api'));
+await out('suite/ui', suitePage('ui'));
+for (const [p, src] of suiteImages()) {
+  await mkdir(path.dirname(path.join(dist, 'suite-files', p)), { recursive: true });
+  await cp(src, path.join(dist, 'suite-files', p));
+}
 await out('drill', drillPage(interviewLog));
 
 problems.push(...excerptProblems);
