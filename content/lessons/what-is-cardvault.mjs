@@ -39,7 +39,7 @@ ${table(['Customer', 'What is special about them'], [
 ])}
 
 <h2>Where it runs</h2>
-<p>CardVault runs in Docker on your own computer, and a copy runs on a stage server on the internet. The local copy behaves exactly as designed. The stage copy has some known defects switched on on purpose, so that your tests have real bugs to find there.</p>
+<p>CardVault runs in two places. A <strong>stage</strong> copy runs on a server on the internet: it is the one behind every Try it panel and Run button on this site, and you can open its screens in your browser. You can also run your own copy in Docker on your computer. Both run the same code with the same demo customers. <a href="/learn/environments/">Where it runs</a> lists the stage pages and shows how to start your own copy.</p>
 
 ${interview({
   say: `<p>“The app I tested is the card and wallet app of a bank. Customers sign in, see their cards and balances, add cards to a checkout wallet for one-tap online payments, and review or dispute their wallet transactions.</p>

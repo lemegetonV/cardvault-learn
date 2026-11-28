@@ -30,7 +30,7 @@ ${table(['Service', 'What it is responsible for', 'Screens it serves'], [
   ['Wallet (`enrollment-service`)', 'Which cards are in the wallet. It decides eligibility and asks the wallet company to add, pause or remove cards.', 'Wallet'],
   ['Transactions (`wallet-txn-service`)', 'The customer’s record of wallet purchases, the CSV export and disputes.', 'Transactions'],
 ])}
-<p>Each service owns its own database. No service reads another service’s tables. If Wallet needs to know about a card, it asks Cards or listens for news from it.</p>
+<p>Each service owns its own database. No service reads another service’s tables. If Wallet needs to know about a card, it asks Cards or listens for news from it. <a href="/learn/data-and-events/">Data and events</a> names the tables and the news each service shares.</p>
 
 ${keyIdea('<p>One service, one job, its own data. When something goes wrong on a screen, this tells you which service to look at first.</p>')}
 
@@ -56,7 +56,7 @@ ${testerEye('<p>Because events arrive a moment later, a test that checks the tra
 <p>In our environments both companies are simulators that tests can control.</p>
 
 <h2>How it is run</h2>
-<p>Every part runs in its own Docker container, and Docker Compose starts them all together with one command: the web app, the five services, the two simulators, one Postgres database server (with a separate database per service) and Kafka. GitHub Actions starts the same set for every change to the code and checks it works.</p>
+<p>Every part runs in its own Docker container, and Docker Compose starts them all together with one command: the web app, the five services, the two simulators, one Postgres database server (with a separate database per service) and Kafka. GitHub Actions starts the same set for every change to the code and checks it works. <a href="/learn/environments/">Where it runs</a> shows how to start it on your own computer.</p>
 
 ${interview({
   say: `<p>“It is a microservice system. A Next.js web app sits in front, with a backend-for-frontend layer that holds the customer’s session and forwards requests. Behind it are five Python services, each with its own database: login, cards, profile, wallet enrolment and transactions.</p>

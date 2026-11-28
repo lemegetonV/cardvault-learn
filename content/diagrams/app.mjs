@@ -100,3 +100,36 @@ export function pyramid() {
   b += text(470, 236, 'Developers: single functions', 't-sm', 'start');
   return svg(W, H, 'The test pyramid: unit tests at the bottom, many API tests in the middle, fewer UI tests at the top.', b);
 }
+
+/** The five Kafka topics: who publishes each one and who listens to it. */
+export function topics() {
+  const W = 860, H = 430;
+  const top = 50, step = 74, th = 52;
+  const ty = (i) => top + i * step;
+  const cy = (i) => ty(i) + th / 2;
+  const rows = [
+    ['contact.updated', 'email or phone changed'],
+    ['card.lifecycle', 'card lost, reissued, closed…'],
+    ['auth.decided', 'purchase approved or declined'],
+    ['txn.cleared', 'purchase settled or refunded'],
+    ['enrollment.changed', 'wallet status changed'],
+  ];
+  let b = '';
+  b += text(105, 28, 'publishes', 't-sm t-muted');
+  b += text(430, 28, 'topic', 't-sm t-event');
+  b += text(755, 28, 'listens', 't-sm t-muted');
+  rows.forEach(([name, sub], i) => {
+    b += box(320, ty(i), 220, th, name, { kind: 'event', sub, cls: 't-md' });
+    b += arrow([[180, cy(i)], [316, cy(i)]], 'ln-event', 'ah-event');
+    b += arrow([[540, cy(i)], [676, cy(i)]], 'ln-event', 'ah-event');
+  });
+  // Publishers on the left.
+  b += box(30, ty(0), 150, th, 'Profile', { kind: 'bank', cls: 't-md' });
+  b += box(30, ty(1), 150, ty(3) + th - ty(1), 'Cards', { kind: 'bank', cls: 't-md' });
+  b += box(30, ty(4), 150, th, 'Wallet', { kind: 'bank', cls: 't-md' });
+  // Listeners on the right.
+  b += box(680, ty(0), 150, ty(1) + th - ty(0), 'Wallet', { kind: 'bank', cls: 't-md' });
+  b += box(680, ty(2), 150, ty(3) + th - ty(2), 'Transactions', { kind: 'bank', cls: 't-md' });
+  b += box(680, ty(4), 150, th, 'Cards', { kind: 'bank', cls: 't-md' });
+  return svg(W, H, 'Profile publishes contact.updated, which Wallet reads. Cards publishes card.lifecycle (read by Wallet), auth.decided and txn.cleared (read by Transactions). Wallet publishes enrollment.changed, which Cards reads.', b);
+}

@@ -3,7 +3,7 @@ import { system } from '../diagrams/app.mjs';
 
 export default {
   minutes: 8,
-  lede: '“Walk me through the architecture of the application you tested” is one of the most common SDET interview questions. This lesson turns the last five lessons into one answer you can say in about two minutes and draw on a whiteboard.',
+  lede: '“Walk me through the architecture of the application you tested” is one of the most common SDET interview questions. This lesson turns the lessons so far into one answer you can say in about two minutes and draw on a whiteboard.',
   youWill: 'You will have a two-minute architecture answer, a picture to draw, and answers to the usual follow-up questions.',
   body: `
 <h2>The shape of a good answer</h2>
@@ -43,6 +43,8 @@ ${table(['They ask', 'The idea to get across'], [
   ['Why events instead of direct calls?', 'Services stay independent and a slow one does not block the others. The cost: results arrive a moment later.'],
   ['How did you test the outside partners?', 'With simulators that act like them and can be told to be slow, fail, or answer twice.'],
   ['Where were most of your tests?', 'API level for business rules, a smaller set of UI tests for key journeys.'],
+  ['Where did the tests run?', 'Locally in Docker while writing them, on a fresh copy in CI for every change, and against a shared stage server. Addresses came from settings, so the same suite ran everywhere.'],
+  ['Where does each service keep its data?', 'Its own database in one Postgres server, and it shares changes through five Kafka topics.'],
 ])}
 <p>Each of these has a longer model answer in the interview corners of the earlier lessons.</p>
 

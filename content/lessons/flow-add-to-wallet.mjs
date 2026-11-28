@@ -1,7 +1,7 @@
-import { sequence, interview, table, keyIdea, testerEye } from '../../src/components.mjs';
+import { sequence, interview, table, keyIdea, testerEye, watchIt } from '../../src/components.mjs';
 
 export default {
-  minutes: 9,
+  minutes: 10,
   lede: 'Adding a card to the wallet is CardVault’s main feature, and its most interesting flow: the bank checks a set of rules, then has to ask an outside company and wait for its answer. This lesson follows it from the button to the final status.',
   youWill: 'You will be able to explain the wallet rules and the asynchronous add-card flow.',
   body: `
@@ -63,6 +63,13 @@ ${testerEye(`<p>Asynchronous flows need a different kind of test:</p>
 <li>Test each eligibility rule with a card that breaks exactly that rule, and one card that passes all of them.</li>
 <li>Ask what happens if the wallet company never calls back, calls back twice, or says no. In test environments the simulator can be told to do each of these.</li>
 </ul>`)}
+
+<h2>Watch it happen</h2>
+<p>The drawing explains the flow; a real run proves it. These buttons run the add-card flow on the live app for a new test customer, and the side panel shows every step and check in order.</p>
+${watchIt({ intro: 'The API test adds a card, sees <code>202</code> and PENDING, then waits until the wallet company’s callback has made it ENROLLED. The Playwright test does the same through the screens, accepting the terms in the wallet company’s frame.', runs: [
+  { api: 'tests/test_wallet.py::test_add_a_card_to_the_wallet', label: 'API: add a card and wait for ENROLLED' },
+  { ui: 'tests/wallet-journey.spec.ts:6', label: 'Browser: add a card, then remove it', title: 'add a card to the wallet, then remove it' },
+] })}
 
 ${interview({
   say: `<p>“The core flow is adding a card to the wallet. The enrolment service first checks eligibility: active, not expired, credit or debit, used in the last 90 days, not opted out, and verified email and phone. If it passes, the service records the card as PENDING, returns 202, and sends a signed request to the external wallet operator.</p>

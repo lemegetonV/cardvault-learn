@@ -25,12 +25,14 @@ export const tracks = [
       },
       {
         title: 'How it is built',
-        blurb: 'The parts behind the screens, and three journeys through them.',
+        blurb: 'The parts behind the screens, where the data and events live, three journeys through them, and where it all runs.',
         lessons: [
           ['system-at-a-glance', 'The system at a glance', true],
+          ['data-and-events', 'Data and events: where CardVault keeps things', true],
           ['flow-login', 'Flow: logging in', true],
           ['flow-add-to-wallet', 'Flow: adding a card to the wallet', true],
           ['flow-purchase', 'Flow: a purchase', true],
+          ['environments', 'Where it runs: stage and your own computer', true],
         ],
       },
       {

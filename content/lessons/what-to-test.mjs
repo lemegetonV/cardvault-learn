@@ -2,7 +2,7 @@ import { figure, interview, table, testerEye } from '../../src/components.mjs';
 import { pyramid } from '../diagrams/app.mjs';
 
 export default {
-  minutes: 9,
+  minutes: 10,
   lede: 'You know the app. The last step before writing any code is deciding what to test and where. This lesson builds a simple test plan for CardVault, the kind of thinking interviewers ask about with “How would you test this?”.',
   youWill: 'You will be able to explain a risk-based test plan for CardVault and say which tests belong at API level and which at UI level.',
   body: `
@@ -35,6 +35,10 @@ ${table(['Feature', 'Biggest risks', 'API tests', 'UI tests'], [
 <li><strong>Cross-service</strong>: an action in one service changes another. A lost card is paused in the wallet.</li>
 <li><strong>Security</strong>: no token, a fake token, someone else’s data.</li>
 </ul>
+
+<h2>Looking behind the API</h2>
+<p>A few checks need more than the API answer. The <strong>database</strong> shows what was really saved: that a password is stored as a hash, a card number is encrypted, and a refused request wrote nothing. The <strong>events</strong> show that the other services were told: reporting a card lost sends a <code>CARD_LOST</code> message, and a purchase sends its decision. Keep these few and targeted, because they depend on the inside of the system and break when it changes. <a href="/learn/data-and-events/">Data and events</a> shows where both live.</p>
+<p>Finally, decide <strong>where</strong> each set runs. Everything runs on a fresh copy in CI for every change; a smaller set runs against stage to prove the deployed app works. <a href="/learn/environments/">Where it runs</a> covers the environments.</p>
 
 ${testerEye('<p>Every row of the plan above becomes real tests in the next two tracks. The API track writes the API column in pytest, and the UI track writes the UI column in Playwright.</p>')}
 
