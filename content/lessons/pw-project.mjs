@@ -23,11 +23,13 @@ ${tree([
   ['tsconfig.json', 1, 'Settings for the TypeScript checker'],
   ['config.ts', 1, 'Where the app is, and the demo password'],
   ['README.md', 1, 'How to run it, for the next person'],
+  ['visual.config.ts', 1, 'Settings for the screenshot tests only'],
   ['learn/', 1, 'One small test file per lesson'],
   ['first-test.spec.ts', 2, 'A test file: the name ends in .spec.ts'],
   ['helpers/', 2, 'Set-up code that tests share'],
   ['files/', 2, 'A receipt picture the upload test sends'],
   ['typescript/', 2, 'Small programs for the TypeScript lessons'],
+  ['visual/', 1, 'The screenshot tests and their saved pictures'],
   ['node_modules/', 1, 'The installed packages; made by npm, never committed'],
   ['playwright-report/', 1, 'The HTML report of the last run; never committed'],
   ['test-results/', 1, 'Screenshots and recordings of failed tests; never committed'],
@@ -55,7 +57,7 @@ ${code({ lang: 'json', title: 'tests/ui/package.json', src: `
 ` })}
 <ul>
 <li><code>devDependencies</code> lists the packages and their exact versions: Playwright Test, TypeScript (for the checker), and type labels for Node.js’s own functions. “Dev” means they are needed to work on the project, not to run a product.</li>
-<li><code>scripts</code> gives commands short names. <code>npm test</code> runs <code>playwright test</code>; <code>npm run typecheck</code> runs the TypeScript checker without running any test (<code>--noEmit</code> means “check only, write no files”).</li>
+<li><code>scripts</code> gives commands short names. <code>npm test</code> runs <code>playwright test</code>; <code>npm run typecheck</code> runs the TypeScript checker without running any test (<code>--noEmit</code> means “check only, write no files”). Two more commands, <code>visual</code> and <code>visual:update</code>, left out here, belong to <a href="/learn/pw-visual/">visual comparisons</a>.</li>
 <li><code>"private": true</code> stops anyone publishing this folder to npm by mistake.</li>
 </ul>
 

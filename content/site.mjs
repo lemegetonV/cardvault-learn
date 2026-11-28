@@ -189,11 +189,11 @@ export const tracks = [
         title: 'Seeing what happened',
         blurb: 'Debugging, reports, flaky tests, screenshots that compare, and parallel runs.',
         lessons: [
-          ['pw-debugging', 'Debugging: trace viewer and UI mode', false],
-          ['pw-reports', 'Reports and evidence', false],
-          ['pw-flaky-tests', 'Flaky tests', false],
-          ['pw-visual', 'Visual comparisons', false],
-          ['pw-parallel', 'Parallel runs and sharding', false],
+          ['pw-debugging', 'Debugging: trace viewer and UI mode', true],
+          ['pw-reports', 'Reports and evidence', true],
+          ['pw-flaky-tests', 'Flaky tests', true],
+          ['pw-visual', 'Visual comparisons', true],
+          ['pw-parallel', 'Parallel runs and sharding', true],
         ],
       },
       {

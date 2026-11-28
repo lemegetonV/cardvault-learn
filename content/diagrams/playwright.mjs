@@ -144,3 +144,25 @@ export function routeFlow() {
   b += arrow([[640, 150], [696, 150]], 'ln', 'ah', { start: true });
   return svg(W, H, 'A request from the page meets page.route first. The test can answer it itself with fulfill, let it reach CardVault and change the real answer before the page sees it, or abort it. Only the middle path reaches the web app.', b);
 }
+
+/** Sharding and workers: two machines, each running half the files with two workers. */
+export function shardsWorkers() {
+  const W = 860, H = 300;
+  let b = '';
+  const machine = (x, title, flag, lanes) => {
+    let m = `<rect class="zone" x="${x}" y="16" width="400" height="266" rx="16"/>`;
+    m += text(x + 20, 42, title, 't-md', 'start');
+    m += text(x + 20, 60, flag, 't-mono', 'start');
+    lanes.forEach((files, i) => {
+      const y = 82 + i * 98;
+      m += text(x + 20, y + 16, `worker ${i}`, 't-sm', 'start');
+      files.forEach((f, j) => {
+        m += box(x + 20 + j * 124, y + 26, 112, 54, f, { kind: 'plain', cls: 't-sm' });
+      });
+    });
+    return m;
+  };
+  b += machine(20, 'Machine 1: shard 1 of 2', '--shard=1/2', [['forms', 'hooks', 'frames'], ['locators', 'time', '…']]);
+  b += machine(440, 'Machine 2: shard 2 of 2', '--shard=2/2', [['waiting', 'reports', 'devices'], ['parallel', 'network', '…']]);
+  return svg(W, H, 'Sharding splits the test files between two machines. On each machine, two workers take files one at a time and run them side by side.', b);
+}
