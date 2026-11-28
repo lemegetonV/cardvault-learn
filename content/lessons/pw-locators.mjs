@@ -31,7 +31,7 @@ test.beforeEach(async ({ page }) => {
 <p><code>DEMO_PASSWORD</code> is a <strong>constant</strong> imported from the suite’s <code>config.ts</code>, so the password is written in one place only.</p>
 
 <h2>By role: what the element is</h2>
-<p>Every element on a web page has a <strong>role</strong> that says what kind of thing it is: a <code>button</code>, a <code>link</code>, a <code>heading</code>, a <code>textbox</code>, a <code>checkbox</code>, a <code>listitem</code>, a <code>navigation</code> area. Screen readers, the tools blind users rely on, read pages through these roles. Most elements also have an <strong>accessible name</strong>: the text on a button, the words of a link, the label of a field.</p>
+<p>Interactive elements and page landmarks have a <strong>role</strong> that says what kind of thing they are: a <code>button</code>, a <code>link</code>, a <code>heading</code>, a <code>textbox</code>, a <code>checkbox</code>, a <code>listitem</code>, a <code>navigation</code> area. Screen readers, the tools blind users rely on, read pages through these roles. Most of them also have an <strong>accessible name</strong>: the text on a button, the words of a link, the label of a field. Like <code>getByText</code> below, <code>getByRole</code> matches part of the name and ignores upper and lower case, so <code>{ name: 'Cards' }</code> would also match a heading “Your cards”; add <code>exact: true</code> to match the whole name.</p>
 ${code({ lang: 'typescript', title: 'tests/ui/learn/locators.spec.ts', src: `
 test('by role: the heading and the navigation links', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Cards' })).toBeVisible();

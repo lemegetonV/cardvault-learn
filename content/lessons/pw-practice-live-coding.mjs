@@ -112,8 +112,10 @@ test('settled transactions are shown after filtering', async ({ page }) => {
 
   await expect(page).toHaveURL(/status=SETTLED/);
   await expect(page.getByTestId('txn-row').first()).toBeVisible();
+  // The filter's effect: no row shows any other status.
+  await expect(page.getByTestId('txn-status').filter({ hasNotText: 'SETTLED' })).toHaveCount(0);
 });
-`})}<p>With the framework, the last lines become the <code>filter to settled transactions</code> test in <a href="/learn/pw-framework-map/">the framework map</a>, which also checks that no row shows another status.</p>`, 'answer')}
+`})}<p>The last line is the one that proves the filter worked: rows are there, and none has another status. With the framework, these lines become the <code>filter to settled transactions</code> test in <a href="/learn/pw-framework-map/">the framework map</a>.</p>`, 'answer')}
 
 ${keyIdea('<p>In live coding, say the goal, the source of each expected value and your locator choice before typing. Write the smallest passing test, then improve it. When reviewing code, name each problem and its risk before fixing it.</p>')}
 

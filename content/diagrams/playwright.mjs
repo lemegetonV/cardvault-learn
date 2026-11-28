@@ -176,14 +176,14 @@ export function frameworkLayers() {
   b += box(250, 108, 360, 62, 'fixtures.ts', { kind: 'plain', sub: 'hands each test what it asks for' });
   b += arrow([[330, 170], [170, 204]]);
   b += arrow([[530, 170], [690, 204]]);
-  b += box(20, 208, 300, 62, 'pages/', { kind: 'plain', sub: 'page objects: where and how' });
+  b += box(20, 208, 300, 62, 'pages/ + components/', { kind: 'plain', sub: 'page and part objects: where and how' });
   b += box(540, 208, 300, 62, 'api/', { kind: 'plain', sub: 'set-up through the services' });
   b += box(350, 210, 160, 58, 'data/', { kind: 'plain', sub: 'values and files', cls: 't-md' });
   b += arrow([[170, 270], [170, 304]]);
   b += arrow([[690, 270], [690, 304]]);
   b += box(20, 308, 300, 58, 'Web app', { kind: 'bank', sub: 'through a real browser' });
   b += box(540, 308, 300, 58, 'Services', { kind: 'bank', sub: 'HTTP, no browser' });
-  return svg(W, H, 'Tests sit on top and only say what to check. Fixtures hand them page objects, an API client and ready-made customers. Page objects drive the web app through a browser; the API client sets up data in the services directly. Test data sits beside both.', b);
+  return svg(W, H, 'Tests sit on top and only say what to check. Fixtures hand them page objects, component objects, an API client and ready-made customers. Page objects drive the web app through a browser; the API client sets up data in the services directly. Test data sits beside both.', b);
 }
 
 /** One test asks for customer; Playwright builds the fixtures it depends on first. */

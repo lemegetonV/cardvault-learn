@@ -7,12 +7,12 @@ export default {
   youWill: 'You will be able to name each folder of the framework, say what it is for, and follow one test through it.',
   body: `
 <h2>The problem the framework solves</h2>
-<p>Count the sign-ins in Part 1: the same four lines open more than twenty test files. Every test that touches the transactions page also knows that the status filter is a select box labelled “Status” with an Apply button. If the Apply button were renamed tomorrow, every one of those tests would need the same change.</p>
+<p>Count the sign-ins in Part 1: the same four lines open more than twenty test files. If the Sign in button were renamed tomorrow, every one of those files would need the same change.</p>
 <p>A framework puts each kind of knowledge in exactly one place. How to find things on a page lives in a page object. How to create a customer lives in an API client. Which values the tests use lives in a data file. Tests are left with one job: saying what they check.</p>
 
 <h2>The folders</h2>
 ${tree([
-  ['playwright.config.ts', 1, 'Adds a project called framework for the tests/ folder'],
+  ['playwright.config.ts', 1, 'Adds two projects for the tests/ folder: framework, and phone'],
   ['config.ts', 1, 'Where the app is (from Part 1, unchanged)'],
   ['fixtures.ts', 1, 'Our own fixtures: page objects, the API client, a new customer'],
   ['pages/', 1, 'One page object per page of the app'],
@@ -21,6 +21,8 @@ ${tree([
   ['CardsPage.ts', 2, 'The Cards page'],
   ['TransactionsPage.ts', 2, 'The transaction list and its filters'],
   ['TransactionPage.ts', 2, 'One transaction, and the dispute form'],
+  ['components/', 1, 'Parts that appear on many pages (met in Module 7)'],
+  ['Toast.ts, ConsentDialog.ts, Menu.ts', 2, 'Messages, the wallet terms, the phone menu'],
   ['api/', 1, 'Set-up through the services, without a browser'],
   ['CardVaultApi.ts', 2, 'Create a customer, make a purchase, count transactions'],
   ['data/', 1, 'Test data in one place'],
@@ -30,12 +32,14 @@ ${tree([
   ['sign-in.spec.ts', 2, 'Signing in, right and wrong'],
   ['cards.spec.ts', 2, 'alice’s cards, with her saved login'],
   ['transactions.spec.ts', 2, 'Filtering; a new customer’s purchase and dispute'],
+  ['wallet-journey.spec.ts', 2, 'Add a card to the wallet and remove it (Module 7)'],
+  ['dispute-journey.spec.ts', 2, 'Dispute a purchase from start to end (Module 7)'],
   ['learn/', 1, 'Part 1, untouched'],
 ], 'tests/ui')}
 <p>Part 1’s <code>learn/</code> folder stays as it was. The framework sits beside it, so you can compare a plain test with its framework version.</p>
 
 <h2>How the pieces depend on each other</h2>
-${figure({ svg: frameworkLayers(), caption: 'Each layer only uses the layer below it. Tests hold the steps and the checks; page objects hold the locators and never decide whether a test passed.' })}
+${figure({ svg: frameworkLayers(), caption: 'Tests use fixtures and test data; fixtures build the page objects and the API client. Tests hold the steps and the checks; page objects hold the locators and never decide whether a test passed.' })}
 <ul>
 <li><strong>Tests</strong> read like a list of steps a person would follow: open the transactions page, filter to settled, expect only settled rows.</li>
 <li><strong>Fixtures</strong> are Playwright’s way of handing things to a test, met in <a href="/learn/pw-builtin-fixtures/">built-in fixtures</a>. The framework adds its own.</li>
@@ -66,18 +70,22 @@ ${code({ lang: 'typescript', title: 'tests/ui/tests/transactions.spec.ts', src: 
 </ol>
 
 <h2>Running it</h2>
-${terminal([['npx playwright test --project=framework', `Running 8 tests using 2 workers
+${terminal([['npx playwright test --project=framework', `Running 12 tests using 2 workers
 
-  ✓  1 [setup] › learn/saved-login.setup.ts:5:1 › sign in as alice and save the login (533ms)
-  ✓  3 [framework] › tests/cards.spec.ts:8:1 › alice has her four cards (450ms)
-  ✓  2 [framework] › tests/sign-in.spec.ts:4:1 › alice signs in and sees her wallet (691ms)
-  ✓  4 [framework] › tests/cards.spec.ts:17:1 › the credit card shows its limit (452ms)
-  ✓  5 [framework] › tests/sign-in.spec.ts:13:1 › a wrong password is refused (688ms)
-  ✓  6 [framework] › tests/transactions.spec.ts:9:3 › alice’s transactions › filter to settled transactions (537ms)
-  ✓  7 [framework] › tests/transactions.spec.ts:23:3 › a new customer’s purchase › the purchase is in the list (892ms)
-  ✓  8 [framework] › tests/transactions.spec.ts:31:3 › a new customer’s purchase › dispute the purchase, with a note and a receipt (1.1s)
+  ✓   1 [setup] › learn/saved-login.setup.ts:5:1 › sign in as alice and save the login (584ms)
+  ✓   3 [framework] › tests/cards.spec.ts:8:1 › alice has her four cards (421ms)
+  ✓   4 [framework] › tests/cards.spec.ts:17:1 › the credit card shows its limit (366ms)
+  ✓   5 [framework] › tests/sign-in.spec.ts:4:1 › alice signs in and sees her wallet (704ms)
+  ✓   2 [framework] › tests/dispute-journey.spec.ts:7:1 › dispute a purchase and see it marked in the list @phone (2.0s)
+  ✓   6 [framework] › tests/sign-in.spec.ts:13:1 › a wrong password is refused (796ms)
+  ✓   8 [framework] › tests/transactions.spec.ts:9:3 › alice’s transactions › filter to settled transactions (584ms)
+  ✓   7 [framework] › tests/dispute-journey.spec.ts:29:1 › a purchase can only be disputed once (1.5s)
+  ✓   9 [framework] › tests/transactions.spec.ts:23:3 › a new customer’s purchase › the purchase is in the list (1.3s)
+  ✓  11 [framework] › tests/transactions.spec.ts:31:3 › a new customer’s purchase › dispute the purchase, with a note and a receipt (1.3s)
+  ✓  10 [framework] › tests/wallet-journey.spec.ts:6:1 › add a card to the wallet, then remove it @phone (3.7s)
+  ✓  12 [framework] › tests/wallet-journey.spec.ts:31:1 › Add card stays disabled until the terms are accepted (797ms)
 
-  8 passed (5.3s)`]], 'Real output')}
+  12 passed (9.7s)`]], 'Real output. The two journey files are the subject of Module 7.')}
 <p>The framework has its own project in the config, so <code>--project=framework</code> runs only its tests, after the setup project that saves alice’s login. Plain <code>npx playwright test</code> runs both parts.</p>
 
 ${testerEye('<p>A framework is worth its cost only while it stays simple. Every piece here exists because Part 1 showed the same thing repeated. Resist adding layers “in case”: a reader should be able to go from a test to the click it makes in one or two jumps.</p>')}

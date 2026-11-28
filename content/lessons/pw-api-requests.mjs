@@ -58,7 +58,7 @@ ${code({ lang: 'typescript', title: 'tests/ui/learn/api-requests.spec.ts', src: 
   const signedOut = await request.get('/api/cards');
   expect(signedOut.status()).toBe(401);
 ` })}
-<p>This test signs alice in on the page first. <code>/api/cards</code> is the web app’s own route, which keeps the token in a cookie for the browser. <code>page.request</code> is a request client that shares the page’s context, so it sends the sign-in cookie, and the answer is 200. The separate <code>request</code> fixture has no cookies, so the same address answers 401, “not signed in”.</p>
+<p>This test signs alice in on the page first. <code>/api/cards</code> is the web app’s own route, which keeps the token in a cookie for the browser. <code>page.request</code> is a request client that shares the page’s context, so it sends the sign-in cookie, and the answer is 200. The separate <code>request</code> fixture has no cookies here, so the same address answers 401, “not signed in”. (If a file sets a saved login with <code>storageState</code>, as the next lesson does, the <code>request</code> fixture loads those cookies too.)</p>
 ${sequence({
   id: 'request-kinds',
   label: 'Who sends the cookie',

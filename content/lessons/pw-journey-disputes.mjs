@@ -64,7 +64,7 @@ test('a purchase can only be disputed once', async ({ customer, transactionsPage
   await expect(transactionPage.disputeButton).toBeHidden();
 });
 ` })}
-<p>“One open dispute per purchase” is a business rule, and a rule gets a test whose name states it. If it breaks, the failing test’s name says which rule, without reading the journey. This test skips the menu and goes straight to the list, because the route there is not what it checks.</p>
+<p>“One open dispute per purchase” is a business rule, and a rule gets a test whose name states it. If it breaks, the failing test’s name says which rule, without reading the journey. This test skips the menu and goes straight to the list, because the route there is not what it checks. It proves the customer is no longer offered a second dispute; that the services refuse one is checked by an API test.</p>
 
 ${keyIdea('<p>Journeys move the way a customer does, through the menu, and check the outcome where the customer would look for it, often on another page. Business rules get small tests of their own, named after the rule.</p>')}
 
@@ -72,7 +72,7 @@ ${keyIdea('<p>Journeys move the way a customer does, through the menu, and check
 ${table(['Kind of test', 'How many', 'Example'], [
   ['Journey', 'A few, for the paths that matter most', 'Add a card to the wallet; dispute a purchase'],
   ['Feature test', 'One or more per behaviour', 'The Add card button waits for the terms'],
-  ['Rule test', 'One per business rule', 'A purchase can be disputed once'],
+  ['Rule test', 'One per business rule', 'One open dispute at a time'],
   ['API test', 'Most of the rules and errors', 'The pytest suite'],
 ])}
 <p>Rules that need no browser are cheaper to check through the API, as the pytest track does. The UI suite keeps what only a browser can show: what the customer sees and can do.</p>

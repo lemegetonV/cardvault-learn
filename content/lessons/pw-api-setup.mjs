@@ -12,7 +12,7 @@ export default {
 <li><strong>Focus.</strong> When a dispute test fails, the cause should be in disputes, not in sign-up three pages earlier.</li>
 <li><strong>Some things have no page.</strong> In CardVault, purchases happen at a shop’s checkout, outside the bank’s app. A test needs a way to make one happen.</li>
 </ul>
-<p>So the rule is: set up through the API, check through the UI. The sign-in still goes through the page here, because the browser needs its own session.</p>
+<p>So the rule is: set up through the API, check through the UI. Here the sign-in goes through the page, which also proves the sign-in page works for a new customer. Signing in through the API and loading the saved state, as in <a href="/learn/pw-saved-login/">logging in once</a>, would be faster; it is a choice, not a rule.</p>
 
 <h2>The API client</h2>
 ${code({ lang: 'typescript', title: 'tests/ui/api/CardVaultApi.ts', src: `
@@ -72,7 +72,7 @@ ${code({ lang: 'typescript', title: 'tests/ui/fixtures.ts', src: `
     // The purchase reaches the transaction list a moment later. Wait until it is there.
     await expect.poll(() => api.countTransactions(customer)).toBe(1);
 ` })}
-<p><code>expect.poll(fn)</code> calls the function again and again until its result passes the check, or the time runs out. It is the API version of a web-first assertion from <a href="/learn/pw-assertions/">web-first assertions</a>: no fixed pause, and it moves on the moment the purchase is there. <code>() =&gt; api.countTransactions(customer)</code> is a small function written in place, so <code>poll</code> can call it each time.</p>
+<p><code>expect.poll(fn)</code> calls the function again and again until its result passes the check, or the time runs out (the expect timeout, 5 seconds by default). It is the API version of a web-first assertion from <a href="/learn/pw-assertions/">web-first assertions</a>: no fixed pause, and it moves on the moment the purchase is there. <code>() =&gt; api.countTransactions(customer)</code> is a small function written in place, so <code>poll</code> can call it each time.</p>
 
 ${sequence({
   id: 'api-setup-run',
@@ -89,9 +89,9 @@ ${sequence({
     { from: 'f', to: 'n', label: 'purchase $30.00', note: 'The simulator pays Northwind Books with the card, like a shop’s checkout.' },
     { from: 'n', to: 't', label: 'a moment later', note: 'The bank records the purchase in the customer’s transactions.' },
     { from: 'f', to: 't', label: 'poll: 1 yet?', note: '`expect.poll` asks until the list has one transaction.' },
-    { from: 'f', to: 'b', label: 'sign in', note: 'The only browser step in the set-up: the page needs its own session.' },
+    { from: 'f', to: 'b', label: 'sign in', note: 'The only browser step in the set-up: signing in on the page, which also checks the sign-in page.' },
   ],
-  caption: 'Four quick HTTP calls and one sign-in. The test’s own steps start on a page that already has the data.',
+  caption: 'A few quick HTTP calls and one sign-in. The test’s own steps start on a page that already has the data.',
 })}
 
 ${keyIdea('<p>Set up through the API, check through the UI. Wrap the calls in a small client, fail fast when set-up fails, and use <code>expect.poll</code> to wait for data that arrives a moment later.</p>')}

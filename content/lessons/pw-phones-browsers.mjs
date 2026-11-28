@@ -45,7 +45,7 @@ ${code({ lang: 'typescript', title: 'Example · playwright.config.ts (not in Car
 ${table(['Choice', 'Gain', 'Cost'], [
   ['Chromium only', 'Fast, simple, covers most users', 'Misses engine-specific bugs'],
   ['Chromium + a phone project', 'Catches layout and touch problems', 'The chosen tests run twice'],
-  ['All three engines', 'Catches Safari and Firefox bugs', 'Every run takes about three times as long, more to install'],
+  ['All three engines', 'Catches Safari and Firefox bugs', 'Three times as many tests to run, and more to install'],
 ])}
 <p>Many teams run Chromium on every pull request and all engines once a night. That decision belongs to the team, based on where its customers are; CardVault’s suite chose Chromium and a phone.</p>
 

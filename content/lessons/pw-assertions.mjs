@@ -61,7 +61,7 @@ test('the page address and the browser tab title', async ({ page }) => {
 });
 ` })}
 <ul>
-<li><code>.not</code> reverses an assertion, and it waits too: <code>not.toBeVisible()</code> passes as soon as the element is not visible, or does not exist at all.</li>
+<li><code>.not</code> reverses an assertion, and it waits too: <code>not.toBeVisible()</code> passes as soon as the element is not visible, or does not exist at all. That is why the <code>toContainText('Not eligible')</code> check comes first: it proves the card is on the page. A negative check on its own can pass before the page has even loaded.</li>
 <li>Assertions on <code>page</code> check the whole page: its address with <code>toHaveURL</code> and the browser tab’s title with <code>toHaveTitle</code>. <code>/CardVault/</code> is a pattern that means “contains CardVault”.</li>
 </ul>
 

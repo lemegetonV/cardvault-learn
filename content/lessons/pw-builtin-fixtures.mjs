@@ -3,12 +3,12 @@ import { fixtureLayers } from '../diagrams/playwright.mjs';
 
 export default {
   minutes: 11,
-  lede: 'Every test so far began with async ({ page }). That { page } is a request: “give me a browser tab”. Playwright calls the things a test can ask for fixtures. This lesson tours the built-in ones, page, context, browser, request and testInfo, and shows when each is the right tool.',
+  lede: 'Every test so far began with async ({ page }). That { page } is a request: “give me a browser tab”. Playwright calls the things a test can ask for fixtures. This lesson tours the built-in ones, page, context, browser and request, plus testInfo, and shows when each is the right tool.',
   youWill: 'You will be able to explain what a fixture is and pick the right built-in fixture for a test.',
   body: `
 <h2>What a fixture is</h2>
 <p>A <strong>fixture</strong> is something a test needs that Playwright prepares before the test starts and tidies up after it ends. The test names the fixtures it wants inside <code>{ }</code>, and Playwright creates only those. Python’s pytest uses the same word for the same idea.</p>
-<p>The braces are a TypeScript feature called <strong>destructuring</strong>: Playwright passes the test one object holding every fixture, and <code>{ page, request }</code> takes out just the two named ones.</p>
+<p>The braces are a JavaScript feature, which TypeScript shares, called <strong>destructuring</strong>: Playwright passes the test one object holding every fixture, and <code>{ page, request }</code> takes out just the two named ones.</p>
 ${figure({ svg: fixtureLayers(), caption: 'How the built-in fixtures fit together. The browser is shared; everything inside a context belongs to one test.' })}
 
 <h2>page and context</h2>
@@ -95,7 +95,7 @@ ${table(['Fixture', 'What it is', 'New for each test?'], [
   ['`browser`', 'The running browser', 'No, one per worker'],
   ['`request`', 'Sends HTTP requests with no browser', 'Yes'],
   ['`browserName`', '`chromium`, `firefox` or `webkit`', 'A plain value'],
-  ['`testInfo`', 'Facts about the running test (second parameter)', 'Yes'],
+  ['`testInfo` (not a fixture)', 'Facts about the running test: the second parameter, outside the braces', 'Yes'],
 ])}
 <p>A <strong>worker</strong> is one of the separate processes Playwright uses to run tests in parallel; <a href="/learn/pw-parallel/">parallel runs</a> covers them. You can also write your own fixtures, such as “a signed-in wallet page”, which is how the CardVault framework will remove repeated set-up in <a href="/learn/pw-custom-fixtures/">custom fixtures</a>.</p>
 

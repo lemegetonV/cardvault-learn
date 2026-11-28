@@ -65,7 +65,7 @@ test('a wrong password is refused', async ({ loginPage, page }) => {
   await expect(page).toHaveURL('/login');
 });
 ` })}
-<p>The test asks for <code>loginPage</code> by name, like a built-in fixture; <a href="/learn/pw-custom-fixtures/">custom fixtures</a> shows where it comes from. If the Sign in button is renamed, only <code>LoginPage.ts</code> changes, and every test keeps working.</p>
+<p>The test asks for <code>loginPage</code> by name, like a built-in fixture; <a href="/learn/pw-custom-fixtures/">custom fixtures</a> shows where it comes from. If the Sign in button is renamed, only <code>LoginPage.ts</code> changes, and every framework test keeps working. (Part 1’s plain files would still need their own fix, which is the point of the comparison.)</p>
 
 <h2>Locators that take a value</h2>
 ${code({ lang: 'typescript', title: 'tests/ui/pages/CardsPage.ts', src: `
@@ -104,7 +104,7 @@ ${table(['In the page object', 'In the test'], [
 ])}
 <p>Keeping assertions out of page objects means one page object serves every test: one test checks that a dispute opens, another that the note counter works, using the same methods. A page object that asserts would decide for the test what “correct” means.</p>
 
-${testerEye('<p>Keep page objects plain: one class per page, no inheritance chains, no “base page” with dozens of helpers. When a part appears on many pages, such as a menu or a toast, a small class for that part is cleaner than copying it into every page object.</p>')}
+${testerEye('<p>Keep page objects plain: one class per page, no inheritance chains, no “base page” with dozens of helpers. When a part appears on many pages, such as a menu or a toast, a small class for that part is cleaner than copying it into every page object. CardVault’s suite has three, in <code>components/</code>, met in <a href="/learn/pw-journey-wallet/">the wallet journey</a>.</p>')}
 
 ${interview({
   say: `<p>“We use the Page Object Model. Each page of the app has a class in pages/ that takes Playwright’s page in its constructor, stores readonly locators for its fields and buttons, and has async methods for user actions, like signIn or openDispute. Methods that pick one item, like a card by its last four digits, return a locator. Assertions stay in the tests, so page objects can be reused and tests show what they verify.”</p>`,

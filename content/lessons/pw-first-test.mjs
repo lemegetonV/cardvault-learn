@@ -30,7 +30,7 @@ test('alice can sign in and see her wallet', async ({ page }) => {
 <li><code>test('alice can sign in…', async ({ page }) =&gt; { ... })</code> declares one test. The first value is its name, which appears in the results, so write it as a sentence about behaviour. The second is the test itself: an <code>async</code> arrow function, as in <a href="/learn/pw-async-await/">the lesson on await</a>.</li>
 <li><code>({ page })</code> asks Playwright for a <strong>page</strong>: a fresh tab in a fresh browser context, made just for this test and closed when it ends. Things a test asks for by name like this are called <strong>fixtures</strong>; the lesson on <a href="/learn/pw-builtin-fixtures/">built-in fixtures</a> explains them.</li>
 <li><code>page.goto('/login')</code> opens a page. The address is short because the settings file names the base address, <code>http://localhost:3000</code>, and Playwright puts the two together.</li>
-<li><code>page.getByLabel('Username')</code> finds the text field whose label says “Username”, the way a person would find it. <code>.fill('alice')</code> clears the field and types into it.</li>
+<li><code>page.getByLabel('Username')</code> finds the text field whose label says “Username”, the way a person would find it. <code>.fill('alice')</code> sets the field’s value to “alice”, replacing anything already in it.</li>
 <li><code>page.getByRole('button', { name: 'Sign in' })</code> finds the button called “Sign in”. The <code>{ name: ... }</code> part is an <strong>object</strong>: values with names, in curly brackets. <code>.click()</code> clicks it. The next lesson, on <a href="/learn/pw-locators/">locators</a>, covers these ways of finding things.</li>
 <li><code>expect(page).toHaveURL('/wallet')</code> checks that the browser’s address is now the wallet page.</li>
 <li><code>expect(...heading...).toBeVisible()</code> checks that the “Checkout wallet” heading is on the screen.</li>
@@ -52,13 +52,14 @@ ${terminal([
   ['cd tests/ui', ''],
   ['npm install', ''],
   ['npx playwright install chromium', ''],
-  ['npx playwright test learn/first-test.spec.ts', `Running 1 test using 1 worker
+  ['npx playwright test learn/first-test.spec.ts', `Running 2 tests using 1 worker
 
-  ✓  1 [learn] › learn/first-test.spec.ts:6:1 › alice can sign in and see her wallet (620ms)
+  ✓  1 [setup] › learn/saved-login.setup.ts:5:1 › sign in as alice and save the login (549ms)
+  ✓  2 [learn] › learn/first-test.spec.ts:6:1 › alice can sign in and see her wallet (557ms)
 
-  1 passed (1.3s)`],
+  2 passed (2.1s)`],
 ], 'Real output')}
-<p>The line names the <strong>project</strong> (<code>[learn]</code>, a group of tests with shared settings), the file and line, the test name and how long it took. A <strong>worker</strong> is one process that runs tests; with more files, Playwright uses several at once.</p>
+<p>Each line names the <strong>project</strong> (<code>[learn]</code>, a group of tests with shared settings), the file and line, the test name and how long it took. The first line, <code>[setup]</code>, is a step the suite always runs first: it signs alice in once and saves the login for later lessons. Ignore it until <a href="/learn/pw-saved-login/">logging in once</a>; your test is line 2. A <strong>worker</strong> is one process that runs tests; with more files, Playwright uses several at once.</p>
 <p>By default the browser is <strong>headless</strong>: it runs without a window, which is faster and works on servers. Two options let you watch:</p>
 ${terminal([
   ['npx playwright test --headed', ''],

@@ -18,10 +18,13 @@ type CardVaultFixtures = {
   cardsPage: CardsPage;
   transactionsPage: TransactionsPage;
   transactionPage: TransactionPage;
+  ...
   api: CardVaultApi;
   customer: Customer;
+  ...
 };
 ` })}
+<p>The <code>...</code> lines hide four more names that Module 7 adds: three component objects (<code>toast</code>, <code>consentDialog</code>, <code>menu</code>) and <code>customerWithCard</code>.</p>
 <p><code>type</code> gives a name to the shape of an object: here, which fixture names exist and what type each value has. TypeScript uses it to check that a test asking for <code>loginPage</code> really gets a <code>LoginPage</code>, and to suggest the page object’s methods as you type.</p>
 
 <h2>Building them</h2>

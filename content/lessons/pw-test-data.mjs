@@ -69,7 +69,7 @@ export function unusedUsername(): string {
   return \`nobody-\${Date.now()}\`;
 }
 ` })}
-<p><code>Date.now()</code> is the number of milliseconds since 1970, different every time it is called, so each run gets a name like <code>nobody-1795765742123</code>. <a href="/learn/pw-flaky-tests/">Flaky tests</a> showed why: the same made-up name on every run eventually locked the account and broke the test.</p>
+<p><code>Date.now()</code> is the number of milliseconds since 1970, different on every run, so each run gets a name like <code>nobody-1795765742123</code>. <a href="/learn/pw-flaky-tests/">Flaky tests</a> showed why: the same made-up name on every run eventually locked the account and broke the test.</p>
 
 ${keyIdea('<p>Read shared demo data, never change it. Make fresh data for any test that changes something. Make values unique when the app remembers them. Expected values come from the data the test controls, not from copying the app’s output.</p>')}
 
@@ -82,7 +82,8 @@ export const BASE_URL = process.env.BASE_URL ?? 'http://localhost:3000';
 export const DEMO_PASSWORD = process.env.DEMO_PASSWORD ?? 'CardVault-Demo-1';
 ` })}
 <p>Addresses live in <code>config.ts</code>, met in <a href="/learn/pw-project/">a Playwright project</a>. <code>process.env.BASE_URL</code> reads an <strong>environment variable</strong>, a setting given to a program when it starts. <code>??</code> means “if that is not set, use this”. So the suite runs against your own computer by default, and against another copy of CardVault when told to:</p>
-${terminal([['BASE_URL=https://cardvault.example.com npx playwright test', '']], 'Point the whole suite at another environment')}
+${terminal([['BASE_URL=https://cardvault.example.com npx playwright test', '']], 'Point the browser at another copy of CardVault')}
+<p>That moves the browser. The API client talks to the services directly, so their addresses (<code>AUTH_URL</code>, <code>WALLET_URL</code> and the others in <code>config.ts</code>) are set the same way when the whole suite moves.</p>
 <p>Secrets, such as passwords for a shared environment, are passed the same way, from the CI system’s secret store. They never go into the repository.</p>
 
 ${testerEye('<p>When a test fails on one environment and passes on another, look at the data first: is the demo data the same there, has someone changed it by hand, is the environment older? Tests that create their own data are far less sensitive to this, which is one more reason to prefer them for anything that changes state.</p>')}

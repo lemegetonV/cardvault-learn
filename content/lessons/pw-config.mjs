@@ -60,6 +60,7 @@ ${code({ lang: 'typescript', title: 'tests/ui/playwright.config.ts', src: `
       use: { ...devices['Desktop Chrome'] },
       dependencies: ['setup'], // run the setup project before this one
     },
+    ...
   ],
 ` })}
 <p>A <strong>project</strong> is a named group of tests with its own settings. Each one says where its files are (<code>testDir</code>) and, optionally, which file names count (<code>testMatch</code>). By default Playwright treats files ending in <code>.spec.ts</code> or <code>.test.ts</code> as tests.</p>
@@ -68,7 +69,8 @@ ${code({ lang: 'typescript', title: 'tests/ui/playwright.config.ts', src: `
 <li>The <code>learn</code> project runs the lesson tests. <code>dependencies: ['setup']</code> makes Playwright finish the setup project first.</li>
 <li><code>devices['Desktop Chrome']</code> is a ready-made set of options: window size, user agent and browser. The three dots are the <strong>spread</strong> syntax: they copy every setting from that object into this one.</li>
 </ul>
-<p>A project’s <code>use</code> is added on top of the top-level <code>use</code>, so the <code>learn</code> tests get <code>baseURL</code> and the trace settings too. Later the framework adds more projects, such as a phone, so the same tests run in several set-ups (<a href="/learn/pw-phones-browsers/">phones and other browsers</a>). <code>npx playwright test --project=learn</code> runs a single project.</p>
+<p>A project’s <code>use</code> is added on top of the top-level <code>use</code>, so the <code>learn</code> tests get <code>baseURL</code> and the trace settings too. The <code>...</code> stands for two more projects in the same file, <code>framework</code> and <code>phone</code>, which Part 2 uses (<a href="/learn/pw-phones-browsers/">phones and other browsers</a>). <code>npx playwright test --project=learn</code> runs a single project, plus the <code>setup</code> project it depends on.</p>
+<p>Two meanings of “project” meet here. The <em>project folder</em> from <a href="/learn/pw-project/">a Playwright project</a> is the whole <code>tests/ui</code> folder; a <em>config project</em> is one of these named groups inside it.</p>
 
 <h2>Changing a setting for one file</h2>
 ${code({ lang: 'typescript', title: 'tests/ui/learn/config.spec.ts', src: `
