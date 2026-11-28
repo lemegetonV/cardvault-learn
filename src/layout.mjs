@@ -64,7 +64,9 @@ export function rail(currentId) {
       if (!ready) return `<li><span class="soon">${num}<span>${esc(title)} <em>soon</em></span></span></li>`;
       return `<li><a href="${lessonUrl(id)}"${id === currentId ? ' aria-current="page"' : ''}>${num}<span>${esc(title)}</span></a></li>`;
     }).join('');
-    return `<div class="module"><p class="module-title"><span>M${mi + 1}</span>${esc(m.title)}</p><ol>${items}</ol></div>`;
+    // Only the current lesson's module starts open, so the rail stays short.
+    const here = m.lessons.some(([id]) => id === currentId);
+    return `<details class="module"${here ? ' open' : ''}><summary class="module-title"><span>M${mi + 1}</span>${esc(m.title)}</summary><ol>${items}</ol></details>`;
   }).join('');
   return `<h2>${esc(t.title)}</h2>${mods}`;
 }

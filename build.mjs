@@ -51,7 +51,7 @@ for (const [i, l] of ready.entries()) {
 <p class="eyebrow"><span class="chip">Lesson ${String(l.n).padStart(2, '0')}</span><span>${esc(l.trackTitle)} · ${esc(l.module)}</span></p>
 <h1>${esc(l.title)}</h1>
 <p class="lede">${mod.lede}</p>
-<div class="meta-row"><span>About ${mod.minutes} minutes</span><span>${esc(mod.youWill)}</span></div>
+<div class="meta-row"><span class="time">${mod.minutes} min read</span><span>${esc(mod.youWill)}</span></div>
 ${softenLinks(l.id, mod.body, lessons)}
 ${pager}
 </article></div>`;
