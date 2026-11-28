@@ -13,7 +13,7 @@ export const tracks = [
     id: 'app',
     title: 'Know the app',
     short: 'The app',
-    blurb: 'CardVault as a product: what it does, its screens, its services and how they connect. Enough to explain it in an interview.',
+    blurb: 'CardVault as a product: what it does, its screens, its services, events and data, and where it runs. Enough to explain it in an interview.',
     modules: [
       {
         title: 'The product',
@@ -25,12 +25,22 @@ export const tracks = [
       },
       {
         title: 'How it is built',
-        blurb: 'The parts behind the screens, and three journeys through them.',
+        blurb: 'The parts behind the screens, three journeys through them, the events they share and where the data lives.',
         lessons: [
           ['system-at-a-glance', 'The system at a glance', true],
           ['flow-login', 'Flow: logging in', true],
           ['flow-add-to-wallet', 'Flow: adding a card to the wallet', true],
           ['flow-purchase', 'Flow: a purchase', true],
+          ['app-events', 'Events and Kafka', true],
+          ['app-data', 'Where the data lives', true],
+        ],
+      },
+      {
+        title: 'Where it runs',
+        blurb: 'Your own copy on your computer, and the shared stage server this site talks to.',
+        lessons: [
+          ['run-locally', 'Running CardVault on your computer', true],
+          ['stage-environment', 'The stage environment', true],
         ],
       },
       {

@@ -39,7 +39,7 @@ ${table(['Customer', 'What is special about them'], [
 ])}
 
 <h2>Where it runs</h2>
-<p>CardVault runs in Docker on your own computer, and a copy runs on a stage server on the internet. The local copy behaves exactly as designed. The stage copy has some known defects switched on on purpose, so that your tests have real bugs to find there.</p>
+<p>CardVault runs in Docker on your own computer, and a copy runs on a stage server on the internet. The local copy behaves exactly as designed. The stage copy can have known defects switched on on purpose, so that your tests have real bugs to find there. <a href="/learn/run-locally/">Running CardVault on your computer</a> and <a href="/learn/stage-environment/">The stage environment</a> show both.</p>
 
 ${interview({
   say: `<p>“The app I tested is the card and wallet app of a bank. Customers sign in, see their cards and balances, add cards to a checkout wallet for one-tap online payments, and review or dispute their wallet transactions.</p>

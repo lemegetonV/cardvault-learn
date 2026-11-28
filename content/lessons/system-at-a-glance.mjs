@@ -32,6 +32,17 @@ ${table(['Service', 'What it is responsible for', 'Screens it serves'], [
 ])}
 <p>Each service owns its own database. No service reads another service’s tables. If Wallet needs to know about a card, it asks Cards or listens for news from it.</p>
 
+<h3>Each service up close</h3>
+<p>The same five services with their main customer requests, the port each listens on in a local stack, and the events each sends and listens to. You will meet every one of these requests in the flow lessons and the API track.</p>
+${table(['Service', 'Port', 'Main requests', 'Sends', 'Listens to'], [
+  ['Login', '8001', '`POST /v1/auth/login`, `/refresh`, `/logout`; `GET /v1/auth/me`', 'nothing', 'nothing'],
+  ['Cards', '8002', '`GET /v1/cards`, `GET /v1/cards/{id}`; `POST …/report-lost`, `/reissue`, `/close`', '`card.lifecycle`, `auth.decided`, `txn.cleared`', '`enrollment.changed`'],
+  ['Wallet', '8003', '`GET /v1/wallet`; add or remove a card at `/v1/wallet/cards/{id}`; `POST /v1/wallet/opt-out`, `/opt-in`', '`enrollment.changed`', '`card.lifecycle`, `contact.updated`'],
+  ['Transactions', '8004', '`GET /v1/wallet/transactions` (filters, pages), `/{id}`, `/export`; `POST …/{id}/disputes`', 'nothing', '`auth.decided`, `txn.cleared`'],
+  ['Profile', '8005', '`GET` and `PATCH /v1/profile`; `POST /v1/profile/verify/send`, `/verify`', '`contact.updated`', 'nothing'],
+])}
+<p>Two more programs stand in for the outside companies: the <strong>wallet company simulator</strong> (port 8101) and the <strong>card network simulator</strong> (port 8102). The web app runs on port 3000. Every service publishes its full API description as an interactive page at <code>/docs</code>, which <a href="/learn/run-locally/">Running CardVault on your computer</a> shows you how to open.</p>
+
 ${keyIdea('<p>One service, one job, its own data. When something goes wrong on a screen, this tells you which service to look at first.</p>')}
 
 <p>You can talk to each service yourself. The panel below calls them directly, the way an API test does, instead of going through the web app. Log in first: the Login service hands back a token, and the other four services each answer with their own part of alice’s data.</p>
@@ -48,6 +59,7 @@ ${figure({ svg: twoWays(), caption: 'Top: a direct call. Bottom: an event on the
 <p>A <strong>direct call</strong> is a normal HTTP request: ask a question, wait for the answer. The web app uses direct calls, because a screen needs its data now.</p>
 <p>An <strong>event</strong> is an announcement. When Cards approves a purchase, it does not call Transactions and wait. It puts a short message on the <strong>message bus</strong> (CardVault uses Kafka) saying “this purchase was approved”. Transactions listens to the bus and adds the purchase to the customer’s list a moment later. Likewise, when a card is reported lost, Cards announces it and Wallet reacts by pausing the card in the wallet.</p>
 <p>Events keep services independent: Cards does not need Transactions to be running to approve a purchase. The cost is that the result appears a moment later instead of instantly.</p>
+<p>The five topics, what an event looks like, and where each service keeps its data are the subjects of <a href="/learn/app-events/">Events and Kafka</a> and <a href="/learn/app-data/">Where the data lives</a>.</p>
 
 ${testerEye('<p>Because events arrive a moment later, a test that checks the transactions list straight after a purchase can fail even when nothing is wrong. Good tests wait for the result to appear, with a time limit, instead of checking once. You will write exactly this kind of test in the API track.</p>')}
 
