@@ -653,11 +653,10 @@ details.raw summary { cursor: pointer; font-size: 0.9375rem; font-weight: 500; c
 code { background: var(--line-soft); border-color: transparent; color: var(--ink); }
 .code pre code, .ex-lines code { color: inherit; background: none; }
 .article > .code, .article > .table-wrap, .article > .tree, .article > figure, .article > .stepper-wrap { max-width: var(--wide); }
-@media (min-width: 1500px) { body { font-size: 1.125rem; } }
 /* Show == and != as typed: beginners must see the real characters. */
 code, pre, .ex-lines { font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0; }
-/* Big screens get slightly larger text, but lines stay a comfortable length. */
-@media (min-width: 1500px) { :root { --measure: 46rem; --wide: 60rem; } }
+/* Big screens get a slightly wider page frame; the lesson text itself stays the same size (see "Compact lesson content"). */
+@media (min-width: 1500px) { :root { --wide: 60rem; } }
 
 /* ---------- Live lab: Try it panels, Run buttons, lab page, suite browser ---------- */
 .muted { color: var(--muted); }
@@ -909,3 +908,30 @@ p.tp-why { font-size: 0.875rem; }
 .zoom img { display: block; flex: none; max-width: none; width: 220vw; height: auto; border-radius: 8px; background: #fff; box-shadow: 0 12px 40px rgb(0 0 0 / 0.4); }
 @media (min-width: 900px) { .zoom { align-items: center; justify-content: center; } .zoom img { width: auto; max-width: 100%; } }
 @media (max-width: 899px) { .zoom { justify-content: flex-start; } }
+
+/* ---------- Compact lesson content ----------
+   The owner found lessons too large to read without constant scrolling. The header, rail and
+   "On this page" keep their size; only the article is tightened: smaller text and headings,
+   less space between blocks, and diagrams, screenshots and step-throughs capped so one fits on a screen. */
+:root { --measure: 40rem; --figure: 48rem; }
+.article { font-size: 1rem; line-height: 1.65; }
+.article h1 { font-size: clamp(1.8rem, 1.3rem + 1.4vw, 2.35rem); margin-bottom: 12px; }
+.article h2 { font-size: clamp(1.25rem, 1.12rem + 0.4vw, 1.4rem); margin: 40px 0 10px; }
+.article h3 { font-size: 1.075rem; margin: 26px 0 6px; }
+.article .lede { font-size: 1.0625rem; line-height: 1.6; margin-bottom: 14px; }
+.article p, .article ul, .article ol { margin-bottom: 14px; }
+.article li { margin: 4px 0; }
+.article hr { margin: 36px 0; }
+.eyebrow { margin-bottom: 10px; }
+.meta-row { font-size: 0.875rem; padding-bottom: 18px; }
+figure { margin: 24px 0; }
+.article > figure, .article > .stepper-wrap, .article > .shot-pair, .article > figure.wide { max-width: var(--figure); }
+.fig { padding: 18px; }
+.fig svg { max-height: 68vh; }
+figcaption { font-size: 0.875rem; margin-top: 10px; }
+.callout { padding: 14px 18px; margin: 22px 0; }
+.code pre { font-size: 0.8125rem; line-height: 1.65; }
+.article table { font-size: 0.875rem; }
+.interview { margin: 44px 0 22px; padding: 20px 22px; }
+.interview .say, .article blockquote.script { font-size: 1rem; }
+.pager { margin-top: 48px; }
