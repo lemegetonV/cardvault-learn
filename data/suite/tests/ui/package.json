@@ -6,6 +6,8 @@
     "test": "playwright test",
     "learn": "playwright test --project=learn",
     "report": "playwright show-report",
+    "visual": "docker run --rm --network host --ipc=host -v \"$PWD\":/work -w /work mcr.microsoft.com/playwright:v1.65.1-noble npx playwright test --config visual.config.ts",
+    "visual:update": "npm run visual -- --update-snapshots",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

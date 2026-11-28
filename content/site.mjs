@@ -3,7 +3,7 @@
 export const site = {
   name: 'CardVault Learn',
   description: 'Interview prep for QA and SDET roles: understand the CardVault app, then learn to test it with pytest and Playwright.',
-  cardvaultCommit: '1f8ae4b',
+  cardvaultCommit: '518ffdb',
   cardvaultRepo: 'https://github.com/lemegetonV/cardvault',
 };
 
@@ -189,22 +189,22 @@ export const tracks = [
         title: 'Seeing what happened',
         blurb: 'Debugging, reports, flaky tests, screenshots that compare, and parallel runs.',
         lessons: [
-          ['pw-debugging', 'Debugging: trace viewer and UI mode', false],
-          ['pw-reports', 'Reports and evidence', false],
-          ['pw-flaky-tests', 'Flaky tests', false],
-          ['pw-visual', 'Visual comparisons', false],
-          ['pw-parallel', 'Parallel runs and sharding', false],
+          ['pw-debugging', 'Debugging: trace viewer and UI mode', true],
+          ['pw-reports', 'Reports and evidence', true],
+          ['pw-flaky-tests', 'Flaky tests', true],
+          ['pw-visual', 'Visual comparisons', true],
+          ['pw-parallel', 'Parallel runs and sharding', true],
         ],
       },
       {
         title: 'The CardVault framework',
         blurb: 'The folder map first, then each part and why it exists.',
         lessons: [
-          ['pw-framework-map', 'The framework map', false],
-          ['pw-page-objects', 'Page objects', false],
-          ['pw-custom-fixtures', 'Custom fixtures', false],
-          ['pw-api-setup', 'API set-up for UI tests', false],
-          ['pw-test-data', 'Test data and config', false],
+          ['pw-framework-map', 'The framework map', true],
+          ['pw-page-objects', 'Page objects', true],
+          ['pw-custom-fixtures', 'Custom fixtures', true],
+          ['pw-api-setup', 'API set-up for UI tests', true],
+          ['pw-test-data', 'Test data and config', true],
         ],
       },
       {

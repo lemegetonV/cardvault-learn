@@ -144,3 +144,64 @@ export function routeFlow() {
   b += arrow([[640, 150], [696, 150]], 'ln', 'ah', { start: true });
   return svg(W, H, 'A request from the page meets page.route first. The test can answer it itself with fulfill, let it reach CardVault and change the real answer before the page sees it, or abort it. Only the middle path reaches the web app.', b);
 }
+
+/** Sharding and workers: two machines, each running half the files with two workers. */
+export function shardsWorkers() {
+  const W = 860, H = 300;
+  let b = '';
+  const machine = (x, title, flag, lanes) => {
+    let m = `<rect class="zone" x="${x}" y="16" width="400" height="266" rx="16"/>`;
+    m += text(x + 20, 42, title, 't-md', 'start');
+    m += text(x + 20, 60, flag, 't-mono', 'start');
+    lanes.forEach((files, i) => {
+      const y = 82 + i * 98;
+      m += text(x + 20, y + 16, `worker ${i}`, 't-sm', 'start');
+      files.forEach((f, j) => {
+        m += box(x + 20 + j * 124, y + 26, 112, 54, f, { kind: 'plain', cls: 't-sm' });
+      });
+    });
+    return m;
+  };
+  b += machine(20, 'Machine 1: shard 1 of 2', '--shard=1/2', [['forms', 'hooks', 'frames'], ['locators', 'time', '…']]);
+  b += machine(440, 'Machine 2: shard 2 of 2', '--shard=2/2', [['waiting', 'reports', 'devices'], ['parallel', 'network', '…']]);
+  return svg(W, H, 'Sharding splits the test files between two machines. On each machine, two workers take files one at a time and run them side by side.', b);
+}
+
+/** The framework in layers: tests on top, fixtures, then page objects and the API client, then the app. */
+export function frameworkLayers() {
+  const W = 860, H = 380;
+  let b = '';
+  b += box(250, 16, 360, 62, 'tests/*.spec.ts', { kind: 'plain', sub: 'what to check, in plain steps' });
+  b += arrow([[430, 78], [430, 104]]);
+  b += box(250, 108, 360, 62, 'fixtures.ts', { kind: 'plain', sub: 'hands each test what it asks for' });
+  b += arrow([[330, 170], [170, 204]]);
+  b += arrow([[530, 170], [690, 204]]);
+  b += box(20, 208, 300, 62, 'pages/', { kind: 'plain', sub: 'page objects: where and how' });
+  b += box(540, 208, 300, 62, 'api/', { kind: 'plain', sub: 'set-up through the services' });
+  b += box(350, 210, 160, 58, 'data/', { kind: 'plain', sub: 'values and files', cls: 't-md' });
+  b += arrow([[170, 270], [170, 304]]);
+  b += arrow([[690, 270], [690, 304]]);
+  b += box(20, 308, 300, 58, 'Web app', { kind: 'bank', sub: 'through a real browser' });
+  b += box(540, 308, 300, 58, 'Services', { kind: 'bank', sub: 'HTTP, no browser' });
+  return svg(W, H, 'Tests sit on top and only say what to check. Fixtures hand them page objects, an API client and ready-made customers. Page objects drive the web app through a browser; the API client sets up data in the services directly. Test data sits beside both.', b);
+}
+
+/** One test asks for customer; Playwright builds the fixtures it depends on first. */
+export function fixtureChain() {
+  const W = 860, H = 280;
+  let b = '';
+  b += box(20, 110, 170, 64, 'the test', { kind: 'plain', sub: 'asks for customer' });
+  b += arrow([[190, 142], [246, 142]]);
+  b += box(250, 110, 170, 64, 'customer', { kind: 'plain', sub: 'new, with a purchase' });
+  b += arrow([[420, 130], [490, 62]]);
+  b += arrow([[420, 142], [490, 142]]);
+  b += arrow([[420, 154], [490, 222]]);
+  b += box(494, 30, 160, 58, 'api', { kind: 'plain', cls: 't-md' });
+  b += box(494, 112, 160, 58, 'loginPage', { kind: 'plain', cls: 't-md' });
+  b += box(494, 194, 160, 58, 'page', { kind: 'plain', sub: 'built in', cls: 't-md' });
+  b += arrow([[654, 58], [700, 58]]);
+  b += arrow([[654, 140], [700, 140]]);
+  b += box(704, 30, 136, 58, 'request', { kind: 'plain', sub: 'built in', cls: 't-md' });
+  b += box(704, 112, 136, 58, 'page', { kind: 'plain', sub: 'the same one', cls: 't-md' });
+  return svg(W, H, 'The test asks only for customer. customer needs api, loginPage and page; api needs the built-in request fixture, and loginPage needs page. Playwright builds them from the right-hand side first, and gives the test the same page that customer signed in.', b);
+}

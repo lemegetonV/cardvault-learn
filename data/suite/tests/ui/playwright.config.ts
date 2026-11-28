@@ -34,5 +34,12 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
       dependencies: ['setup'], // run the setup project before this one
     },
+    {
+      // The framework tests in tests/, built on page objects and fixtures (Part 2).
+      name: 'framework',
+      testDir: './tests',
+      use: { ...devices['Desktop Chrome'] },
+      dependencies: ['setup'],
+    },
   ],
 });
