@@ -3,7 +3,7 @@
 export const site = {
   name: 'CardVault Learn',
   description: 'Interview prep for QA and SDET roles: understand the CardVault app, then learn to test it with pytest and Playwright.',
-  cardvaultCommit: '1ea4bea',
+  cardvaultCommit: '1f8ae4b',
   cardvaultRepo: 'https://github.com/lemegetonV/cardvault',
 };
 
@@ -167,22 +167,22 @@ export const tracks = [
         title: 'The test runner',
         blurb: 'Hooks, isolation, built-in fixtures, the config file and the command line.',
         lessons: [
-          ['pw-hooks-isolation', 'Hooks and test isolation', false],
-          ['pw-builtin-fixtures', 'Built-in fixtures', false],
-          ['pw-config', 'The config file and projects', false],
-          ['pw-running-tests', 'Running what you want', false],
+          ['pw-hooks-isolation', 'Hooks and test isolation', true],
+          ['pw-builtin-fixtures', 'Built-in fixtures', true],
+          ['pw-config', 'The config file and projects', true],
+          ['pw-running-tests', 'Running what you want', true],
         ],
       },
       {
         title: 'Beyond one page',
         blurb: 'Frames, tabs, dialogs, downloads, the network, time, devices, API calls and saved logins.',
         lessons: [
-          ['pw-frames', 'Frames', false],
-          ['pw-tabs-dialogs-downloads', 'Tabs, dialogs and downloads', false],
-          ['pw-network-mocking', 'Mocking the network', false],
-          ['pw-time-devices', 'Time, places and devices', false],
-          ['pw-api-requests', 'API requests in Playwright', false],
-          ['pw-saved-login', 'Logging in once', false],
+          ['pw-frames', 'Frames', true],
+          ['pw-tabs-dialogs-downloads', 'Tabs, dialogs and downloads', true],
+          ['pw-network-mocking', 'Mocking the network', true],
+          ['pw-time-devices', 'Time, places and devices', true],
+          ['pw-api-requests', 'API requests in Playwright', true],
+          ['pw-saved-login', 'Logging in once', true],
         ],
       },
       {

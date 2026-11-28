@@ -22,10 +22,17 @@ export default defineConfig({
   // A project is one group of tests with its own settings.
   projects: [
     {
+      // Runs first: signs in once and saves the login to a file (lesson: Logging in once).
+      name: 'setup',
+      testDir: './learn',
+      testMatch: '*.setup.ts',
+    },
+    {
       // The small tests in learn/, one file per lesson, in a desktop Chrome window.
       name: 'learn',
       testDir: './learn',
       use: { ...devices['Desktop Chrome'] },
+      dependencies: ['setup'], // run the setup project before this one
     },
   ],
 });

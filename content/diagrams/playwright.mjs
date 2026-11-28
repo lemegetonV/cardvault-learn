@@ -109,3 +109,38 @@ export function sleepVsWait() {
   b += lane(170, 'Wait for 20 rows', 2.6, 2.6, 'box-bank', 'goes on when they arrive');
   return svg(W, H, 'A fixed two-second sleep wastes time on a quick day and checks too early on a slow day. Waiting for the rows goes on the moment they arrive, whatever the day.', b);
 }
+
+/** The built-in fixtures, nested: one browser per worker, a context and page per test, request beside them. */
+export function fixtureLayers() {
+  const W = 820, H = 300;
+  let b = '';
+  b += `<rect class="zone" x="20" y="16" width="520" height="266" rx="16"/>`;
+  b += text(40, 42, 'browser', 't-md', 'start');
+  b += text(40, 60, 'started once per worker, shared by its tests', 't-mono', 'start');
+  b += `<rect class="zone" x="40" y="76" width="480" height="188" rx="12"/>`;
+  b += text(58, 100, 'context', 't-md', 'start');
+  b += text(58, 118, 'new for every test: empty cookies and storage', 't-mono', 'start');
+  b += box(60, 136, 210, 108, 'page', { kind: 'plain', sub: 'the first tab' });
+  b += box(290, 136, 210, 108, 'context.newPage()', { kind: 'plain', sub: 'more tabs, same sign-in', cls: 't-md' });
+  b += box(580, 60, 220, 90, 'request', { kind: 'plain', sub: 'HTTP calls, no browser' });
+  b += box(580, 176, 220, 90, 'testInfo', { kind: 'plain', sub: 'facts about this test' });
+  return svg(W, H, 'The browser fixture is started once per worker. Every test gets a new context inside it, and a page inside that. More pages in the same context share its sign-in. The request and testInfo fixtures sit beside the browser.', b);
+}
+
+/** What page.route can do with a request: answer it, change the real answer, or stop it. */
+export function routeFlow() {
+  const W = 860, H = 300;
+  let b = '';
+  b += box(20, 112, 140, 76, 'Page', { kind: 'plain', sub: 'asks for data' });
+  b += box(220, 112, 160, 76, 'page.route', { kind: 'plain', sub: 'matches the address' });
+  b += arrow([[160, 150], [216, 150]]);
+  b += box(470, 20, 170, 64, 'fulfill', { kind: 'plain', sub: 'answer from the test' });
+  b += box(470, 118, 170, 64, 'fetch, then fulfill', { kind: 'plain', sub: 'real answer, changed', cls: 't-md' });
+  b += box(470, 216, 170, 64, 'abort', { kind: 'stop', sub: 'as if offline' });
+  b += arrow([[380, 140], [430, 52], [466, 52]]);
+  b += arrow([[380, 150], [466, 150]]);
+  b += arrow([[380, 160], [430, 248], [466, 248]]);
+  b += box(700, 112, 140, 76, 'Web app', { kind: 'bank', sub: 'CardVault' });
+  b += arrow([[640, 150], [696, 150]], 'ln', 'ah', { start: true });
+  return svg(W, H, 'A request from the page meets page.route first. The test can answer it itself with fulfill, let it reach CardVault and change the real answer before the page sees it, or abort it. Only the middle path reaches the web app.', b);
+}
