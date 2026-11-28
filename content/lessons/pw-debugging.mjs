@@ -19,7 +19,7 @@ ${terminal([['npx playwright test learn/config.spec.ts --repeat-each 30 --worker
 <p>So the link never appeared. But did the click happen? Did it hit the button? Was the page still loading? The error cannot say. The trace can.</p>
 
 <h2>The trace viewer</h2>
-<p>A <strong>trace</strong> is a recording of a test: every action and assertion, a snapshot of the page before and after each one, the network requests, the browser console and the test’s source. The config keeps one for every failed test (<code>trace: 'retain-on-failure'</code>), and the error output prints the command to open it:</p>
+<p>A <strong>trace</strong> is a recording of a test: every action and assertion, a snapshot of the page before and after each one, the network requests, the browser console and the test’s source. The config keeps one for every failed test (<code>trace: 'retain-on-failure'</code>). Many projects use <code>'on-first-retry'</code> instead, which records only when a failed test is retried: cheaper, but a test that fails without a retry leaves no trace. The error output prints the command to open it:</p>
 ${terminal([['npx playwright show-trace test-results/…/trace.zip', '']], 'Open a trace')}
 ${shot({ src: 'pw-trace-viewer.png', alt: 'The Playwright trace viewer. A timeline of page thumbnails across the top. On the left, the list of actions: Before Hooks, two expects, a Click on the Menu button taking 59 milliseconds, and a failed toBeVisible expect taking 5 seconds. In the middle, the page as it was: the wallet on a narrow screen with the Menu button and the navigation closed. Below, details of the failed call.', caption: 'The real trace of that failure. The Click on Menu passed in 59 ms, yet the page snapshot shows the menu still closed. The click landed, but the page did not react.' })}
 <ul>
@@ -59,7 +59,7 @@ ${keyIdea('<p>When the error message is not enough, open the trace: it shows eve
 ${table(['Tool', 'Command', 'Use it to'], [
   ['Trace viewer', '`npx playwright show-trace trace.zip`', 'Examine a run after it happened, including on CI'],
   ['UI mode', '`npx playwright test --ui`', 'Pick tests, run them, and see the same timeline and snapshots straight away; re-run on save'],
-  ['Inspector', '`npx playwright test --debug`', 'Pause before every action and step through in a visible browser'],
+  ['Inspector', '`npx playwright test --debug`', 'Open a visible browser paused at the start, then step through action by action'],
   ['A pause in the code', '`await page.pause()`', 'Stop at one line and open the inspector there'],
   ['Headed run', '`npx playwright test --headed`', 'Simply watch the browser'],
   ['Locator picker', 'In UI mode or the inspector', 'Point at an element and get a suggested locator'],
@@ -73,7 +73,7 @@ ${interview({
   qa: [
     ['What is a Playwright trace?', '<p>A zip file recording a test run: each action and assertion with DOM snapshots before and after, timings, network requests, console output and the test source. Open it with <code>npx playwright show-trace</code> or at trace.playwright.dev.</p>'],
     ['How do you debug a test that fails only on CI?', '<p>Keep traces on failure in CI, upload them as artifacts, download the trace and open it locally. It shows what the CI browser saw at every step, which usually reveals timing or data differences.</p>'],
-    ['What is the difference between UI mode and --debug?', '<p>UI mode is a test explorer with a timeline: pick, run and re-run tests and inspect each step. <code>--debug</code> opens the inspector and pauses before each action so you can step through a single run live.</p>'],
+    ['What is the difference between UI mode and --debug?', '<p>UI mode is a test explorer with a timeline: pick, run and re-run tests and inspect each step. <code>--debug</code> opens a visible browser and the inspector, paused at the start, so you can step through one run action by action.</p>'],
   ],
 })}
 `,

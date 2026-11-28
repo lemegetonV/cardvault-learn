@@ -36,7 +36,7 @@ withAwait();
 <ol>
 <li><code>function loadHeading(): Promise&lt;string&gt;</code> declares a function. The part after the colon is its <strong>return type</strong>: it returns a promise that will one day hold a <code>string</code> (text). TypeScript reads <code>Promise&lt;string&gt;</code> as “a promise of a string”.</li>
 <li><code>new Promise((resolve) =&gt; { ... })</code> makes a promise by hand. You will rarely do this in tests; Playwright makes the promises for you. Here, <code>setTimeout</code> waits 500 milliseconds and then calls <code>resolve</code>, which fills the promise with the text <code>'Checkout wallet'</code>.</li>
-<li><code>(resolve) =&gt; { ... }</code> is an <strong>arrow function</strong>: a short way to write a function with no name. The inputs go in the brackets, the body after <code>=&gt;</code>. Playwright tests are written as arrow functions too.</li>
+<li><code>(resolve) =&gt; { ... }</code> is an arrow function, as in the last lesson: the input in the brackets, the body after <code>=&gt;</code>.</li>
 <li>In <code>withoutAwait</code>, <code>heading</code> gets the promise itself, the ticket, not the text. <code>: void</code> means the function returns nothing.</li>
 <li>In <code>withAwait</code>, <code>await</code> pauses until the promise is filled, so <code>heading</code> holds the text. The function is marked <code>async</code>, and an <code>async</code> function always returns a promise itself, here <code>Promise&lt;void&gt;</code>: a promise of nothing, which only says “I have finished”.</li>
 </ol>
@@ -82,13 +82,14 @@ ${sequence({
 
 <h2>What happens if you forget await</h2>
 <p>Take the first test and delete one <code>await</code>, in front of the line that types the username. The code still runs, because a promise without <code>await</code> is allowed. But now nothing waits for the typing to finish, so the steps no longer happen in a guaranteed order. When we ran it, the test failed like this:</p>
-${terminal([['npx playwright test learn/first-test.spec.ts', `  ✘  1 [learn] › learn/first-test.spec.ts:6:1 › alice can sign in and see her wallet (5.5s)
+${terminal([['npx playwright test learn/first-test.spec.ts', `  ✓  1 [setup] › learn/saved-login.setup.ts:5:1 › sign in as alice and save the login (555ms)
+  ✘  2 [learn] › learn/first-test.spec.ts:6:1 › alice can sign in and see her wallet (5.5s)
 
     Error: expect(page).toHaveURL(expected) failed
 
     Expected: "http://localhost:3000/wallet"
     Received: "http://localhost:3000/login"
-    Timeout:  5000ms`]], 'Real output, with one await removed')}
+    Timeout:  5000ms`]], 'Real output, shortened, with one await removed. The [setup] line is a sign-in step that runs first; the first-test lesson explains it.')}
 <p>The browser never left the sign-in page. The error points at the last line, but the real mistake is three lines higher. That is what makes a missing <code>await</code> nasty: the failure shows up somewhere else, and sometimes the test even passes by luck. Code editors and linters (tools that read code and flag likely mistakes) can be set up to warn about a promise that is not awaited.</p>
 
 ${testerEye('<p>When a test fails in a way that makes no sense, or fails only sometimes, look for a missing <code>await</code> before anything else. It is the most common beginner bug in Playwright code.</p>')}

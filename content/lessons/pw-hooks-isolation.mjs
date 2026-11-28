@@ -9,7 +9,7 @@ export default {
 <h2>Four hooks</h2>
 <p>You met <code>test.beforeEach</code> in <a href="/learn/pw-locators/">the locators lesson</a>: a function that runs before every test in its file. It has three relatives. A <strong>hook</strong> is any of these functions that Playwright calls around your tests, at fixed moments:</p>
 ${table(['Hook', 'Runs', 'Typical use'], [
-  ['`test.beforeAll`', 'Once, before the first test in the file or group', 'A check or set-up shared by all the tests, with no browser page'],
+  ['`test.beforeAll`', 'Once per worker, before the first test in the file or group (again if a failure starts a new worker)', 'A check or set-up shared by all the tests, with no browser page'],
   ['`test.beforeEach`', 'Before every test', 'Sign in, open the page under test'],
   ['`test.afterEach`', 'After every test, even a failed one', 'Clean up something the test made outside the browser'],
   ['`test.afterAll`', 'Once, after the last test', 'Clean up what beforeAll made'],
@@ -67,7 +67,7 @@ test('every test starts signed out', async ({ page }) => {
 });
 ` })}
 ${figure({ svg: contexts(), caption: 'The picture from the first lesson, now in practice: two tests signed in as alice, and the third still starts signed out.' })}
-<p>This is <strong>test isolation</strong>. Each test gets a new browser context: an empty browser profile with no cookies, no storage and no sign-in. So tests can run in any order, or at the same time, and one test’s leftovers can never make another pass or fail. The pattern <code>/\\/login/</code> means “the address contains /login”; the backslash makes the slash a plain character.</p>
+<p>This is <strong>test isolation</strong>. Each test gets a new browser context: an empty browser profile with no cookies, no storage and no sign-in. So tests can run in any order, or at the same time, and nothing one test leaves in the browser can make another pass or fail. (Data saved by the app is another matter; see below.) The pattern <code>/\\/login/</code> means “the address contains /login”; the backslash makes the slash a plain character.</p>
 
 <h2>The order of a run</h2>
 ${sequence({
@@ -88,19 +88,22 @@ ${sequence({
   ],
   caption: 'Contexts are created before each test and closed after it, so there is nothing to clean up in the browser.',
 })}
-<p>When <code>beforeAll</code> fails, Playwright reports the failure once and skips the rest. With the app stopped, the real output was:</p>
-${terminal([['npx playwright test learn/hooks.spec.ts', `  ✘  1 [learn] › learn/hooks.spec.ts:23:3 › signed in as alice › her wallet lists four cards (0ms)
+<p>When <code>beforeAll</code> fails, Playwright reports the failure once and skips the rest. To see it, point the suite at a port where nothing runs. <code>--no-deps</code> skips the sign-in step that normally runs first, which would otherwise fail before this file starts:</p>
+${terminal([['BASE_URL=http://localhost:3999 npx playwright test learn/hooks.spec.ts --no-deps', `Running 3 tests using 1 worker
+  ✘  1 [learn] › learn/hooks.spec.ts:23:3 › signed in as alice › her wallet lists four cards (0ms)
   -  2 [learn] › learn/hooks.spec.ts:27:3 › signed in as alice › her profile shows her email address
   -  3 [learn] › learn/hooks.spec.ts:36:1 › every test starts signed out
 
     Error: apiRequestContext.get: connect ECONNREFUSED 127.0.0.1:3999
 
   1 failed
-  2 did not run`]], 'Real output, shortened, with BASE_URL pointing at a port where nothing runs')}
+  2 did not run`]], 'Real output, shortened')}
 
 <h2>What about afterEach?</h2>
 <p>Because each context is thrown away, you rarely need <code>afterEach</code> for the browser. You need it for things the test created <em>outside</em> the browser that would otherwise pile up, such as a record made through an API:</p>
 ${code({ lang: 'typescript', title: 'Example · clean up after every test', src: `
+let noteId = ''; // each test stores the id of the note it creates here
+
 test.afterEach(async ({ request }) => {
   // Runs after every test, also when the test failed.
   await request.delete('/api/notes/' + noteId);
@@ -115,7 +118,7 @@ ${testerEye('<p>A test that passes alone but fails in a full run, or the other w
 ${interview({
   say: `<p>“Playwright gives every test a fresh browser context, so tests are isolated: no cookies or sign-in carry over, and they can run in any order or in parallel. I use beforeEach for shared steps like signing in, describe to group tests with their own hooks, and beforeAll only for set-up that needs no page. afterEach is for cleaning up data created outside the browser; where I can, I avoid it by giving each test its own fresh data.”</p>`,
   qa: [
-    ['What is the difference between beforeAll and beforeEach?', '<p><code>beforeEach</code> runs before every test and can use <code>page</code>. <code>beforeAll</code> runs once for the file or group, before any test, and cannot use <code>page</code> because a page belongs to a single test. It suits one-off checks or set-up through the API.</p>'],
+    ['What is the difference between beforeAll and beforeEach?', '<p><code>beforeEach</code> runs before every test and can use <code>page</code>. <code>beforeAll</code> runs once per worker for the file or group, before any test, and cannot use <code>page</code> because a page belongs to a single test. It suits one-off checks or set-up through the API.</p>'],
     ['How does Playwright keep tests independent?', '<p>Each test gets a new browser context, like a fresh incognito profile, which is closed after the test. Cookies, storage and sign-in never leak between tests. Server-side data is the tester’s job: give each test its own data or use data nobody changes.</p>'],
     ['Does afterEach run if the test fails?', '<p>Yes. After hooks run whether the test passed or failed, which is why clean-up belongs there and not on the last line of the test.</p>'],
   ],

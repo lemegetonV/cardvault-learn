@@ -30,11 +30,15 @@ test('cancel the browser’s own confirm box: nothing changes', async ({ page })
   const card = page.getByRole('listitem').filter({ hasText: '4417' });
 
   // Say what to do with the next dialog before the click that opens it.
+  // The handler only notes the question and presses Cancel; the check comes after.
+  let question = '';
   page.once('dialog', async (dialog) => {
-    expect(dialog.message()).toBe('Close the credit card ending 4417? This cannot be undone.');
+    question = dialog.message();
     await dialog.dismiss(); // the Cancel button
   });
   await card.getByRole('button', { name: 'Close' }).click();
+
+  expect(question).toBe('Close the credit card ending 4417? This cannot be undone.');
 
   await expect(card.getByRole('button', { name: 'Close' })).toBeVisible();
   await expect(card).toContainText('ACTIVE');

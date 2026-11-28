@@ -7,12 +7,12 @@ export default {
   youWill: 'You will be able to explain workers, parallel mode and sharding, and say what makes tests safe to run side by side.',
   body: `
 <h2>Workers</h2>
-<p>A <strong>worker</strong> is a separate process that runs tests, each with its own browser. Playwright starts several workers and hands them test files, one file at a time. By default it uses half of the computer’s processor cores; on a four-core machine that is two. The whole CardVault suite shows the difference:</p>
+<p>A <strong>worker</strong> is a separate process that runs tests, each with its own browser. Playwright starts several workers and hands them test files, one file at a time (in CardVault’s config; with <code>fullyParallel</code> on, it hands out single tests). By default it uses half of the computer’s processor cores; on a four-core machine that is two. The whole CardVault suite shows the difference:</p>
 ${table(['Command', 'Result'], [
-  ['`npx playwright test`', '67 passed (28.8s), two workers'],
-  ['`npx playwright test --workers=1`', '67 passed (46.0s), one worker'],
+  ['`npx playwright test`', '80 passed (44.4s), two workers'],
+  ['`npx playwright test --workers=1`', '80 passed (1.1m), one worker'],
 ])}
-<p>The same 67 tests, about a third less time. <code>--workers</code> on the command line, or <code>workers</code> in the config, sets the number. More workers is not always faster: each one runs a browser, and the app under test has to answer them all.</p>
+<p>The same 80 tests, about a third less time. <code>--workers</code> on the command line, or <code>workers</code> in the config, sets the number. More workers is not always faster: each one runs a browser, and the app under test has to answer them all.</p>
 
 <h2>Inside one file</h2>
 <p>By default the tests in one file run in order, in one worker, which keeps a file’s tests from surprising each other. A file can ask for its tests to be shared out too:</p>
@@ -54,11 +54,11 @@ ${keyIdea('<p>Workers run test files side by side, each with its own browser. Pa
 
 <h2>Sharding: more than one machine</h2>
 <p>When one machine is not enough, <strong>sharding</strong> splits the suite into parts and runs each part on a different machine, usually separate CI jobs. <code>--shard=1/2</code> means “run the first half”:</p>
-${figure({ svg: shardsWorkers(), caption: 'Two shards, each with two workers. Each shard runs about half of the files, and each worker in it takes files one at a time.' })}
-${terminal([['npx playwright test --shard=1/2', `Running 35 tests using 2 workers, shard 1 of 2
-  35 passed (16.3s)`], ['npx playwright test --shard=2/2', `Running 33 tests using 2 workers, shard 2 of 2
-  33 passed (14.9s)`]], 'Real output, progress dots removed')}
-<p>35 and 33 make 68, one more than the suite’s 67: each shard runs the setup step, because each machine needs its own saved login. Each shard writes its own report; the <code>blob</code> reporter from <a href="/learn/pw-reports/">reports and evidence</a> saves results so that <code>npx playwright merge-reports</code> can join them into one.</p>
+${figure({ svg: shardsWorkers(), caption: 'Two shards, each with two workers. Each shard runs about half of the tests, and each worker in it takes files one at a time.' })}
+${terminal([['npx playwright test --shard=1/2', `Running 42 tests using 2 workers, shard 1 of 2
+  42 passed (21.1s)`], ['npx playwright test --shard=2/2', `Running 39 tests using 2 workers, shard 2 of 2
+  39 passed (26.6s)`]], 'Real output, progress dots removed')}
+<p>42 and 39 make 81, one more than the suite’s 80: each shard runs the setup step, because each machine needs its own saved login. Each shard writes its own report; the <code>blob</code> reporter from <a href="/learn/pw-reports/">reports and evidence</a> saves results so that <code>npx playwright merge-reports</code> can join them into one.</p>
 
 <h2>What parallel runs ask of your tests</h2>
 ${table(['Rule', 'Why', 'In CardVault’s suite'], [

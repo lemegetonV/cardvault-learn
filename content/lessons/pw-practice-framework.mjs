@@ -30,7 +30,7 @@ ${figure({ svg: frameworkLayers(), caption: 'The picture from the framework map,
 <p><strong>5.</strong> Long tests are split into test.steps. Traces are kept for failed tests. GitHub Actions starts a fresh copy of the app on every pull request, runs the suite with one retry, and uploads the HTML report and traces even when tests fail.</p>
 <p><strong>6.</strong> The two main journeys run again on a Pixel 7 project. A couple of visual tests run inside Playwright’s Docker image so their baselines match everywhere. Next I would add Firefox and WebKit in a nightly run.”</p>
 </blockquote>
-<p>That is about 330 words, a little over two minutes. Every sentence has a lesson behind it in this track, so you can go deeper wherever the interviewer leads.</p>
+<p>That is about 300 words, roughly two minutes. Every sentence has a lesson behind it in this track, so you can go deeper wherever the interviewer leads.</p>
 
 <h2>Handling follow-ups</h2>
 <ul>

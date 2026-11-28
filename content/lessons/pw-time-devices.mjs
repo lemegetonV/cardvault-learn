@@ -23,12 +23,12 @@ ${code({ lang: 'typescript', title: 'tests/ui/learn/time.spec.ts', src: `
   });
 ` })}
 <ul>
-<li><code>page.clock.install()</code> replaces the page’s clock and timers with fake ones that Playwright controls. It must come before the page opens, so the page uses the fake clock from the start. Time still flows normally until the test moves it.</li>
+<li><code>page.clock.install()</code> replaces the page’s clock and timers with fake ones that Playwright controls. Call it before the page opens: timers the page started earlier are not controlled. The fake clock covers the whole context, every page in it. Time still flows normally until the test moves it.</li>
 <li>The wait for <code>/api/auth/session</code> matters. Until that answer arrives, the page’s timer has no deadline, and moving the clock would do nothing. An earlier version of this file skipped it and failed now and then when the machine was busy, which is how the line got here.</li>
 </ul>
 ${code({ lang: 'typescript', title: 'tests/ui/learn/time.spec.ts', src: `
   test('a warning appears one minute before the session ends', async ({ page }) => {
-    // Jump 14 minutes ahead, running every timer that falls in between.
+    // Jump 14 minutes ahead. Each timer that came due fires once, like opening a laptop lid.
     await page.clock.fastForward('14:00');
 
     const warning = page.getByRole('alertdialog', { name: 'Your session is about to end' });
@@ -49,7 +49,7 @@ ${code({ lang: 'typescript', title: 'tests/ui/learn/time.spec.ts', src: `
     await expect(page.getByText('You were signed out after 15 minutes.')).toBeVisible();
   });
 ` })}
-<p><code>fastForward('14:00')</code> moves the fake clock 14 minutes ahead in an instant, as “minutes:seconds”, and fires the timers that were due in between. The page reacts as if 14 minutes had passed. The checks use only what the customer sees: an <code>alertdialog</code> (a dialog that needs attention), the countdown text, the toast, and finally the sign-in page with its message. The countdown is checked loosely, “Signing out in”, because the exact second depends on when the page’s timer last ticked.</p>
+<p><code>fastForward('14:00')</code> moves the fake clock 14 minutes ahead in an instant, as “minutes:seconds”, and fires each timer that came due once, like opening a laptop after it slept: a countdown that ticks every second does not tick 840 times. (<code>page.clock.runFor</code> would run every tick.) The page reacts as if 14 minutes had passed. The checks use only what the customer sees: an <code>alertdialog</code> (a dialog that needs attention), the countdown text, the toast, and finally the sign-in page with its message. The countdown is checked loosely, “Signing out in”, because the exact second depends on when the page’s timer last ticked.</p>
 
 <h2>Where the customer is</h2>
 <p>CardVault shows every date and time in the customer’s own time zone and format, using the browser’s settings. Two options control those settings: <code>locale</code>, the language and region (such as <code>en-IN</code>, English as used in India), and <code>timezoneId</code>, the time zone. To know the right answer, the test needs a transaction at a known moment, so it supplies one with <a href="/learn/pw-network-mocking/">page.route</a>: one purchase at 14:30 UTC on 1 March 2026.</p>
@@ -116,7 +116,7 @@ ${testerEye('<p>Time zones are a classic source of bugs: a purchase late in the 
 ${interview({
   say: `<p>“For time-based UI like a session timeout I install Playwright’s fake clock before the page loads and fastForward it, so a 15-minute rule runs in a second. For dates and currency I set locale and timezoneId per test group and feed the page a transaction at a known UTC time, so the expected local text is worked out from the rules. For mobile I emulate a device from the devices list, tap instead of click, and check there is no horizontal scroll.”</p>`,
   qa: [
-    ['How do you test a session timeout without waiting?', '<p>Call <code>page.clock.install()</code> before the page opens, then <code>page.clock.fastForward(\'14:00\')</code> to move time and fire the timers that were due. Assert on the warning, then fast-forward past the limit and assert the sign-out.</p>'],
+    ['How do you test a session timeout without waiting?', '<p>Call <code>page.clock.install()</code> before the page opens, then <code>page.clock.fastForward(\'14:00\')</code> to jump ahead; each timer that came due fires once. Assert on the warning, then fast-forward past the limit and assert the sign-out.</p>'],
     ['How do you test that dates show in the user’s time zone?', '<p>Set <code>timezoneId</code> and <code>locale</code> with <code>test.use</code>, control the data so a timestamp is known, and assert the local text you work out from the zone’s offset. Repeat for a second zone to prove the conversion.</p>'],
     ['Is device emulation the same as testing on a real phone?', '<p>No. It sets the screen size, pixel density, touch and user agent in a desktop browser engine, which finds most layout and touch problems. Browser-specific or hardware issues need real devices or a device cloud.</p>'],
   ],

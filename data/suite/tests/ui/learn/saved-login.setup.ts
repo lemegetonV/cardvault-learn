@@ -1,7 +1,7 @@
 import { test as setup, expect } from '@playwright/test';
 import { ALICE_LOGIN, DEMO_PASSWORD } from '../config';
 
-// `test as setup` only renames test, so the report reads "setup".
+// `test as setup` only renames test so the file reads well; "[setup]" in the report is the project name.
 setup('sign in as alice and save the login', async ({ page }) => {
   await page.goto('/login');
   await page.getByLabel('Username').fill('alice');

@@ -6,7 +6,7 @@ export default {
   youWill: 'You will be able to write a screenshot comparison, handle changing content with masks, and explain where baselines come from.',
   body: `
 <h2>Comparing pictures</h2>
-<p><code>expect(page).toHaveScreenshot(name)</code> takes a screenshot and compares it with a saved picture called the <strong>baseline</strong>. If the two differ by more than a small tolerance, the test fails. The first time, there is no baseline: Playwright saves the screenshot as the baseline and fails the test, so that a person looks at the picture before it becomes the truth.</p>
+<p><code>expect(page).toHaveScreenshot(name)</code> takes a screenshot and compares it with a saved picture called the <strong>baseline</strong>. If any pixel differs by more than a small colour threshold, the test fails; <code>maxDiffPixels</code> can allow a few differing pixels, but by default none are allowed. The first time, there is no baseline: Playwright saves the screenshot as the baseline and fails the test, so that a person looks at the picture before it becomes the truth.</p>
 ${code({ lang: 'typescript', title: 'tests/ui/visual/visual.spec.ts', src: `
 test('the sign-in page looks as it did', async ({ page }) => {
   await page.goto('/login');
@@ -18,7 +18,7 @@ ${terminal([['npm run visual', `    Error: A snapshot doesn't exist at /work/vis
 
 <h2>When something changes</h2>
 <p>To see a failure, a temporary test turned the Sign in button red and compared again:</p>
-${terminal([['npx playwright test', `    Error: expect(page).toHaveScreenshot(expected) failed
+${terminal([['npm run visual', `    Error: expect(page).toHaveScreenshot(expected) failed
 
       11843 pixels (ratio 0.02 of all image pixels) are different.
 
@@ -42,7 +42,7 @@ ${keyIdea('<p><code>toHaveScreenshot</code> compares with an approved baseline a
 
 <h2>Why the pictures belong to one machine</h2>
 <p>The same page renders slightly differently on another operating system, browser build or set of fonts: text a pixel wider, edges smoothed differently. CardVault’s suite learned this the hard way. The first baselines were made on one Linux machine, and on the CI machine, also Linux, both tests failed:</p>
-${terminal([['npx playwright test', `    Error: expect(page).toHaveScreenshot(expected) failed
+${terminal([['(CI, the test step)', `    Error: expect(page).toHaveScreenshot(expected) failed
 
       1363 pixels (ratio 0.01 of all image pixels) are different.`]], 'Real output from CI, shortened')}
 <p>Nothing in the app had changed; the fonts had. The usual answer is to take and compare every screenshot on the same machine image. Playwright publishes a <strong>Docker image</strong>, a ready-made Linux system with the browsers and fonts installed, for each version. CardVault runs its visual tests inside it, locally and on CI, so the baselines and the comparisons come from identical machines.</p>
@@ -58,7 +58,7 @@ ${table(['Option', 'What it does'], [
   ['`maxDiffPixels: 100`', 'Allows up to this many different pixels'],
   ['`maxDiffPixelRatio: 0.01`', 'Allows this share of pixels to differ'],
   ['`fullPage: true`', 'Captures the whole scrollable page'],
-  ['`animations: \'disabled\'`', 'Stops animations (the default for screenshots)'],
+  ['`animations: \'disabled\'`', 'Stops animations (already the default for <code>toHaveScreenshot</code>)'],
   ['`--update-snapshots`', 'Saves new baselines from this run'],
 ])}
 

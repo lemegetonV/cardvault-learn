@@ -14,7 +14,7 @@ ${terminal([['npx playwright test learn/config.spec.ts -g "Menu" --repeat-each 3
   1 flaky
     [learn] › learn/config.spec.ts:16:1 › on a narrow screen the links hide behind a Menu button
   30 passed (19.1s)`]], 'Real output, shortened, from the version before the fix')}
-<p><code>--repeat-each 30</code> runs the test 30 times. <code>--retries 1</code> runs a failed test once more; a test that failed and then passed is reported as <strong>flaky</strong>, separately from passed and failed. The whole suite in this track was run four times over on four workers, and that turned up three flaky tests.</p>
+<p><code>--repeat-each 30</code> runs the test 30 times. <code>--retries 1</code> runs a failed test once more; a test that failed and then passed is reported as <strong>flaky</strong>, separately from passed and failed. Repeating the whole suite the same way, with <code>--repeat-each 4 --workers 4</code>, turned up three flaky tests in this track.</p>
 
 <h2>Case 1: clicking before the page was ready</h2>
 <p>The Menu test above. Its <a href="/learn/pw-debugging/">trace</a> showed the click landing on a page that looked finished but whose scripts had not started yet, so the click did nothing. Auto-waiting checks that the button is visible, stable and enabled, and it was. It cannot know that the page’s code is not yet listening. The fix waits for something that only appears once the page is fully running:</p>

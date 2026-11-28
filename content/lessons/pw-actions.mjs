@@ -72,7 +72,7 @@ ${sequence({
   ],
   steps: [
     { from: 't', to: 'p', label: 'click Apply', note: 'The test asks for a click and awaits it.' },
-    { from: 'p', to: 'b', label: 'find exactly one', note: 'Playwright resolves the locator. Not there yet, or more than one match? It keeps looking (strict mode fails at once on several matches).' },
+    { from: 'p', to: 'b', label: 'find exactly one', note: 'Playwright resolves the locator. Not there yet? It keeps looking. More than one match? It fails at once (strict mode).' },
     { from: 'p', to: 'b', label: 'visible? stable?', note: 'The element must be visible, and not moving, for example in the middle of an animation.' },
     { from: 'p', to: 'b', label: 'enabled? not covered?', note: 'It must be enabled, and no other element, such as a dialog or a banner, may sit on top of it and catch the click.' },
     { from: 'p', to: 'b', label: 'click', note: 'Only now does Playwright scroll it into view and click it, like a mouse would.' },
@@ -90,7 +90,7 @@ ${table(['Action', 'Does', 'Notes'], [
   ['`fill(text)`', 'Clears the field and sets its value', 'Text, password, date, text areas'],
   ['`press(key)`', 'Presses one key, such as `\'Enter\'` or `\'Tab\'`', 'For keyboard behaviour'],
   ['`pressSequentially(text)`', 'Types one character at a time', 'Only when the page reacts to each key'],
-  ['`check()`, `uncheck()`', 'Ticks or clears a checkbox or radio button', 'Fails if the state does not change'],
+  ['`check()`, `uncheck()`', 'Ticks or clears a checkbox (`check()` also selects a radio button)', 'Fails if the box does not end up in that state'],
   ['`selectOption(value)`', 'Chooses from a select box', 'By value or `{ label }`'],
   ['`setInputFiles(path)`', 'Puts a file in a file field', 'Covered in the forms lesson'],
   ['`hover()`', 'Moves the mouse over the element', 'For menus that open on hover'],
@@ -103,7 +103,7 @@ ${interview({
   qa: [
     ['What is auto-waiting?', '<p>Before an action, Playwright waits until the target element is ready: visible, stable, enabled and not covered by another element. It keeps retrying those checks, so the test does not need manual waits before clicking or typing.</p>'],
     ['What is the difference between fill() and pressSequentially()?', '<p><code>fill()</code> sets the whole value at once, which is fast and what most tests need. <code>pressSequentially()</code> types character by character, for fields that react to each key, such as a search box that suggests results as you type.</p>'],
-    ['Why use check() instead of click() on a checkbox?', '<p><code>click()</code> toggles, so the result depends on the starting state. <code>check()</code> ensures the box ends up ticked, does nothing if it already is, and fails if the box does not change, which makes the intent clear.</p>'],
+    ['Why use check() instead of click() on a checkbox?', '<p><code>click()</code> toggles, so the result depends on the starting state. <code>check()</code> ensures the box ends up ticked: it does nothing if it already is, and fails if the box cannot be ticked. That makes the intent clear.</p>'],
   ],
 })}
 `,

@@ -31,7 +31,7 @@ test.beforeEach(async ({ page, request }) => {
 <ul>
 <li><code>{ page, request }</code> asks Playwright for two fixtures: the browser page, and <code>request</code>, which sends HTTP requests straight to services without a browser. The helper uses it to create the customer and the purchase. The lesson on <a href="/learn/pw-api-requests/">API requests</a> covers it.</li>
 <li><code>customer.username</code> reads a value from the object the helper returned.</li>
-<li>The purchase was made at “Northwind Books”, so the test finds its row by that name. <code>/Northwind Books/</code> is a pattern, because the link’s name also holds the date and the card.</li>
+<li>The purchase was made at “Northwind Books”, so the test finds its row by that name. <code>/Northwind Books/</code> is a pattern (a regular expression), which matches the name anywhere inside the link’s longer name with the date and the card. The plain string <code>'Northwind Books'</code> would also work, because names match part of the text by default; the pattern just makes “part of” visible to the reader.</li>
 </ul>
 
 <h2>Filling the form and uploading a file</h2>
@@ -51,7 +51,7 @@ test('open a dispute with a reason, a note and a receipt', async ({ page }) => {
 ` })}
 <ol>
 <li><code>selectOption({ label: 'Wrong amount' })</code> chooses by the text the customer sees, which reads better here than the hidden value.</li>
-<li><code>getByLabel(/Receipt/)</code> uses a pattern because the full label is long: “Receipt (optional: PDF, PNG or JPEG, up to 5 MB)”.</li>
+<li><code>getByLabel(/Receipt/)</code> matches the start of the long label “Receipt (optional: PDF, PNG or JPEG, up to 5 MB)”. As with the link, <code>'Receipt'</code> would work too.</li>
 <li><code>setInputFiles('learn/files/receipt.png')</code> puts a file into the file field without opening the computer’s file picker, which a test cannot click. The path is relative to the folder you run the tests from, <code>tests/ui</code>. The file is a small picture kept in the suite for this purpose.</li>
 <li>Three checks prove the business result, not just that a button was pressed: the confirmation message (a <strong>toast</strong>: a short message with <code>role="status"</code> that disappears after 4 seconds), the “Dispute open” badge, and the Dispute button gone, because a second dispute is not allowed.</li>
 </ol>

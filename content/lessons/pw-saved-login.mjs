@@ -6,12 +6,12 @@ export default {
   youWill: 'You will be able to save a login with storageState and reuse it through a setup project.',
   body: `
 <h2>What “signed in” really is</h2>
-<p>After you sign in, the browser holds a few <strong>cookies</strong>: small pieces of data the web app set, which the browser sends back with every request. In CardVault, one of them carries the access token. Being signed in is nothing more than having those cookies. So if a test can start with them already in place, it starts signed in.</p>
+<p>After you sign in, the browser holds a few <strong>cookies</strong>: small pieces of data the web app set, which the browser sends back with every request. In CardVault, one of them carries the access token. Being signed in is nothing more than having those cookies, as long as the server still accepts the token in them. So if a test can start with them already in place, it starts signed in.</p>
 <p>Playwright calls the cookies and local storage of a context its <strong>storage state</strong>. It can write them to a JSON file and load them into a new context.</p>
 
 <h2>Step 1: a setup test that saves the login</h2>
 ${code({ lang: 'typescript', title: 'tests/ui/learn/saved-login.setup.ts', src: `
-// \`test as setup\` only renames test, so the report reads "setup".
+// \`test as setup\` only renames test so the file reads well; "[setup]" in the report is the project name.
 setup('sign in as alice and save the login', async ({ page }) => {
   await page.goto('/login');
   await page.getByLabel('Username').fill('alice');
@@ -92,7 +92,7 @@ ${keyIdea('<p>Sign in once in a setup project, save the context with <code>stora
 
 <h2>Things to keep in mind</h2>
 <ul>
-<li><strong>A saved login expires.</strong> CardVault’s session lasts 15 minutes. Because the setup runs at the start of every run, each run gets a fresh one.</li>
+<li><strong>A saved login expires.</strong> CardVault’s session lasts 15 minutes. Because the setup runs at the start of every run, each run gets a fresh one, which is enough while a run takes less than 15 minutes.</li>
 <li><strong>Tests that change data still need their own customer.</strong> A saved login shares one account. It suits tests that only read, like these. Tests that change data use a new customer each, as in <a href="/learn/pw-forms/">forms and uploads</a>.</li>
 <li><strong>Keep at least one real sign-in test.</strong> Skipping the form everywhere means only the setup step exercises it. The sign-in page deserves tests of its own, like <a href="/learn/pw-first-test/">your first test</a>.</li>
 </ul>

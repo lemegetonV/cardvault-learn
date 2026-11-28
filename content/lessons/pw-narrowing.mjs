@@ -55,7 +55,7 @@ test('filter by what is inside: the prepaid card', async ({ page }) => {
   await expect(prepaidCard).toContainText('5521');
 });
 ` })}
-<p><code>has</code> takes another locator instead of text: keep the cards that contain an element matching it. It is useful when the thing that tells items apart is a badge, a button or a label rather than plain text. Its opposites are <code>hasNotText</code> and <code>hasNot</code>.</p>
+<p><code>has</code> takes another locator instead of text: keep the cards that contain an element matching it. The inner locator starts with <code>page.</code>, but it is searched inside each card, not across the whole page. It is useful when the thing that tells items apart is a badge, a button or a label rather than plain text. Its opposites are <code>hasNotText</code> and <code>hasNot</code>.</p>
 
 <h2>By position, as a last resort</h2>
 ${code({ lang: 'typescript', title: 'tests/ui/learn/narrowing.spec.ts', src: `
@@ -68,7 +68,7 @@ test('first, last and nth: by position', async ({ page }) => {
   await expect(cards.last()).toBeVisible();
 });
 ` })}
-<p><code>first()</code>, <code>last()</code> and <code>nth()</code> pick by position. They always work, which is exactly the danger: if the order of the cards changes, the test silently picks another card. Use them only when the position itself is what you are testing, such as “the newest transaction is at the top”.</p>
+<p><code>first()</code>, <code>last()</code> and <code>nth()</code> pick by position. They never complain about several matches, which is exactly the danger: if the order of the cards changes, the test silently picks another card. Use them only when the position itself is what you are testing, such as “the newest transaction is at the top”.</p>
 
 ${keyIdea('<p>Actions need a locator that matches exactly one element. Narrow by meaning first: find the right container with <code>filter</code>, then the element inside it. Pick by position only when the position is the point of the test.</p>')}
 

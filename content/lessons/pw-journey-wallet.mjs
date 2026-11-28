@@ -47,7 +47,7 @@ ${code({ lang: 'typescript', title: 'tests/ui/components/ConsentDialog.ts', src:
 ` })}
 <ul>
 <li><code>contentFrame()</code> from <a href="/learn/pw-frames/">frames</a> returns a <code>FrameLocator</code>: locators built from it look inside the frame. The page object hides that detail, so tests never need to know there is a frame.</li>
-<li><code>waitFor()</code> waits until a locator’s element is on screen, then returns. It is not a check: it never decides whether the test passed. It makes <code>acceptTerms()</code> finish only when the terms are really accepted, so the next step does not race ahead.</li>
+<li><code>waitFor()</code> waits until a locator’s element is on screen, then returns. It is not an assertion and compares nothing, but if the element never appears it times out and the test fails. It makes <code>acceptTerms()</code> finish only when the terms are really accepted, so the next step does not race ahead.</li>
 </ul>
 
 <h2>The wallet page grows</h2>

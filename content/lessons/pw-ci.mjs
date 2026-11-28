@@ -63,7 +63,8 @@ jobs:
 ${table(['Step', 'Why'], [
   ['Get the code', 'The runner is a brand-new Linux machine with nothing on it'],
   ['Start CardVault', 'A full copy of the app, built from the same commit, with its demo data: the tests never touch a shared environment'],
-  ['Set up Node.js', 'The same major version as on your computer'],
+  ['Set up Node.js', 'A fixed major version, 22, so every run uses the same Node.js'],
+
   ['`npm ci`', 'Installs exactly the versions in `package-lock.json`, unlike `npm install`, which may update them'],
   ['Install the browser', '`--with-deps` also installs the Linux libraries the browser needs'],
   ['Check the TypeScript', 'A type mistake fails in seconds, before any browser starts'],
@@ -95,6 +96,7 @@ ${code({ lang: 'yaml', title: '.github/workflows/ui-tests.yml', src: `
 <ul>
 <li>Normally a failed step stops the job. <code>if: always()</code> runs a step anyway, so the screenshot tests still run and the evidence is still saved after a failure.</li>
 <li>The visual tests run in Playwright’s Docker image, for the reason <a href="/learn/pw-visual/">visual comparisons</a> told: their pictures were made there.</li>
+<li>A last step, also <code>if: always()</code>, stops CardVault and deletes its data, so the runner is left clean.</li>
 <li><code>upload-artifact</code> keeps files from the run for 14 days, as a zip called an <strong>artifact</strong>: the HTML reports, and the screenshots and traces of failed tests.</li>
 </ul>
 ${terminal([['(GitHub Actions log, the visual step)', `Running 2 tests using 1 worker

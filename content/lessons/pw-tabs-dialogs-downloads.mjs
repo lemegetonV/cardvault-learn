@@ -35,11 +35,15 @@ test('cancel the browser’s own confirm box: nothing changes', async ({ page })
   const card = page.getByRole('listitem').filter({ hasText: '4417' });
 
   // Say what to do with the next dialog before the click that opens it.
+  // The handler only notes the question and presses Cancel; the check comes after.
+  let question = '';
   page.once('dialog', async (dialog) => {
-    expect(dialog.message()).toBe('Close the credit card ending 4417? This cannot be undone.');
+    question = dialog.message();
     await dialog.dismiss(); // the Cancel button
   });
   await card.getByRole('button', { name: 'Close' }).click();
+
+  expect(question).toBe('Close the credit card ending 4417? This cannot be undone.');
 
   await expect(card.getByRole('button', { name: 'Close' })).toBeVisible();
   await expect(card).toContainText('ACTIVE');
@@ -47,8 +51,9 @@ test('cancel the browser’s own confirm box: nothing changes', async ({ page })
 ` })}
 <ol>
 <li><code>page.once('dialog', handler)</code> registers a <strong>handler</strong>: a function Playwright calls the next time a dialog appears, once only. (<code>page.on</code> would call it for every dialog.)</li>
-<li>The handler receives the dialog. <code>dialog.message()</code> is its text, checked here so the test proves the right question was asked. <code>dialog.dismiss()</code> presses Cancel; <code>dialog.accept()</code> presses OK.</li>
-<li>This test uses alice because cancelling must change nothing, and the last two lines check exactly that. As a safety net, Playwright dismisses any dialog that has no handler, so even a broken version of this test would not close her card.</li>
+<li>The handler receives the dialog. <code>dialog.message()</code> is its text; the handler keeps it in <code>question</code>, and the test checks it after the click, so the test proves the right question was asked. <code>dialog.dismiss()</code> presses Cancel; <code>dialog.accept()</code> presses OK.</li>
+<li>Why not check inside the handler? A failed check there would stop the handler before it presses Cancel, and the click would hang until the test timed out, with a confusing error. Keep handlers small and check afterwards.</li>
+<li>This test uses alice because cancelling must change nothing, and the last two lines check exactly that. Only <code>accept()</code> closes a card, and this test never calls it. (When no handler is registered at all, Playwright dismisses dialogs by itself.)</li>
 </ol>
 ${code({ lang: 'typescript', title: 'tests/ui/learn/tabs-dialogs-downloads.spec.ts', src: `
 test('accept the confirm box: the card is closed', async ({ page, request }) => {

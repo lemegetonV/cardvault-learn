@@ -14,11 +14,14 @@ ${table(['Command', 'Runs'], [
   ['`npx playwright test learn/running.spec.ts:9`', 'The test that starts on line 9'],
 ])}
 <p>To choose by the test’s name instead, use <code>-g</code>, short for <code>--grep</code>. It matches the full name, including any <code>describe</code> group:</p>
-${terminal([['npx playwright test -g "wrong password"', `Running 1 test using 1 worker
+${terminal([['npx playwright test -g "wrong password"', `Running 3 tests using 2 workers
 
-  ✓  1 [learn] › learn/running.spec.ts:9:1 › a wrong password is refused @smoke (535ms)
+  ✓  1 [setup] › learn/saved-login.setup.ts:5:1 › sign in as alice and save the login (472ms)
+  ✓  2 [framework] › tests/sign-in.spec.ts:13:1 › a wrong password is refused (527ms)
+  ✓  3 [learn] › learn/running.spec.ts:9:1 › a wrong password is refused @smoke (502ms)
 
-  1 passed (1.2s)`]], 'Real output')}
+  3 passed (2.1s)`]], 'Real output')}
+<p>Two tests have “wrong password” in their names: this lesson’s, and the framework’s version from Part 2. The <code>[setup]</code> step runs as well, every time, because the other projects depend on it. Add <code>--no-deps</code> to skip it when a test does not need alice’s saved login.</p>
 
 <h2>Tags</h2>
 <p>A <strong>tag</strong> is a label that starts with <code>@</code>. You give it to a test in an options object between the name and the function:</p>
@@ -31,26 +34,29 @@ test('the sign-in page opens', { tag: '@smoke' }, async ({ page }) => {
 ` })}
 <p>A <strong>smoke test</strong> is a quick check that the most important things work at all, run first so a broken build is spotted in seconds. Tags appear at the end of the test’s name, so <code>--grep @smoke</code> finds them, and <code>--grep-invert</code> runs everything else:</p>
 ${terminal([
-  ['npx playwright test --grep @smoke', `Running 2 tests using 1 worker
+  ['npx playwright test --grep @smoke', `Running 3 tests using 1 worker
 
-  ✓  1 [learn] › learn/running.spec.ts:4:1 › the sign-in page opens @smoke (436ms)
-  ✓  2 [learn] › learn/running.spec.ts:9:1 › a wrong password is refused @smoke (510ms)
+  ✓  1 [setup] › learn/saved-login.setup.ts:5:1 › sign in as alice and save the login (504ms)
+  ✓  2 [learn] › learn/running.spec.ts:4:1 › the sign-in page opens @smoke (337ms)
+  ✓  3 [learn] › learn/running.spec.ts:9:1 › a wrong password is refused @smoke (418ms)
 
-  2 passed (1.6s)`],
-  ['npx playwright test --grep-invert @smoke learn/running.spec.ts', `Running 2 tests using 1 worker
+  3 passed (2.3s)`],
+  ['npx playwright test --grep-invert @smoke learn/running.spec.ts', `Running 3 tests using 1 worker
 
-  ✓  1 [learn] › learn/running.spec.ts:20:1 › the sign-in page has a title in the browser tab (307ms)
-  ✓  2 [learn] › learn/running.spec.ts:25:1 › the username field can be typed into (272ms)
+  ✓  1 [setup] › learn/saved-login.setup.ts:5:1 › sign in as alice and save the login (520ms)
+  ✓  2 [learn] › learn/running.spec.ts:21:1 › the sign-in page has a title in the browser tab (239ms)
+  ✓  3 [learn] › learn/running.spec.ts:26:1 › the username field can be typed into (258ms)
 
-  2 passed (1.3s)`],
+  3 passed (2.0s)`],
 ], 'Real output')}
 <p>Before running anything, <code>--list</code> shows which tests a command would pick:</p>
 ${terminal([['npx playwright test --list learn/running.spec.ts', `Listing tests:
+  [setup] › learn/saved-login.setup.ts:5:1 › sign in as alice and save the login
   [learn] › learn/running.spec.ts:4:1 › the sign-in page opens
   [learn] › learn/running.spec.ts:9:1 › a wrong password is refused
-  [learn] › learn/running.spec.ts:20:1 › the sign-in page has a title in the browser tab
-  [learn] › learn/running.spec.ts:25:1 › the username field can be typed into
-Total: 4 tests in 1 file`]], 'Real output')}
+  [learn] › learn/running.spec.ts:21:1 › the sign-in page has a title in the browser tab
+  [learn] › learn/running.spec.ts:26:1 › the username field can be typed into
+Total: 5 tests in 2 files`]], 'Real output')}
 
 <h2>A test that must work every time</h2>
 ${code({ lang: 'typescript', title: 'tests/ui/learn/running.spec.ts', src: `
@@ -96,7 +102,8 @@ ${table(['Flag', 'What it does'], [
   ['`--project=learn`', 'Run one project (its dependencies run first)'],
   ['`--headed`', 'Show the browser window'],
   ['`--ui`', 'UI mode: pick tests, watch them and step through each action'],
-  ['`--debug`', 'Open the inspector and pause before each action'],
+  ['`--debug`', 'Open a visible browser and the inspector, paused at the start, so you can step through each action'],
+  ['`--no-deps`', 'Skip the projects this one depends on, such as setup'],
   ['`--last-failed`', 'Run only the tests that failed last time'],
   ['`--repeat-each=5`', 'Run each test five times, to catch tests that fail only sometimes'],
   ['`--workers=1`', 'Run one test at a time'],

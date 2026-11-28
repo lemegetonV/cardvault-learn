@@ -22,7 +22,7 @@ test.describe('the session clock', () => {
   });
 
   test('a warning appears one minute before the session ends', async ({ page }) => {
-    // Jump 14 minutes ahead, running every timer that falls in between.
+    // Jump 14 minutes ahead. Each timer that came due fires once, like opening a laptop lid.
     await page.clock.fastForward('14:00');
 
     const warning = page.getByRole('alertdialog', { name: 'Your session is about to end' });

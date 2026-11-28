@@ -94,7 +94,7 @@ ${keyIdea('<p>package.json says which tools to install, playwright.config.ts say
 
 <h2>Running the tests</h2>
 ${terminal([
-  ['npx playwright test', '  61 passed (32.2s)'],
+  ['npx playwright test', '  80 passed (44.4s)'],
   ['npx playwright test learn/locators.spec.ts', ''],
   ['npm run typecheck', ''],
 ], 'The everyday commands, in tests/ui')}

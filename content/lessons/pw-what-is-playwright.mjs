@@ -35,10 +35,10 @@ ${table(['Word', 'What it is', 'Think of it as'], [
   ['Context', 'A fresh, empty browser profile inside it: no cookies, no history, no saved sign-in', 'A brand-new private window'],
   ['Page', 'One tab inside a context', 'A tab'],
 ])}
-${figure({ svg: contexts(), caption: 'Playwright gives every test its own context, so one test can never see another test’s sign-in or data.' })}
+${figure({ svg: contexts(), caption: 'Playwright gives every test its own context, so one test can never see another test’s cookies or sign-in. Data stored by the app itself is shared; <a href="/learn/pw-forms/">forms and uploads</a> shows how tests deal with that.' })}
 <p>Starting a browser is slow; creating a context takes a few milliseconds. So Playwright starts the browser once and gives <strong>every test a new context</strong>. That is why one test can sign in as alice while the next starts signed out, with nothing leaking between them. The lesson on <a href="/learn/pw-hooks-isolation/">test isolation</a> goes deeper.</p>
 
-${keyIdea('<p>Playwright is a browser-automation library plus a test runner. Each test gets a fresh browser context, like a new private window, so tests do not affect each other.</p>')}
+${keyIdea('<p>Playwright is a browser-automation library plus a test runner. Each test gets a fresh browser context, like a new private window, so nothing one test leaves in the browser can affect another.</p>')}
 
 <h2>Why teams choose Playwright</h2>
 <p>For years the standard tool was <strong>Selenium</strong>, and you will be asked to compare the two. These are the differences that matter in practice:</p>

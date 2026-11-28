@@ -11,7 +11,8 @@ ${code({ lang: 'typescript', title: 'Example · learn/first-test.spec.ts, last l
   await expect(page.getByRole('heading', { name: 'My wallet' })).toBeVisible();
 ` })}
 <p>Run it. This is the real output, with a few long divider lines shortened and the trace instructions left out:</p>
-${terminal([['npx playwright test learn/first-test.spec.ts', `  ✘  1 [learn] › learn/first-test.spec.ts:6:1 › alice can sign in and see her wallet (5.7s)
+${terminal([['npx playwright test learn/first-test.spec.ts', `  ✓  1 [setup] › learn/saved-login.setup.ts:5:1 › sign in as alice and save the login (558ms)
+  ✘  2 [learn] › learn/first-test.spec.ts:6:1 › alice can sign in and see her wallet (5.7s)
 
   1) [learn] › learn/first-test.spec.ts:6:1 › alice can sign in and see her wallet ─────────────────
 
@@ -43,7 +44,9 @@ ${terminal([['npx playwright test learn/first-test.spec.ts', `  ✘  1 [learn] �
     attachment #3: trace (application/zip) ────────────────────────────────────────
     test-results/first-test-alice-can-sign-in-and-see-her-wallet-learn/trace.zip
 
-  1 failed`]], 'Real output')}
+  1 failed
+    [learn] › learn/first-test.spec.ts:6:1 › alice can sign in and see her wallet
+  1 passed (7.2s)`]], 'Real output')}
 
 <h2>Read it from the top</h2>
 <ol>
