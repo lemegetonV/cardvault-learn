@@ -10,6 +10,8 @@ User=ubuntu
 WorkingDirectory=/opt/cardvault-learn/lab
 Environment=CARDVAULT_DIR=/opt/cardvault
 Environment=SUITE_DIR=/opt/cardvault-suite/tests/api
+Environment=UI_DIR=/opt/cardvault-suite/tests/ui
+Environment=UI_BASE_URL=https://cardvault.140-245-206-220.sslip.io
 Environment=PATH=/home/ubuntu/.local/bin:/usr/local/bin:/usr/bin:/bin
 ExecStart=/usr/bin/python3 server.py
 Restart=on-failure

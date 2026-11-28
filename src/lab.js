@@ -284,7 +284,7 @@
 
   // One run's view: tests, each with its phases and steps, then the raw pytest output.
   function runView(body) {
-    const intro = el('p', { class: 'tp-intro', text: 'Each row is one real step the test took, in order. Open a row to see what was sent and what came back.' });
+    const intro = el('p', { class: 'tp-intro', text: 'Each row is one real step the test took, in order: the calls it made and, marked CHECK, each assert it tested. Open a row to see what was sent and what came back, or what a check compared.' });
     const tests = el('div', { class: 'tp-tests' });
     const logPre = el('pre');
     const log = el('details', { class: 'tp-log' }, el('summary', { text: 'pytest output' }), logPre);
@@ -370,6 +370,26 @@
       }
     }
 
+    // One assert line: the code, whether it held, and the values pytest compared.
+    function onAssert(d) {
+      const summary = [el('span', { class: 'tp-m chk', text: 'CHECK' }), el('code', { class: 'tp-path', text: d.code || 'assert' }),
+        d.passed ? pill('ok', 'holds') : pill('bad', 'fails')];
+      const first = (d.values || '').split('\n')[0];
+      const detail = [
+        el('p', { class: 'tp-note', text: `Line ${d.line} of ${d.file}. ${d.passed
+          ? 'The comparison was true, so the test carried on.'
+          : 'The comparison was false, so pytest stopped the test here and marked it failed.'}` }),
+        block(d.passed ? 'What pytest compared' : 'What pytest compared (left: what the app gave, right: what the test expects)', d.values),
+      ];
+      if (!d.passed && first.includes(' == ')) {
+        const [got, want] = first.split(' == ');
+        detail.splice(1, 0, el('dl', { class: 'tp-cmp' }, el('dt', { text: 'Expected' }), el('dd', {}, el('code', { text: want })),
+          el('dt', { text: 'Got' }), el('dd', {}, el('code', { text: got }))));
+      }
+      step(d.phase, d.passed ? 'assert' : 'assert bad', summary, detail);
+      if (!d.passed) test.last.row.open = true;
+    }
+
     function onOutcome(d) {
       if (!test) startTest(d.nodeid);
       const kind = d.outcome === 'passed' ? 'ok' : d.outcome === 'skipped' ? 'info' : 'bad';
@@ -386,6 +406,7 @@
         if (d.type === 'test') { startTest(d.nodeid); return; }
         if (d.type === 'http') onHttp(d);
         else if (d.type === 'db') onDb(d);
+        else if (d.type === 'assert') onAssert(d);
         else if (d.type === 'watch' || d.type === 'event' || d.type === 'topics') onEvent(d);
         else if (d.type === 'outcome') onOutcome(d);
       },
@@ -450,6 +471,184 @@
         else view.handle(d);
       });
       setState(exitCode === 0 ? 'ok' : 'bad', exitCode === 0 ? 'passed' : exitCode === null ? 'stopped' : 'failed');
+    } catch (e) {
+      body.append(el('p', { class: 'tp-why bad', text: 'The connection to the live lab was lost.' }));
+      setState('bad', 'stopped');
+    } finally {
+      running = false;
+      runButtons.forEach((b) => { b.disabled = false; });
+      panel.querySelector('.tp-again').disabled = false;
+    }
+  }
+
+
+  // ------------------------------------------------------------ Playwright runs
+
+  // Built-in fixtures that only start the browser: hidden, with every step inside them.
+  const QUIET_FIXTURE = /^Fixture "(browser|browserName|context|page|playwright|request|_.*)"$/;
+  const UI_PHASES = { setup: 'Before the test: hooks and fixtures', call: 'The test', teardown: 'After the test' };
+  const STEP_KIND = {
+    'pw:api': ['ACTION', 'act'], expect: ['CHECK', 'chk'], 'test.step': ['STEP', 'stp'], hook: ['HOOK', 'hk'], fixture: ['FIXTURE', 'hk'],
+  };
+  const fileUrl = (run, rel) => `/vm/ui-files/${run}/${rel.split('/').map(encodeURIComponent).join('/')}`;
+
+  function uiRunView(body) {
+    const intro = el('p', { class: 'tp-intro', text: 'Each row is one thing the test did in the browser, in order: ACTION rows act on the page, CHECK rows are expect() checks. Open a row to see the line of code it came from. When the test ends, its screenshot, video and trace appear below it.' });
+    const tests = el('div', { class: 'tp-tests' });
+    const logPre = el('pre');
+    const log = el('details', { class: 'tp-log' }, el('summary', { text: 'Playwright output' }), logPre);
+    body.append(intro, tests, log);
+    const byTest = new Map(); // test id -> { section, head, lists, phase }
+    const steps = new Map(); // step id -> { row, depth, phase, hidden }
+    let run = null;
+
+    function startTest(d) {
+      const head = el('div', { class: 'tp-test-head' }, pill('run', 'running'), el('code', { text: d.title }));
+      const section = el('section', { class: 'tp-test' }, head);
+      if (d.project === 'setup') section.append(el('p', { class: 'tp-note', text: 'The setup project runs first: it signs alice in and saves the login for the tests that need it.' }));
+      tests.append(section);
+      byTest.set(d.id, { section, head, list: null, phase: null, n: 0 });
+    }
+
+    function listFor(t, phase) {
+      if (t.phase !== phase) {
+        t.section.append(el('p', { class: 'tp-phase', text: UI_PHASES[phase] }));
+        t.list = el('ol', { class: 'tp-steps' });
+        t.section.append(t.list);
+        t.phase = phase;
+      }
+      return t.list;
+    }
+
+    function onStep(d) {
+      const t = byTest.get(d.test);
+      if (!t) return;
+      const parent = d.parent ? steps.get(d.parent) : null;
+      // "Before Hooks" and "After Hooks" become the section titles, not rows.
+      if (d.category === 'hook' && !parent && /^Worker Cleanup$/.test(d.title)) {
+        steps.set(d.id, { hidden: true, depth: -1 });
+        return;
+      }
+      if (d.category === 'hook' && !parent && /^(Before|After) Hooks$/.test(d.title)) {
+        steps.set(d.id, { group: d.title.startsWith('Before') ? 'setup' : 'teardown', depth: -1 });
+        return;
+      }
+      const phase = parent ? parent.phase || parent.group : 'call';
+      const hidden = (parent && parent.hidden) || (d.category === 'fixture' && QUIET_FIXTURE.test(d.title));
+      const depth = parent && !parent.hidden ? parent.depth + 1 : 0;
+      const info = { phase, hidden, depth, row: null };
+      steps.set(d.id, info);
+      if (hidden) return;
+      const [label, cls] = STEP_KIND[d.category] || ['STEP', 'stp'];
+      // Actions and checks show their line of code, which says more than "Click".
+      const useCode = d.at && d.at.code && (d.category === 'pw:api' || d.category === 'expect');
+      const text = useCode ? d.at.code.replace(/^await\s+/, '').replace(/;$/, '') : d.title;
+      const summary = el('summary', {}, el('span', { class: `tp-m ${cls}`, text: label }),
+        el(useCode ? 'code' : 'span', { class: 'tp-path', text }), pill('run', '…'));
+      const detail = el('div', { class: 'tp-detail' });
+      if (d.at) {
+        detail.append(el('p', { class: 'tp-note', text: `${useCode ? `Playwright step “${d.title}”, from line` : 'Line'} ${d.at.line} of ${d.at.file}` }));
+        if (d.at.code && !useCode) detail.append(el('pre', { class: 'tp-src', text: d.at.code }));
+      } else {
+        detail.append(el('p', { class: 'tp-note', text: 'Done by Playwright itself, not by a line of the test.' }));
+      }
+      const row = el('details', { class: `tp-step ui ${d.category === 'expect' ? 'assert' : ''}` }, summary, detail);
+      const li = el('li', { style: `--depth:${depth}` }, row);
+      listFor(t, phase).append(li);
+      t.n += 1;
+      info.row = row;
+    }
+
+    function onStepEnd(d) {
+      const info = steps.get(d.id);
+      if (!info || !info.row) return;
+      const summary = info.row.querySelector('summary');
+      const isCheck = info.row.classList.contains('assert');
+      summary.lastChild.replaceWith(d.error ? pill('bad', isCheck ? 'fails' : 'failed') : pill('ok', isCheck ? 'holds' : 'done'));
+      summary.append(el('span', { class: 'tp-ms', text: `${d.ms} ms` }));
+      if (d.error) {
+        info.row.classList.add('bad');
+        info.row.querySelector('.tp-detail').append(block('Error', d.error.split('\nCall log:')[0].trim()));
+        info.row.open = true;
+      }
+    }
+
+    function onOutcome(d) {
+      const t = byTest.get(d.id);
+      if (!t) return;
+      const ok = d.status === d.expected;
+      const kind = ok ? (d.status === 'skipped' ? 'info' : 'ok') : 'bad';
+      t.head.replaceChildren(pill(kind, d.status === 'timedOut' ? 'timed out' : d.status), el('code', { text: d.title }), el('span', { class: 'tp-ms', text: `${d.seconds} s` }));
+      if (d.error) {
+        const where = d.at ? ` (line ${d.at.line} of ${d.at.file})` : '';
+        t.section.append(el('div', { class: 'tp-why bad' }, el('p', { class: 'tp-label', text: `Why it failed${where}` }), el('pre', { text: d.error })));
+      }
+      if (!run || !d.files.length) return;
+      const media = el('div', { class: 'tp-media' });
+      const links = el('p', { class: 'tp-links' });
+      for (const f of d.files) {
+        const url = fileUrl(run, f.path);
+        if (f.type.startsWith('image/')) {
+          media.append(el('figure', {}, el('a', { href: url, target: '_blank', rel: 'noopener' }, el('img', { src: url, alt: `The page when “${d.title}” ended`, loading: 'lazy' })), el('figcaption', { text: 'The page when the test ended' })));
+        } else if (f.type.startsWith('video/')) {
+          media.append(el('figure', {}, el('video', { src: `${url}#t=0.1`, controls: '', preload: 'metadata', muted: '' }), el('figcaption', { text: 'A video of the whole test' })));
+        } else if (f.name === 'trace') {
+          const viewer = `/vm/ui-files/${run}/report/trace/index.html?trace=${encodeURIComponent(location.origin + url)}`;
+          links.append(el('a', { class: 'btn', href: viewer, target: '_blank', rel: 'noopener', text: 'Open the trace' }), ' ');
+        }
+      }
+      t.section.append(media);
+      if (links.childNodes.length) t.section.append(links);
+    }
+
+    return {
+      handle(d) {
+        if (d.type === 'start') run = d.run;
+        else if (d.type === 'log') logPre.append(colourLine(d.line), '\n');
+        else if (d.type === 'pw-test') startTest(d);
+        else if (d.type === 'pw-step') onStep(d);
+        else if (d.type === 'pw-step-end') onStepEnd(d);
+        else if (d.type === 'pw-outcome') onOutcome(d);
+      },
+      finish(done) {
+        if (done && done.report) {
+          body.insertBefore(el('p', { class: 'tp-links' }, el('a', { class: 'btn', href: done.report, target: '_blank', rel: 'noopener', text: 'Open the full HTML report' })), log);
+        }
+      },
+    };
+  }
+
+  async function runUiTest(nodeId, title) {
+    if (running) { openPanel(panel.querySelector('.tp-title').textContent, panel.querySelector('.tp-file').textContent); return; }
+    current = nodeId;
+    again = () => runUiTest(nodeId, title);
+    const [file, line] = nodeId.split(':');
+    openPanel(title || (line ? `The test on line ${line}` : `All tests in ${file}`), `tests/ui/${file}`, 'UI test run on the live app');
+    const body = panel.querySelector('.tp-body');
+    body.textContent = '';
+    running = true;
+    runButtons.forEach((b) => { b.disabled = true; });
+    panel.querySelector('.tp-again').disabled = true;
+    setState('run', 'running');
+    const view = uiRunView(body);
+    let done = null;
+    try {
+      const res = await labFetch('ui-trace', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ node_id: nodeId }) });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        body.append(el('p', { class: 'tp-why bad', text: data.error || `The lab answered ${res.status}.` }));
+        setState('bad', 'not run');
+        return;
+      }
+      await readLines(res, (text) => {
+        let d;
+        try { d = JSON.parse(text); } catch (e) { return; }
+        if (d.type === 'done') done = d;
+        else view.handle(d);
+      });
+      view.finish(done);
+      const code = done ? done.exit_code : null;
+      setState(code === 0 ? 'ok' : 'bad', code === 0 ? 'passed' : code === null ? 'stopped' : 'failed');
     } catch (e) {
       body.append(el('p', { class: 'tp-why bad', text: 'The connection to the live lab was lost.' }));
       setState('bad', 'stopped');
@@ -553,17 +752,29 @@
 
   // ------------------------------------------------------------ start
 
-  const hasLab = document.querySelector('[data-tryit], [data-lab-reset], [data-run], [data-lab-status], [data-run-select], [data-perf]');
+  const hasLab = document.querySelector('[data-tryit], [data-lab-reset], [data-run], [data-run-ui], [data-lab-status], [data-run-select], [data-run-ui-select], [data-perf]');
   if (!hasLab) return;
 
   document.querySelectorAll('.tryit-req').forEach(setupRequest);
   document.querySelectorAll('[data-lab-reset]').forEach(setupReset);
   document.querySelectorAll('[data-lab-status]').forEach(loadStatus);
 
-  runButtons = [...document.querySelectorAll('[data-run], [data-run-select], [data-perf]')];
+  runButtons = [...document.querySelectorAll('[data-run], [data-run-ui], [data-run-select], [data-run-ui-select], [data-perf]')];
   document.querySelectorAll('[data-run]').forEach((btn) => {
     btn.disabled = false;
     btn.addEventListener('click', () => runTest(btn.dataset.run));
+  });
+  document.querySelectorAll('[data-run-ui]').forEach((btn) => {
+    btn.disabled = false;
+    btn.addEventListener('click', () => runUiTest(btn.dataset.runUi, btn.dataset.title));
+  });
+  document.querySelectorAll('[data-run-ui-select]').forEach((btn) => {
+    const select = document.querySelector(btn.dataset.runUiSelect);
+    btn.disabled = false;
+    btn.addEventListener('click', () => {
+      const option = select.selectedOptions[0];
+      runUiTest(select.value, option && option.value.includes(':') ? option.textContent : '');
+    });
   });
   document.querySelectorAll('[data-perf]').forEach((btn) => {
     btn.disabled = false;

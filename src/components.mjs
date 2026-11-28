@@ -103,6 +103,32 @@ function checkExcerpt(title, src) {
   }
 }
 
+/**
+ * The Playwright tests in a suite file, read from its source: [{ line, title }].
+ * Only learn/ and tests/ files: the visual tests run in Docker only.
+ */
+export function uiTestsIn(suitePath) {
+  if (!/^tests\/ui\/(learn|tests)\/.+\.(spec|setup)\.ts$/.test(suitePath)) return [];
+  const lines = readFileSync(new URL(suitePath, SUITE), 'utf8').split('\n');
+  const found = [];
+  lines.forEach((line, i) => {
+    const m = line.match(/^\s*(?:test|setup)(?:\.(?:only|fail|fixme|slow))?\(\s*(.*)$/);
+    if (!m) return;
+    const rest = m[1] || (lines[i + 1] || '').trim();
+    const t = rest.match(/^(['"`])(.*?)\1/);
+    if (t) found.push({ line: i + 1, title: t[2] });
+  });
+  return found;
+}
+
+/** The lab's id for a Playwright test or file: its path inside tests/ui, plus ":line" for one test. */
+export const uiNode = (suitePath, line) => suitePath.replace(/^tests\/ui\//, '') + (line ? `:${line}` : '');
+
+/** A button that runs one Playwright test (or file) on the live app, results in the side panel. */
+export function uiRunButton(nodeId, label = 'Run on the live app', title = '') {
+  return `<button type="button" class="run-btn" data-run-ui="${esc(nodeId)}"${title ? ` data-title="${esc(title)}"` : ''} disabled title="npx playwright test ${esc(nodeId)}">${runIcon}${esc(label)}</button>`;
+}
+
 /** A code block. title names the file it comes from; note is a short line on the right. */
 export function code({ src, lang = 'python', title = '', note = '' }) {
   const clean = src.replace(/^\n/, '').replace(/\s+$/, '');
@@ -118,6 +144,12 @@ export function code({ src, lang = 'python', title = '', note = '' }) {
     if (/^tests\/api\/tests\/test_\w+\.py$/.test(file[1])) {
       const names = [...clean.matchAll(/^def (test_\w+)\(/gm)].map((m) => m[1]);
       runs = names.map((t) => runButton(`${nodeFile(file[1])}::${t}`, names.length > 1 ? `Run ${t}` : 'Run this test on the live app')).join('');
+    }
+    const uiTests = uiTestsIn(file[1]);
+    if (uiTests.length) {
+      const shown = clean.split('\n').map((l) => l.match(/^\s*(?:test|setup)(?:\.\w+)?\(\s*(['"`])(.*?)\1/)).filter(Boolean).map((m) => m[2]);
+      const picked = uiTests.filter((t) => shown.includes(t.title));
+      runs = picked.map((t) => uiRunButton(uiNode(file[1], t.line), picked.length > 1 ? `Run “${t.title}”` : 'Run this test on the live app', t.title)).join('');
     }
   }
   return `<div class="code wide-ok"><div class="code-head"><span>${esc(title)}</span><span>${right}</span></div>`

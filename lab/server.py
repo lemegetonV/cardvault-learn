@@ -11,6 +11,12 @@ Standard library only, so it needs nothing installed.
   POST /vm/run            run one test (or one file) and stream pytest's output
   POST /vm/trace          the same run, streamed as JSON lines: each API call, database
                           query and event the tests make (from labtrace.py), plus the output
+  GET  /vm/ui-tests       the Playwright tests the runner can run
+  POST /vm/ui-trace       run one Playwright test (or file) in a headless browser, streamed as
+                          JSON lines: each action and expect() check (from pw-reporter.cjs), then
+                          the screenshot, video and trace it recorded
+  GET  /vm/ui-files/...   a file from one of the last few Playwright runs (screenshot, video,
+                          trace, and the HTML report with its trace viewer)
   POST /vm/perf           run the suite's Locust load test, small and fixed (5 users for
                           20 seconds), streamed as JSON lines: the running totals every
                           few seconds, then the final results per kind of request
@@ -19,11 +25,15 @@ Settings (environment variables):
   CARDVAULT_DIR   the CardVault checkout that runs the stack (for scripts/reset.sh and .env)
   SUITE_DIR       the folder that holds the API suite (tests/api of a CardVault checkout)
   SUITE_PYTHON    the Python that has the suite's requirements installed
+  UI_DIR          the folder that holds the Playwright suite (tests/ui, with node_modules)
+  UI_BASE_URL     the web app the Playwright tests open (default http://127.0.0.1:3000)
   LAB_PORT        default 8790
 """
 
 import json
+import mimetypes
 import os
+import shutil
 import queue
 import re
 import subprocess
@@ -38,6 +48,10 @@ from pathlib import Path
 CARDVAULT_DIR = Path(os.getenv("CARDVAULT_DIR", "/opt/cardvault"))
 SUITE_DIR = Path(os.getenv("SUITE_DIR", "/opt/cardvault-suite/tests/api"))
 SUITE_PYTHON = os.getenv("SUITE_PYTHON", str(SUITE_DIR / ".venv/bin/python"))
+UI_DIR = Path(os.getenv("UI_DIR", "/opt/cardvault-suite/tests/ui"))
+UI_BASE_URL = os.getenv("UI_BASE_URL", "http://127.0.0.1:3000")
+UI_RUNS = Path(tempfile.gettempdir()) / "cardvault-lab-ui"
+UI_KEEP_RUNS = 6
 PORT = int(os.getenv("LAB_PORT", "8790"))
 LAB_DIR = Path(__file__).resolve().parent
 
@@ -62,7 +76,7 @@ PERF_SECONDS = 20
 
 # One reset or test run at a time, so they never trip over each other.
 busy = threading.Lock()
-tests_cache = {"ids": None}
+tests_cache = {"ids": None, "ui": None}
 
 
 def read_env_file(path):
@@ -119,6 +133,77 @@ def collect_tests():
         ids = [line.strip() for line in result.stdout.splitlines() if "::" in line]
         tests_cache["ids"] = ids
     return tests_cache["ids"]
+
+
+def ui_env(run_dir):
+    """The Playwright suite's settings: the web app, the services and the test key."""
+    env = suite_env()
+    env.update(
+        BASE_URL=UI_BASE_URL,
+        CARDS_URL=SERVICES["cards"],
+        UI_DIR=str(UI_DIR),
+        LAB_RUN_DIR=str(run_dir),
+        PLAYWRIGHT_HTML_OPEN="never",
+        FORCE_COLOR="0",
+    )
+    return env
+
+
+def ui_command(*args):
+    return [str(UI_DIR / "node_modules/.bin/playwright"), "test",
+            "--config", str(LAB_DIR / "playwright.lab.config.cjs"), *args]
+
+
+# The projects the site can run. The visual tests need the Playwright Docker image, and the
+# phone project repeats framework tests, so neither is offered.
+UI_PROJECTS = {"setup", "learn", "framework"}
+
+
+def collect_ui_tests():
+    """Every Playwright test as "file:line", with its project and title."""
+    if tests_cache["ui"] is None:
+        with tempfile.TemporaryDirectory() as folder:
+            result = subprocess.run(ui_command("--list", "--reporter=json"), cwd=UI_DIR,
+                                    env=ui_env(folder), capture_output=True, text=True, timeout=90)
+        tests = {}
+
+        def walk(suite):
+            for spec in suite.get("specs", []):
+                for test in spec.get("tests", []):
+                    if test.get("projectName") in UI_PROJECTS:
+                        tests[f"{spec['file']}:{spec['line']}"] = {
+                            "project": test["projectName"], "title": spec["title"]}
+            for child in suite.get("suites", []):
+                walk(child)
+
+        try:
+            for suite in json.loads(result.stdout).get("suites", []):
+                walk(suite)
+        except json.JSONDecodeError:
+            return {}
+        tests_cache["ui"] = tests
+    return tests_cache["ui"]
+
+
+def ui_target(node_id):
+    """The project for a test ("learn/locators.spec.ts:28") or file, or None if not runnable."""
+    tests = collect_ui_tests()
+    if node_id in tests:
+        return tests[node_id]["project"]
+    projects = {t["project"] for key, t in tests.items() if key.rsplit(":", 1)[0] == node_id}
+    return projects.pop() if len(projects) == 1 else None
+
+
+def new_ui_run_dir():
+    """A fresh folder for one run's results. Only the last few runs are kept."""
+    UI_RUNS.mkdir(parents=True, exist_ok=True)
+    runs = sorted(UI_RUNS.iterdir(), key=lambda p: p.stat().st_mtime)
+    for old in runs[:-(UI_KEEP_RUNS - 1)] if len(runs) >= UI_KEEP_RUNS else []:
+        shutil.rmtree(old, ignore_errors=True)
+    run_id = time.strftime("%Y%m%d-%H%M%S") + "-" + os.urandom(3).hex()
+    folder = UI_RUNS / run_id
+    folder.mkdir()
+    return run_id, folder
 
 
 def runnable(node_id):
@@ -221,6 +306,10 @@ class Handler(BaseHTTPRequestHandler):
             return self.health()
         if self.path == "/vm/tests":
             return self.send_json(200, {"tests": collect_tests()})
+        if self.path == "/vm/ui-tests":
+            return self.send_json(200, {"tests": collect_ui_tests()})
+        if self.path.startswith("/vm/ui-files/"):
+            return self.ui_file(self.path[len("/vm/ui-files/"):])
         self.send_json(404, {"error": "not found"})
 
     def do_POST(self):
@@ -236,6 +325,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.run_test(body)
         if self.path == "/vm/trace":
             return self.run_trace(body)
+        if self.path == "/vm/ui-trace":
+            return self.run_ui_trace(body)
         if self.path == "/vm/perf":
             return self.run_perf()
         self.send_json(404, {"error": "not found"})
@@ -348,6 +439,32 @@ class Handler(BaseHTTPRequestHandler):
         node_id = str(req.get("node_id", ""))
         if not runnable(node_id):
             return self.send_json(400, {"error": f"{node_id!r} is not a test in the suite"})
+        env = suite_env()
+        env["PYTHONPATH"] = str(LAB_DIR)
+        # The pass hook only sees asserts that pytest rewrote with the hook switched on,
+        # so keep those rewritten files in a cache of the lab's own.
+        env["PYTHONPYCACHEPREFIX"] = str(Path(tempfile.gettempdir()) / "cardvault-lab-pycache")
+        command = [SUITE_PYTHON, "-m", "pytest", node_id, "--tb=short", "--color=no",
+                   "-p", "no:cacheprovider", "-p", "labtrace",
+                   "-o", "enable_assertion_pass_hook=true"]
+        self.stream_traced_run(command, SUITE_DIR, env, {"node_id": node_id})
+
+    def run_ui_trace(self, req):
+        """Run a Playwright test with pw-reporter.cjs and stream every step as JSON lines."""
+        node_id = str(req.get("node_id", ""))
+        if not (UI_DIR / "node_modules").exists():
+            return self.send_json(404, {"error": "the Playwright suite is not installed on this server"})
+        project = ui_target(node_id)
+        if project is None:
+            return self.send_json(400, {"error": f"{node_id!r} is not a Playwright test the lab can run"})
+        run_id, run_dir = new_ui_run_dir()
+        command = ui_command(node_id, f"--project={project}")
+        self.stream_traced_run(command, UI_DIR, ui_env(run_dir),
+                               {"node_id": node_id, "project": project, "run": run_id},
+                               {"run": run_id, "report": f"/vm/ui-files/{run_id}/report/index.html"})
+
+    def stream_traced_run(self, command, cwd, env, start, done=None):
+        """Run a command that writes JSON lines to LAB_TRACE_FD; stream them with its output."""
         if not busy.acquire(blocking=False):
             return self.send_json(409, {"error": "another test run or a reset is in progress, try again shortly"})
         process = None
@@ -359,12 +476,8 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("X-Accel-Buffering", "no")
             self.send_header("Connection", "close")
             self.end_headers()
-            env = suite_env()
-            env["PYTHONPATH"] = str(LAB_DIR)
             env["LAB_TRACE_FD"] = str(write_end)
-            command = [SUITE_PYTHON, "-m", "pytest", node_id, "--tb=short", "--color=no",
-                       "-p", "no:cacheprovider", "-p", "labtrace"]
-            process = subprocess.Popen(command, cwd=SUITE_DIR, env=env, pass_fds=(write_end,),
+            process = subprocess.Popen(command, cwd=cwd, env=env, pass_fds=(write_end,),
                                        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
             os.close(write_end)
             write_end = None
@@ -383,7 +496,7 @@ class Handler(BaseHTTPRequestHandler):
             timer = threading.Timer(RUN_TIMEOUT, process.kill)
             timer.start()
             try:
-                self.send_line(json.dumps({"type": "start", "node_id": node_id}))
+                self.send_line(json.dumps({"type": "start", **start}))
                 open_streams = 2
                 while open_streams:
                     line = lines.get()
@@ -392,7 +505,7 @@ class Handler(BaseHTTPRequestHandler):
                     elif line.strip():
                         self.send_line(line)
                 process.wait()
-                self.send_line(json.dumps({"type": "done", "exit_code": process.returncode}))
+                self.send_line(json.dumps({"type": "done", "exit_code": process.returncode, **(done or {})}))
             finally:
                 timer.cancel()
                 trace_stream.close()
@@ -405,6 +518,27 @@ class Handler(BaseHTTPRequestHandler):
                     os.close(fd)
             self.close_connection = True
             busy.release()
+
+    def ui_file(self, rest):
+        """Serve one file of a recent Playwright run, and nothing outside that run's folder."""
+        rest = rest.split("?", 1)[0]
+        run_id, _, inner = rest.partition("/")
+        if not re.fullmatch(r"\d{8}-\d{6}-[0-9a-f]{6}", run_id) or not inner:
+            return self.send_json(404, {"error": "not found"})
+        base = (UI_RUNS / run_id).resolve()
+        target = (base / inner).resolve()
+        if base not in target.parents or not target.is_file():
+            return self.send_json(404, {"error": "that file is not there any more; run the test again"})
+        kind = mimetypes.guess_type(target.name)[0] or "application/octet-stream"
+        if target.suffix == ".webmanifest":
+            kind = "application/manifest+json"
+        self.send_response(200)
+        self.send_header("Content-Type", kind)
+        self.send_header("Content-Length", str(target.stat().st_size))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        with target.open("rb") as f:
+            shutil.copyfileobj(f, self.wfile)
 
     def run_perf(self):
         """Run the Locust load test and stream progress and results as JSON lines."""

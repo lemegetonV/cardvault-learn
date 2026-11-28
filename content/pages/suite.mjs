@@ -3,7 +3,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { page } from '../../src/layout.mjs';
-import { esc, highlight, runButton, nodeFile } from '../../src/components.mjs';
+import { esc, highlight, runButton, nodeFile, uiTestsIn, uiNode, uiRunButton } from '../../src/components.mjs';
 import { lessonUrl } from '../site.mjs';
 
 const DATA = fileURLToPath(new URL('../../data/suite/', import.meta.url));
@@ -22,7 +22,7 @@ export const SUITES = {
     order: ['README.md', 'package.json', 'package-lock.json', 'tsconfig.json', 'playwright.config.ts', 'visual.config.ts', 'config.ts', 'fixtures.ts'],
     langs: { '.ts': 'typescript', '.json': 'json', '.md': 'text' },
     tab: 'UI suite · Playwright', chip: 'UI suite', lang: 'TypeScript and Playwright', title: 'The Playwright suite · CardVault Learn',
-    lede: `Every file of the Playwright suite that the UI testing lessons teach. <code>learn/</code> holds one small spec per Part 1 lesson; <code>pages/</code>, <code>components/</code>, <code>api/</code>, <code>fixtures.ts</code> and <code>tests/</code> are the framework from Part 2. Start from <a href="${lessonUrl('pw-framework-map')}">the framework map</a> if you want each file’s job first. These tests run on your own computer with <code>npx playwright test</code>; the site shows their code.`,
+    lede: `Every file of the Playwright suite that the UI testing lessons teach. <code>learn/</code> holds one small spec per Part 1 lesson; <code>pages/</code>, <code>components/</code>, <code>api/</code>, <code>fixtures.ts</code> and <code>tests/</code> are the framework from Part 2. Test files list their tests with a Run button, which runs that test in a headless Chrome on the server, against the live app. A panel shows each action and check as it happens, then the screenshot, video and trace the run recorded. Start from <a href="${lessonUrl('pw-framework-map')}">the framework map</a> if you want each file’s job first.`,
   },
 };
 
@@ -84,6 +84,11 @@ function fileSection(s, p) {
     const tests = testsIn(p);
     const items = tests.map((t) => `<li><code>${esc(t)}</code>${runButton(`${nodeFile(p)}::${t}`, 'Run')}</li>`).join('');
     runs = `<div class="sf-tests run-host"><div class="sf-tests-head"><b>${tests.length} test${tests.length === 1 ? '' : 's'} in this file</b>${runButton(nodeFile(p), 'Run the whole file')}</div><ul>${items}</ul></div>`;
+  }
+  const uiTests = uiTestsIn(p);
+  if (uiTests.length) {
+    const items = uiTests.map((t) => `<li><code>${esc(t.title)}</code>${uiRunButton(uiNode(p, t.line), 'Run', t.title)}</li>`).join('');
+    runs = `<div class="sf-tests run-host"><div class="sf-tests-head"><b>${uiTests.length} test${uiTests.length === 1 ? '' : 's'} in this file</b>${uiRunButton(uiNode(p), 'Run the whole file')}</div><ul>${items}</ul></div>`;
   }
   return `<section class="sf" data-path="${esc(p)}">${runs}<div class="code wide-ok">${head}<pre><code>${highlight(src, lang)}</code></pre></div></section>`;
 }
