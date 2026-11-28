@@ -19,7 +19,7 @@ ${code({ lang: 'typescript', title: 'tests/ui/components/Menu.ts', src: `
     await this.nav.getByRole('link', { name: linkName }).click();
   }
 ` })}
-<p><code>isVisible()</code> is one of the few Playwright calls that does not wait: it looks once and answers <code>true</code> or <code>false</code>. That suits a question about the layout, which is already settled once the page has loaded. The comment repeats a lesson from <a href="/learn/pw-flaky-tests/">flaky tests</a>: the Menu button ignores clicks until the page’s scripts have started, so the caller waits for the page’s data first.</p>
+<p><code>isVisible()</code> is one of the few Playwright calls that does not wait: it looks once and answers <code>true</code> or <code>false</code>. That suits a question about the layout, which is already settled once the page has loaded. The comment’s warning comes from <a href="/learn/pw-flaky-tests/">flaky tests</a>.</p>
 
 <h2>The journey</h2>
 ${code({ lang: 'typescript', title: 'tests/ui/tests/dispute-journey.spec.ts', src: `

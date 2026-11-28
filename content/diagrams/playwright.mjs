@@ -203,3 +203,22 @@ export function fixtureChain() {
   b += box(704, 150, 136, 58, 'page', { kind: 'plain', sub: 'built in', cls: 't-md' });
   return svg(W, H, 'The test asks only for customer. customer needs api and loginPage; api needs the built-in request fixture, and loginPage needs the built-in page. Playwright builds them from the right-hand side first, and the test gets the same page that customer signed in.', b);
 }
+
+/** The three parts of a page object class, and who uses each. */
+export function classAnatomy() {
+  const W = 860, H = 340;
+  let b = '';
+  b += `<rect class="zone" x="300" y="16" width="540" height="308" rx="16"/>`;
+  b += text(320, 42, 'export class LoginPage', 't-sm', 'start');
+  b += text(320, 60, 'a template; each new LoginPage(page) makes one object', 't-mono', 'start');
+  b += box(320, 76, 500, 66, 'Fields', { kind: 'plain', sub: 'what it holds: page, username, password, signInButton, error' });
+  b += box(320, 156, 500, 66, 'constructor(page)', { kind: 'plain', sub: 'runs once, on new: builds each locator and stores it' });
+  b += box(320, 236, 500, 66, 'Methods', { kind: 'plain', sub: 'what it does: open(), signIn(username, password)' });
+  b += box(20, 156, 220, 66, 'new LoginPage(page)', { kind: 'plain', sub: 'a fixture makes it', cls: 't-md' });
+  b += arrow([[240, 189], [316, 189]]);
+  b += box(20, 236, 220, 66, 'a test', { kind: 'plain', sub: 'loginPage.signIn(...)', cls: 't-md' });
+  b += arrow([[240, 269], [316, 269]]);
+  b += arrow([[570, 156], [570, 146]]);
+  b += text(580, 151, 'fills', 't-sm t-muted', 'start');
+  return svg(W, H, 'A class has three parts. Fields are the values each object holds. The constructor runs once when new LoginPage(page) is called and fills the fields with locators. Methods are the actions a test calls, such as signIn.', b);
+}

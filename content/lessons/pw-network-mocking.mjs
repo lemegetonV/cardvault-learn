@@ -7,13 +7,14 @@ export default {
   youWill: 'You will be able to mock and modify network responses with page.route and explain what a mocked test does and does not prove.',
   body: `
 <h2>Standing in the middle</h2>
-<p>CardVault’s pages are client pages: they open first, then ask the web app for data with HTTP requests, such as <code>/api/wallet/transactions?limit=20</code> for the list. <code>page.route(pattern, handler)</code> tells Playwright: when this page sends a request that matches the pattern, give it to my handler instead of sending it. This is called <strong>mocking</strong> or <strong>intercepting</strong> the network.</p>
+<p>CardVault’s pages are client pages: they open first, then ask the web app for data with HTTP requests, such as <code>/api/wallet/transactions?limit=20</code> for the list. <code>page.route(pattern, handler)</code> tells Playwright: when this page sends a request that matches the pattern, give it to my handler instead of sending it. This is called <strong>mocking</strong> or <strong>intercepting</strong> the network. It only sees requests the <em>browser</em> sends: calls the web app’s server makes to the services behind it never pass through the browser, so they cannot be mocked this way. That is why the pattern targets the web app’s <code>/api/...</code> addresses.</p>
 ${figure({ svg: routeFlow(), caption: 'A matched request goes to your handler first. It can answer, pass the request on and change the answer, or stop it.' })}
 <p>Every test in this file signs in as alice first. The route is set up before the page that sends the request is opened, so the very first request is caught. The pattern is kept in one constant at the top of the file:</p>
 ${code({ lang: 'typescript', title: 'tests/ui/learn/network-mocking.spec.ts', src: `
 // The address the transactions page asks for its list.
 const TRANSACTIONS_API = '**/api/wallet/transactions?*';
 ` })}
+<p>In this pattern, <code>**</code> matches any start of the address, and <code>?*</code> means a literal question mark followed by any query, such as <code>?limit=20</code>.</p>
 
 <h2>Fake an empty list</h2>
 ${code({ lang: 'typescript', title: 'tests/ui/learn/network-mocking.spec.ts', src: `
@@ -97,6 +98,7 @@ ${testerEye('<p>Mocking is how UI tests cover failure screens without breaking a
 ${interview({
   say: `<p>“I use page.route to intercept requests from the page. With fulfill I return my own JSON, for example an empty list or a 503 to check the empty and error states; with route.fetch I get the real response and change one field, for edge cases like a very long merchant name. Mocked tests prove how the UI handles a response, not that the backend is right, so most of my tests run against real data and mocking is for hard-to-reach states.”</p>`,
   qa: [
+    ['Can page.route mock the calls your backend makes to other services?', '<p>No. It only intercepts requests the browser sends. Server-to-server calls need a mock service or a test double on the server side.</p>'],
     ['How do you mock an API response in Playwright?', '<p>Call <code>page.route(pattern, route =&gt; route.fulfill({ status, json }))</code> before the page sends the request. Matching requests get your response and never reach the server.</p>'],
     ['How do you change a real response instead of replacing it?', '<p>In the handler, call <code>route.fetch()</code> to get the real response, change the parsed body, then <code>route.fulfill({ response, json: changed })</code>. Status and headers stay real.</p>'],
     ['What are the risks of mocking?', '<p>The test no longer checks the backend, and a hand-written fake can drift from the real API, so the test passes while the real page breaks. Mock for states that are hard to create, keep the fake’s shape close to the real one, and keep real end-to-end tests too.</p>'],

@@ -158,4 +158,38 @@
     mark();
     window.addEventListener('hashchange', mark);
   }
+
+  // "On this page": highlight the section being read.
+  const tocLinks = [...document.querySelectorAll('.toc a')];
+  if (tocLinks.length) {
+    const heads = tocLinks.map((a) => document.getElementById(a.getAttribute('href').slice(1)));
+    let queued = false;
+    const update = () => {
+      queued = false;
+      let current = -1;
+      heads.forEach((h, k) => { if (h && h.getBoundingClientRect().top < window.innerHeight * 0.35) current = k; });
+      tocLinks.forEach((a, k) => a.classList.toggle('here', k === current));
+    };
+    window.addEventListener('scroll', () => { if (!queued) { queued = true; requestAnimationFrame(update); } }, { passive: true });
+    update();
+  }
+
+  // Screenshots: click or tap to see one full size; click again or press Escape to close.
+  document.addEventListener('click', (e) => {
+    const img = e.target.closest && e.target.closest('.shot img');
+    if (!img) return;
+    const layer = document.createElement('div');
+    layer.className = 'zoom';
+    layer.setAttribute('role', 'dialog');
+    layer.setAttribute('aria-label', img.alt || 'Screenshot');
+    const big = document.createElement('img');
+    big.src = img.currentSrc || img.src;
+    big.alt = img.alt;
+    layer.appendChild(big);
+    const close = () => { layer.remove(); document.removeEventListener('keydown', onKey); };
+    const onKey = (k) => { if (k.key === 'Escape') close(); };
+    layer.addEventListener('click', close);
+    document.addEventListener('keydown', onKey);
+    document.body.appendChild(layer);
+  });
 })();

@@ -62,7 +62,7 @@ ${table(['Tool', 'Command', 'Use it to'], [
   ['Inspector', '`npx playwright test --debug`', 'Open a visible browser paused at the start, then step through action by action'],
   ['A pause in the code', '`await page.pause()`', 'Stop at one line and open the inspector there'],
   ['Headed run', '`npx playwright test --headed`', 'Simply watch the browser'],
-  ['Locator picker', 'In UI mode or the inspector', 'Point at an element and get a suggested locator'],
+  ['Locator picker', 'In UI mode, the inspector, or `npx playwright codegen localhost:3000`', 'Point at an element and get a suggested locator; codegen also records your clicks as test code'],
 ])}
 <p>The trace viewer is the one that works after the fact. A test that fails only on CI cannot be paused, but its trace can be downloaded from the run and opened on your computer, as <a href="/learn/pw-ci/">running in CI</a> shows.</p>
 

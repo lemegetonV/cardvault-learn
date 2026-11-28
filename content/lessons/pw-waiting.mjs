@@ -55,7 +55,7 @@ test('wait for the server to answer', async ({ page }) => {
 ` })}
 <ol>
 <li><code>page.waitForResponse(pattern)</code> waits for the browser to receive a response whose address matches the pattern. In the pattern, <code>**</code> means “anything before this” and <code>*</code> means “anything here”. It returns a promise.</li>
-<li>Notice there is <em>no</em> <code>await</code> in front of it. The test stores the promise in <code>answer</code>, clicks, and only then awaits it. If it awaited first, it would wait for a response that only the click can cause, and hang. If it started listening after the click, a fast answer could arrive before anyone was listening.</li>
+<li>Notice there is <em>no</em> <code>await</code> in front of it. The test stores the promise in <code>answer</code>, clicks, and only then awaits it. If it awaited first, it would wait for a response that only the click can cause, and hang. If it started listening after the click, a fast answer could arrive before anyone was listening. Many codebases write the same thing in one line, <code>const [response] = await Promise.all([page.waitForResponse(pattern), button.click()])</code>, which starts both and waits for both.</li>
 <li><code>response.status()</code> is the HTTP status code. This is a plain <code>expect</code>, without <code>await</code>, because the response is already here.</li>
 </ol>
 <p>Use this when the response itself is part of what you test. When you only need the page to show the result, the row count alone is enough.</p>

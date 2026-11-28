@@ -44,6 +44,7 @@ for (const [i, l] of ready.entries()) {
     + (prev ? `<a class="prev" href="${lessonUrl(prev.id)}"><small>Previous</small><span>${esc(prev.title)}</span></a>` : '<span></span>')
     + (next ? `<a class="next" href="${lessonUrl(next.id)}"><small>Next</small><span>${esc(next.title)}</span></a>` : '')
     + `</nav>`;
+  const sections = withSectionIds(softenLinks(l.id, mod.body, lessons));
   const body = `<div class="frame lesson-frame">
 <aside class="rail" aria-label="Lessons">${rail(l.id)}</aside>
 <article class="article">
@@ -52,9 +53,10 @@ for (const [i, l] of ready.entries()) {
 <h1>${esc(l.title)}</h1>
 <p class="lede">${mod.lede}</p>
 <div class="meta-row"><span class="time">${mod.minutes} min read</span><span>${esc(mod.youWill)}</span></div>
-${softenLinks(l.id, mod.body, lessons)}
+${sections.html}
 ${pager}
-</article></div>`;
+</article>
+${sections.toc}</div>`;
   await out(`learn/${l.id}`, page({ title: `${l.title} · CardVault Learn`, description: mod.lede.replace(/<[^>]+>/g, ''), active: l.track, body }));
 }
 
@@ -70,6 +72,22 @@ problems.push(...excerptProblems);
 await writeFile(path.join(dist, '404.html'), page({ title: 'Page not found · CardVault Learn', body: `<div class="frame"><div class="page-head"><h1>That page does not exist</h1><p class="lede">It may be a lesson that is not written yet. <a href="/">Go to the start</a>.</p></div></div>` }));
 
 /** Links to lessons not yet written become plain text marked "soon"; unknown ids are errors. */
+/** Gives each section heading an id, and lists them for the "On this page" contents (wide screens only). */
+function withSectionIds(html) {
+  const used = new Set();
+  const items = [];
+  const out = html.replace(/<h2>([\s\S]*?)<\/h2>/g, (m, inner) => {
+    const label = inner.replace(/<[^>]+>/g, '').trim();
+    let slug = label.toLowerCase().replace(/&[a-z#0-9]+;/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'section';
+    while (used.has(slug)) slug += '-2';
+    used.add(slug);
+    items.push(`<li><a href="#${slug}">${label}</a></li>`);
+    return `<h2 id="${slug}">${inner}</h2>`;
+  });
+  const toc = items.length > 2 ? `<nav class="toc" aria-label="On this page"><p>On this page</p><ol>${items.join('')}</ol></nav>` : '';
+  return { html: out, toc };
+}
+
 function softenLinks(id, html, lessons) {
   return html.replace(/<a href="\/learn\/([^/"]+)\/">([\s\S]*?)<\/a>/g, (whole, target, label) => {
     const t = lessons.find((x) => x.id === target);

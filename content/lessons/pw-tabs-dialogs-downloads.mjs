@@ -1,7 +1,7 @@
 import { code, interview, table, keyIdea, testerEye } from '../../src/components.mjs';
 
 export default {
-  minutes: 12,
+  minutes: 10,
   lede: 'Some things a page does happen outside the page itself: a link opens a new tab, the browser asks “Are you sure?”, a button saves a file. Playwright reports each of these as an event, and the trick is the same every time: get ready for the event before the click that causes it. This lesson covers all three on CardVault.',
   youWill: 'You will be able to handle new tabs, browser dialogs and downloads, and explain why you wait for them before the click.',
   body: `
@@ -71,20 +71,7 @@ test('accept the confirm box: the card is closed', async ({ page, request }) => 
 ` })}
 <p>Accepting really closes the card, so this test gets a brand-new customer with one card. The confirmation toast and the CLOSED status show the business result.</p>
 
-<h2>A dialog that is part of the page</h2>
-${code({ lang: 'typescript', title: 'tests/ui/learn/tabs-dialogs-downloads.spec.ts', src: `
-test('the opt-out box is part of the page, so it is tested like the page', async ({ page }) => {
-  await signIn(page, 'alice', DEMO_PASSWORD);
-
-  await page.getByRole('button', { name: 'Opt out' }).click();
-  const dialog = page.getByRole('dialog', { name: 'Opt out of the wallet?' });
-  await expect(dialog).toBeVisible();
-
-  await dialog.getByRole('button', { name: 'Cancel' }).click();
-  await expect(dialog).toBeHidden();
-});
-` })}
-<p>Not every “dialog” is the browser’s. CardVault’s opt-out question is drawn by the page itself with <code>role="dialog"</code>, so it is found with <code>getByRole('dialog')</code> and clicked like any element. Tell them apart by looking: the browser’s box has the browser’s style and cannot be inspected in the developer tools.</p>
+<p>Not every “dialog” is the browser’s. CardVault’s “Opt out of the wallet?” question is drawn by the page itself, so a test finds it with <code>getByRole('dialog')</code> and clicks its buttons like any element; the suite file has a test for it. Tell the two apart by looking: the browser’s box has the browser’s style and cannot be inspected in the developer tools.</p>
 
 <h2>A download</h2>
 ${code({ lang: 'typescript', title: 'tests/ui/learn/tabs-dialogs-downloads.spec.ts', src: `

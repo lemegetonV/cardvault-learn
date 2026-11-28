@@ -1,7 +1,7 @@
 import { code, interview, table, keyIdea, shot, testerEye } from '../../src/components.mjs';
 
 export default {
-  minutes: 12,
+  minutes: 11,
   lede: 'Some behaviour depends on things a test does not normally control: how much time has passed, where in the world the customer is, and what device they hold. Waiting 14 real minutes for a session warning is not a test anyone would run. This lesson shows Playwright’s fake clock, its time zone and language settings, and its phone emulation.',
   youWill: 'You will be able to test time-based behaviour with page.clock, local formats with locale and timezoneId, and phones with devices.',
   body: `
@@ -86,19 +86,8 @@ test('tap the Menu button to reach the other pages', async ({ page }) => {
   await expect(page).toHaveURL('/cards');
   await expect(page.getByRole('heading', { name: 'Cards' })).toBeVisible();
 });
-
-test('the page never scrolls sideways', async ({ page }) => {
-  await page.goto('/wallet/transactions');
-  await expect(page.getByTestId('txn-row')).toHaveCount(20);
-
-  // page.evaluate runs a small function inside the page and returns its result.
-  const tooWide = await page.evaluate(
-    () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
-  );
-  expect(tooWide).toBe(false);
-});
 ` })}
-<p>The device settings go at the top of the file because they include which browser to use, which Playwright can only set for a whole file or project. <code>tap()</code> needs a touch screen, which the Pixel 7 settings switch on. In the second test, <code>page.evaluate</code> runs a function inside the page: if the page’s full width is larger than the visible width, the customer would have to scroll sideways. This is <strong>emulation</strong>: Chromium imitating a phone. It catches layout problems, but it is not a real phone or the phone’s own browser.</p>
+<p>The device settings go at the top of the file because they include which browser to use, which Playwright can only set for a whole file or project. <code>tap()</code> needs a touch screen, which the Pixel 7 settings switch on. A second test in the file checks that the page never scrolls sideways at phone width. This is <strong>emulation</strong>: Chromium imitating a phone. It catches layout problems, but it is not a real phone or the phone’s own browser.</p>
 
 ${keyIdea('<p>Install a fake clock before the page opens and move it with <code>fastForward</code>. Set <code>locale</code> and <code>timezoneId</code> to see the page as customers elsewhere do. Use <code>devices[...]</code> to emulate a phone. In each case, work out the expected result from the rules, not from the screen.</p>')}
 
