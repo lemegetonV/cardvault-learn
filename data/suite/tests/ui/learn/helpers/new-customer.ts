@@ -42,3 +42,16 @@ export async function newCustomerWithPurchase(request: APIRequestContext): Promi
 
   return { username: customer.username, password: customer.password };
 }
+
+// Create a customer with one credit card that is not in the wallet yet.
+// The card was used five days ago, so it can be added.
+export async function newCustomerWithCard(request: APIRequestContext): Promise<NewCustomer> {
+  const created = await request.post(`${WALLET_URL}/test/customers`, {
+    headers: { 'X-Test-Key': TEST_KEY },
+    data: { cards: [{ product: 'CREDIT', enrolled: false }] },
+  });
+  expect(created.status()).toBe(201);
+  const customer = await created.json();
+
+  return { username: customer.username, password: customer.password };
+}
