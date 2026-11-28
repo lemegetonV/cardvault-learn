@@ -21,7 +21,7 @@ export class CardsPage {
     return this.cards.filter({ hasText: `•••• ${last4}` });
   }
 
-  // The card's "Available" amount, for example "$2,970.00".
+  // The card's "Available" amount, for example "$4,970.00".
   available(last4: string): Locator {
     return this.card(last4).getByTestId('card-available');
   }
