@@ -1,4 +1,4 @@
-import { sequence, interview, table, keyIdea, testerEye } from '../../src/components.mjs';
+import { sequence, interview, table, keyIdea, shot, testerEye, tryIt } from '../../src/components.mjs';
 
 export default {
   minutes: 9,
@@ -45,6 +45,19 @@ ${sequence({
 })}
 
 ${keyIdea('<p>This flow is <strong>asynchronous</strong>: the first answer (PENDING) is not the final answer (ENROLLED). The final result arrives later, through a callback from another company.</p>')}
+
+${shot({ src: 'wallet-pending.png', alt: 'The Checkout wallet screen: card 4417 is ENROLLED, card 2045 is PENDING, cards 7380 and 5521 are NOT ADDED with the reason Not recently used.', caption: 'Between steps 4 and 9: card 2045 has been added and shows PENDING until the wallet company confirms.' })}
+
+<h2>See it on the live app</h2>
+<p>alice’s debit card 2045 is already in the wallet, so the panel first takes it out and then adds it back. That runs the whole flow above. Send the requests in order.</p>
+${tryIt({ title: 'Try it: remove a card, add it back, watch it change', requests: [
+  { label: 'Sign alice in', method: 'POST', service: 'auth', path: '/v1/auth/login', body: { username: 'alice', password: 'CardVault-Demo-1' } },
+  { label: 'Her wallet', note: 'Each card has `eligible`, an `ineligible_reason` when it may not join, and an `enrollment` with its status (or `null` if it was never added).', method: 'GET', service: 'wallet', path: '/v1/wallet', headers: { Authorization: 'Bearer {{token}}' } },
+  { label: 'Remove card 2045', note: 'Expect `200`, status `REMOVED` at once, and `ineligible_reason: CARD_REMOVED_BY_CUSTOMER`, so the bank never adds it back on its own.', method: 'DELETE', service: 'wallet', path: '/v1/wallet/cards/ca4d0000-a11c-4000-8000-000000000002', headers: { Authorization: 'Bearer {{token}}' } },
+  { label: 'Add it back', note: 'Expect `202` and status `PENDING`. The bank has asked the wallet company and not heard back yet.', method: 'POST', service: 'wallet', path: '/v1/wallet/cards/ca4d0000-a11c-4000-8000-000000000002', headers: { Authorization: 'Bearer {{token}}' }, body: { terms_version: '2026-01' } },
+  { label: 'Ask again after two seconds', note: 'Now `ENROLLED`: the wallet company’s callback arrived. If it still says `PENDING`, wait a moment and send again. That is polling, by hand.', method: 'GET', service: 'wallet', path: '/v1/wallet/cards/ca4d0000-a11c-4000-8000-000000000002', headers: { Authorization: 'Bearer {{token}}' } },
+  { label: 'Try to add the prepaid card 5521', note: 'Expect `422` with `CARD_INELIGIBLE` and `details.reason: PRODUCT_NOT_SUPPORTED`. It fails the third rule in the table above.', method: 'POST', service: 'wallet', path: '/v1/wallet/cards/ca4d0000-a11c-4000-8000-000000000004', headers: { Authorization: 'Bearer {{token}}' }, body: { terms_version: '2026-01' } },
+] })}
 
 <h2>The life of a card in the wallet</h2>
 <p>After that first add, a wallet card moves between a few statuses:</p>

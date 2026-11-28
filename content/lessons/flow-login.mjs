@@ -1,4 +1,4 @@
-import { sequence, interview, keyIdea, testerEye } from '../../src/components.mjs';
+import { sequence, interview, keyIdea, shot, testerEye, tryIt } from '../../src/components.mjs';
 
 export default {
   minutes: 8,
@@ -8,6 +8,8 @@ export default {
 <h2>The problem sign-in solves</h2>
 <p>The Cards service must only ever show alice her own cards. But services do not see the browser or the sign-in form. Each request just arrives at the service. So every request needs to carry proof of who sent it, and every service needs a quick way to check that proof.</p>
 <p>That proof is a <strong>token</strong>: a short piece of text the Login service hands out after a correct password. Think of it as a wristband at an event. You show your ticket once at the gate, get a wristband, and from then on every stall just looks at the wristband.</p>
+
+${shot({ src: 'login.png', alt: 'The CardVault sign-in page with username and password fields.', caption: 'Where the flow starts: the sign-in page of the web app.' })}
 
 <h2>One sign-in, step by step</h2>
 ${sequence({
@@ -35,6 +37,18 @@ ${sequence({
 
 <h2>What is inside a token</h2>
 <p>CardVault’s access token is a <strong>JWT</strong> (JSON Web Token, said “jot”). It holds a few facts, such as the customer’s ID and when the token expires, and a digital signature made with a private key that only the Login service has. Anyone can read the facts, but nobody can change them without breaking the signature. That is why every service can trust a token after checking the signature with Login’s public key.</p>
+
+<h2>See it on the live app</h2>
+<p>The panel below makes the same calls the BFF makes, straight to the services. Send them in order and compare the answers.</p>
+${tryIt({ title: 'Try it: sign in, then show the token', requests: [
+  { label: 'Sign alice in', note: 'Expect `200` with `access_token`, `refresh_token`, `expires_in: 900` (15 minutes in seconds) and her `customer_id`. The panel keeps the access token as `{{token}}`.', method: 'POST', service: 'auth', path: '/v1/auth/login', body: { username: 'alice', password: 'CardVault-Demo-1' } },
+  { label: 'Ask Login who the token belongs to', note: 'Expect alice’s `customer_id`, `username` and `display_name`.', method: 'GET', service: 'auth', path: '/v1/auth/me', headers: { Authorization: 'Bearer {{token}}' } },
+  { label: 'Ask Cards with the token', note: 'Expect `200` and only alice’s cards in `items`.', method: 'GET', service: 'cards', path: '/v1/cards', headers: { Authorization: 'Bearer {{token}}' } },
+  { label: 'Ask Cards with no token', note: 'Expect `401` with `UNAUTHORIZED`: the service does not know who is asking.', method: 'GET', service: 'cards', path: '/v1/cards' },
+  { label: 'Ask Cards with a made-up token', note: 'Expect `401` with `TOKEN_INVALID`: the signature check fails.', method: 'GET', service: 'cards', path: '/v1/cards', headers: { Authorization: 'Bearer not-a-real-token' } },
+  { label: 'Ask for one of bob’s cards with alice’s token', note: 'Expect `404` with `CARD_NOT_FOUND`. The bank does not even admit the card exists.', method: 'GET', service: 'cards', path: '/v1/cards/ca4d0000-b0b0-4000-8000-000000000001', headers: { Authorization: 'Bearer {{token}}' } },
+] })}
+<p>The refresh token has its own story (a used refresh token cannot be used twice). You will try it in <a href="/learn/py-auth/">Authentication and authorisation</a>.</p>
 
 ${keyIdea('<p>Sign in once, then show the token on every request. Each service checks the token itself, so the Login service is not asked again for every screen.</p>')}
 

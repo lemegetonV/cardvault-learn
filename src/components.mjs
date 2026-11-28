@@ -29,10 +29,11 @@ hljs.registerLanguage('typescript', typescript);
 export const esc = (s) => String(s)
   .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 
-/** Inline markup for short strings: `code` and **bold**. Input is trusted lesson text. */
+/** Inline markup for short strings: `code`, **bold** and [links](url). Input is trusted lesson text. */
 export const md = (s) => esc(s)
   .replace(/`([^`]+)`/g, '<code>$1</code>')
-  .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+  .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+  .replace(/\[([^\]]+)\]\(((?:https?:\/)?\/[^)\s]*)\)/g, '<a href="$2">$1</a>');
 
 // ---------------------------------------------------------------- SVG primitives
 

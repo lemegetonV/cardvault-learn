@@ -100,3 +100,69 @@ export function pyramid() {
   b += text(470, 236, 'Developers: single functions', 't-sm', 'start');
   return svg(W, H, 'The test pyramid: unit tests at the bottom, many API tests in the middle, fewer UI tests at the top.', b);
 }
+
+/** Who sends each topic and who listens to it. */
+export function topicMap() {
+  const W = 780, H = 360;
+  const rows = [
+    ['Cards', 'card.lifecycle', 'card lost, reissued, closed…', 'Wallet'],
+    ['Cards', 'auth.decided', 'purchase approved or declined', 'Transactions'],
+    ['Cards', 'txn.cleared', 'settled, reversed, refunded', 'Transactions'],
+    ['Profile', 'contact.updated', 'email or phone changed', 'Wallet'],
+    ['Wallet', 'enrollment.changed', 'wallet status changed', 'Cards'],
+  ];
+  let b = '';
+  b += text(85, 24, 'sends', 't-sm t-muted');
+  b += text(390, 24, 'topic', 't-sm t-muted');
+  b += text(695, 24, 'listens', 't-sm t-muted');
+  rows.forEach(([from, topic, what, to], i) => {
+    const y = 40 + i * 64, cy = y + 26;
+    b += box(20, y, 130, 52, from, { kind: 'bank', cls: 't-md' });
+    b += box(270, y, 240, 52, topic, { kind: 'event', cls: 't-mono', sub: what });
+    b += box(630, y, 130, 52, to, { kind: 'bank', cls: 't-md' });
+    b += arrow([[150, cy], [266, cy]], 'ln-event', 'ah-event');
+    b += arrow([[510, cy], [626, cy]], 'ln-event', 'ah-event');
+  });
+  return svg(W, H, 'Five topics. Cards sends card.lifecycle to Wallet, and auth.decided and txn.cleared to Transactions. Profile sends contact.updated to Wallet. Wallet sends enrollment.changed to Cards.', b);
+}
+
+/** One Postgres server, one database per service, each service reaches only its own. */
+export function databases() {
+  const W = 800, H = 250;
+  const list = [['Login', 'auth'], ['Cards', 'card'], ['Wallet', 'enrollment'], ['Transactions', 'wallet_txn'], ['Profile', 'profile']];
+  let b = '';
+  b += `<rect class="zone" x="10" y="118" width="780" height="120" rx="16"/>`;
+  b += text(772, 142, 'one Postgres server', 't-sm t-accent', 'end');
+  list.forEach(([svc, db], i) => {
+    const x = 22 + i * 154;
+    b += box(x, 20, 140, 52, svc, { kind: 'bank', cls: 't-md' });
+    b += box(x, 160, 140, 60, db, { kind: 'plain', cls: 't-md', sub: 'database' });
+    b += arrow([[x + 70, 72], [x + 70, 156]], 'ln', 'ah', { start: true });
+  });
+  return svg(W, H, 'Five services above five databases on one Postgres server. Each service has an arrow only to its own database.', b);
+}
+
+/** The stage server: only Caddy faces the internet and passes each address to one part. */
+export function stageMap() {
+  const W = 820, H = 330;
+  const rows = [
+    ['cardvault.…', 'Web app', 'bank'],
+    ['docs.… and *-docs.…', 'API pages (read only)', 'bank'],
+    ['operator.…/help', 'Wallet company help', 'mock'],
+    ['Live lab (this site)', 'Lab helper', 'plain'],
+  ];
+  let b = '';
+  b += box(20, 135, 130, 60, 'Internet', { kind: 'plain', sub: 'your browser' });
+  b += `<rect class="zone" x="200" y="14" width="600" height="302" rx="16"/>`;
+  b += text(218, 38, 'the stage server', 't-sm t-accent', 'start');
+  b += box(230, 120, 130, 90, 'Caddy', { kind: 'plain', sub: 'HTTPS, filters' });
+  b += arrow([[150, 165], [226, 165]]);
+  rows.forEach(([addr, label, kind], i) => {
+    const y = 52 + i * 64, cy = y + 24;
+    b += box(590, y, 190, 48, label, { kind, cls: 't-md' });
+    b += arrow([[360, 165], [380, 165], [380, cy], [586, cy]]);
+    b += text(396, cy - 7, addr, 't-mono', 'start');
+  });
+  b += text(485, 306, 'database, Kafka and test routes: not reachable', 't-sm t-muted');
+  return svg(W, H, 'Your browser reaches only Caddy on the stage server. Caddy passes the app, docs, help and lab addresses to their parts. The database, Kafka and test routes cannot be reached.', b);
+}

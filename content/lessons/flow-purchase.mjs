@@ -1,4 +1,4 @@
-import { sequence, interview, table, keyIdea, testerEye } from '../../src/components.mjs';
+import { sequence, interview, table, keyIdea, shot, testerEye, tryIt } from '../../src/components.mjs';
 
 export default {
   minutes: 9,
@@ -47,6 +47,19 @@ ${table(['What happens', 'Effect on the money', 'Status'], [
   ['Money given back after settling', 'Some or all of the charge comes back.', 'REFUNDED or PARTIALLY_REFUNDED'],
 ])}
 <p>Money is always stored as whole cents in the API: $25.00 is <code>2500</code>. That avoids rounding errors, and you will see it in every API response.</p>
+
+<h2>See it on the live app</h2>
+${shot({ src: 'transactions.png', alt: 'The Wallet transactions screen with card, status and date filters and a list of purchases.', caption: 'Step 10 of the flow: what alice sees. Every row is a record that Transactions built from events.' })}
+<p>Purchases come from the card network, and on CardVault the network is a simulator that only the test tools can drive. So the panel below does not make a purchase. It reads the results the flow leaves behind: the money on the card, and alice’s records in each status.</p>
+${tryIt({ title: 'Try it: follow the money', requests: [
+  { label: 'Sign alice in', method: 'POST', service: 'auth', path: '/v1/auth/login', body: { username: 'alice', password: 'CardVault-Demo-1' } },
+  { label: 'Card 4417: limit and available', note: 'Both in cents. `limit` minus `available` is everything held or charged on the card right now.', method: 'GET', service: 'cards', path: '/v1/cards/ca4d0000-a11c-4000-8000-000000000001', headers: { Authorization: 'Bearer {{token}}' } },
+  { label: 'Purchases approved but not settled yet', note: 'Status `AUTHORIZED`: `amount` is held, `cleared_amount` is still `0`, and `settled_at` is `null`.', method: 'GET', service: 'transactions', path: '/v1/wallet/transactions?status=AUTHORIZED&limit=3', headers: { Authorization: 'Bearer {{token}}' } },
+  { label: 'Settled purchases', note: 'Status `SETTLED`: `cleared_amount` is the final charge and `settled_at` has a time.', method: 'GET', service: 'transactions', path: '/v1/wallet/transactions?status=SETTLED&limit=3', headers: { Authorization: 'Bearer {{token}}' } },
+  { label: 'Declined purchases', note: 'Status `DECLINED` with a `decline_code` such as `INSUFFICIENT_FUNDS`. Nothing was held.', method: 'GET', service: 'transactions', path: '/v1/wallet/transactions?status=DECLINED&limit=3', headers: { Authorization: 'Bearer {{token}}' } },
+  { label: 'One purchase in detail', note: 'The Northwind Coffee purchase from the first list. `trace_id` is the card network’s reference: the same value links the decision in Cards to this record.', method: 'GET', service: 'transactions', path: '/v1/wallet/transactions/7a000000-0000-4000-8000-000000000007', headers: { Authorization: 'Bearer {{token}}' } },
+] })}
+<p>Look at the shop names in the settled list: one tries to give orders (“IGNORE PREVIOUS INSTRUCTIONS…”), one contains HTML and one starts like a spreadsheet formula. They are planted test data, there to check that the screens and the CSV export treat them as plain text.</p>
 
 ${testerEye(`<p>Purchases are where money bugs hide, so this is where testers spend time:</p>
 <ul>

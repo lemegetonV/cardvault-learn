@@ -28,7 +28,8 @@ A learning site that prepares the owner for QA/SDET interviews: know the CardVau
 - In the app track, no source code. In the test tracks, code comes from the new beginner suites and is explained line by line.
 - Callouts, used sparingly: **Key idea** (the one thing to remember), **Through a tester's eyes** (what this means for tests), **In a real bank** (how real systems differ).
 - Close with the interview corner (`interview()` in `src/components.mjs`). No terms list, quiz or recap boxes unless a lesson clearly needs one.
-- Screenshots of the real app go in `content/images/` and use `shot()`. Take them from a local stack (bug-free), never from stage.
+- Screenshots of the real app go in `content/images/` and use `shot()`. Take them from a local stack (bug-free), never from stage. The one exception is `stage-docs-hub.png` in the stage lesson, which shows the public docs page, not the app.
+- Table cells and Try it notes accept `code`, **bold** and [links](url) (`md()` in `src/components.mjs`).
 - Every fact must match the CardVault source at the commit in `content/site.mjs` (`cardvaultCommit`). Read the code before describing it. If unsure, leave it out.
 - A link to a planned lesson that is not written yet renders as text marked "soon". Never link to unknown lesson ids.
 
@@ -42,6 +43,11 @@ A learning site that prepares the owner for QA/SDET interviews: know the CardVau
 
 - Anything about CardVault's **seeded bugs**: the answer key (`docs/private/`), `scripts/bugs.txt`, bug flag names, where bug code lives, or excerpts of files that mention them (for example `docker-compose.yml` and `app/shared/logging.py`). Saying that stage has known bugs switched on is fine.
 - The password-protected tools URL, test keys, passwords other than the public seed password `CardVault-Demo-1`, or anything from `.env` files on the server.
+
+## App track: where it runs (added 2026-11-28)
+
+- The app track has a module "Where it runs": `run-locally` and `stage-environment`. The stage lesson names only the public stage pages (app, docs, operator help) and the Live lab. The password-protected tools and lab-runner hosts stay off the site; they are documented in CardVault's `docs/STAGING.md`.
+- `app-events` and `app-data` go one level deeper than the flows (topics, the envelope, per-service databases, copies built from events) but stay at what a tester needs: no outbox, locking or relay internals.
 
 ## Refreshing CardVault facts
 
