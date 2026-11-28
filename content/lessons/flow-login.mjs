@@ -1,7 +1,7 @@
-import { sequence, interview, keyIdea, testerEye } from '../../src/components.mjs';
+import { sequence, interview, keyIdea, testerEye, watchIt } from '../../src/components.mjs';
 
 export default {
-  minutes: 8,
+  minutes: 9,
   lede: 'Every other feature depends on knowing who the customer is. This lesson follows one sign-in from the form to the first screen of cards, and shows how each service knows who is asking.',
   youWill: 'You will be able to explain how sign-in and tokens work in CardVault, step by step.',
   body: `
@@ -49,6 +49,14 @@ ${testerEye(`<p>Sign-in gives you plenty of test ideas:</p>
 <li>One customer’s token never shows another customer’s data.</li>
 </ul>
 <p>You will write each of these as a pytest test in the API track.</p>`)}
+
+<h2>Watch it happen</h2>
+<p>The drawing explains the flow; a real run proves it. These buttons run tests from the two suites against the live app, and the side panel shows each request and response and every check, in order.</p>
+${watchIt({ intro: 'The API tests sign in, then trade a refresh token for new tokens. The Playwright test types alice’s details into the real sign-in page and records a video.', runs: [
+  { api: 'tests/test_login.py::test_login_with_correct_password_returns_a_token', label: 'API: sign in and get a token' },
+  { api: 'tests/test_login.py::test_refresh_gives_new_tokens_and_the_old_refresh_token_stops_working', label: 'API: refresh the session' },
+  { ui: 'tests/sign-in.spec.ts:4', label: 'Browser: alice signs in', title: 'alice signs in and sees her wallet' },
+] })}
 
 ${interview({
   say: `<p>“Customers sign in through the web app, which forwards the credentials to the auth service. It returns a short-lived JWT access token and a refresh token. The web app’s backend-for-frontend keeps them in HttpOnly cookies and adds the access token as a Bearer header on every call to a backend service.</p>

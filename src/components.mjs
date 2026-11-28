@@ -207,9 +207,10 @@ export function terminal(lines, title = 'Terminal') {
   return `<div class="code"><div class="code-head"><span>${esc(title)}</span><span>shell</span></div><pre><code>${body}</code></pre></div>`;
 }
 
+/** A table. A cell is lesson text (`code`, **bold**), or { html } for a cell with links. */
 export function table(head, rows) {
   return `<div class="table-wrap"><table><thead><tr>${head.map((h) => `<th>${esc(h)}</th>`).join('')}</tr></thead>`
-    + `<tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${md(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+    + `<tbody>${rows.map((r) => `<tr>${r.map((c) => `<td>${typeof c === 'object' ? c.html : md(c)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
 
 export function terms(list) {
@@ -336,3 +337,13 @@ export function perfButton(label = 'Run the load test on the live app') {
   return `<button type="button" class="run-btn" data-perf disabled title="locust --headless --users 5 --run-time 20s">${runIcon}${esc(label)}</button>`;
 }
 const runIcon = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4.5 3v10l8-5z" fill="currentColor"/></svg>';
+
+/**
+ * "Watch it happen": Run buttons for real tests that walk through a flow on the live app.
+ * runs: [{ api: 'tests/test_x.py::test_y', label }] or [{ ui: 'tests/x.spec.ts:12', label, title }]
+ */
+export function watchIt({ title = 'Watch it happen on the live app', intro, runs }) {
+  const buttons = runs.map((r) => (r.ui ? uiRunButton(r.ui, r.label, r.title || r.label) : runButton(r.api, r.label))).join('');
+  return `<div class="tryit watch wide-ok"><div class="code-head"><span>${esc(title)}</span><span></span></div>`
+    + `<p class="watch-intro">${intro}</p><div class="code-runs">${buttons}</div></div>`;
+}

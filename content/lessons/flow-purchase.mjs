@@ -1,7 +1,7 @@
-import { sequence, interview, table, keyIdea, testerEye } from '../../src/components.mjs';
+import { sequence, interview, table, keyIdea, testerEye, watchIt } from '../../src/components.mjs';
 
 export default {
-  minutes: 9,
+  minutes: 10,
   lede: 'A purchase is where the money moves. This lesson follows one wallet payment from the shop’s checkout to the customer’s transactions list, and explains the two stages every card payment goes through: approval and settlement.',
   youWill: 'You will be able to explain how a purchase is approved, held, settled and recorded.',
   body: `
@@ -55,6 +55,14 @@ ${testerEye(`<p>Purchases are where money bugs hide, so this is where testers sp
 <li>A lost card is declined with <code>CARD_LOST</code>.</li>
 <li>The purchase appears in Transactions a moment later, so the test waits for it.</li>
 </ul>`)}
+
+<h2>Watch it happen</h2>
+<p>The drawing explains the flow; a real run proves it. These buttons ask the card network simulator for a purchase on a new test customer’s card, and the side panel shows every step and check in order.</p>
+${watchIt({ intro: 'The first API test checks the approval and the money held; the second settles a purchase and checks the charge. The Playwright test opens the transactions screen and finds the new purchase in the list.', runs: [
+  { api: 'tests/test_purchases.py::test_a_purchase_is_approved_and_the_money_is_held', label: 'API: approve and hold' },
+  { api: 'tests/test_purchases.py::test_settling_a_purchase_charges_it', label: 'API: settle it' },
+  { ui: 'tests/transactions.spec.ts:23', label: 'Browser: the purchase is in the list', title: 'the purchase is in the list' },
+] })}
 
 ${interview({
   say: `<p>“A wallet purchase comes in from the card network to the card service, which checks the card and the available balance, places a hold, and returns approved or declined. It publishes an event, and the transactions service consumes it to build the customer’s history.</p>
