@@ -10,7 +10,8 @@ The suite grows in two parts, following the lessons on the learning site:
    and no helpers, so every line is visible.
 2. `tests/`: the CardVault framework tests, built on page objects (`pages/`),
    an API client for set-up (`api/`), custom fixtures (`fixtures.ts`) and test
-   data (`data/`). Journeys on desktop and phone come next.
+   data (`data/`), with shared parts of the screen in `components/`. Two whole
+   customer journeys also run on a phone (the `phone` project).
 
 ## What is where
 
@@ -21,13 +22,17 @@ tests/ui/
   tsconfig.json         settings for the TypeScript checker
   visual.config.ts      settings for the screenshot tests only (run in Docker)
   config.ts             where the app is, and the demo password
-  fixtures.ts           Part 2: our own fixtures (page objects, api, a new customer)
+  fixtures.ts           Part 2: our own fixtures (page objects, components, api, new customers)
   pages/                Part 2: one page object per page
     LoginPage.ts          sign in
     WalletPage.ts         the Checkout wallet and its cards
     CardsPage.ts          the Cards page
     TransactionsPage.ts   the list, its filters
     TransactionPage.ts    one transaction, and the dispute form
+  components/           Part 2: parts of the screen found on many pages
+    Toast.ts              the short messages after an action
+    ConsentDialog.ts      the wallet terms in their frame, and Add card
+    Menu.ts               the main navigation, with or without the phone Menu button
   api/
     CardVaultApi.ts       set-up through the services: customers, purchases
   data/
@@ -37,6 +42,8 @@ tests/ui/
     sign-in.spec.ts       signing in, right and wrong
     cards.spec.ts         alice's cards (saved login, read only)
     transactions.spec.ts  filtering; a new customer's purchase and dispute
+    wallet-journey.spec.ts    add a card to the wallet, then remove it (@phone)
+    dispute-journey.spec.ts   dispute a purchase and see it in the list (@phone)
   visual/               screenshot tests and their saved pictures (npm run visual)
   learn/                Part 1: one small test file per lesson
     first-test.spec.ts    sign in and see the wallet
@@ -85,8 +92,9 @@ cd tests/ui
 npm install                      # the tools in package.json, once
 npx playwright install chromium  # the browser Playwright drives, once
 
-npx playwright test              # every test: 74 passed (73 tests and the setup step)
+npx playwright test              # every test: 80 passed (79 tests and the setup step)
 npx playwright test --project=framework        # only the framework tests (and setup)
+npx playwright test --project=phone            # the @phone journeys on a Pixel 7
 npx playwright test learn/first-test.spec.ts   # one file
 npx playwright test --grep @smoke               # only the tests tagged @smoke
 npx playwright test --headed     # watch the browser while it runs

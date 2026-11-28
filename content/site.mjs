@@ -3,7 +3,7 @@
 export const site = {
   name: 'CardVault Learn',
   description: 'Interview prep for QA and SDET roles: understand the CardVault app, then learn to test it with pytest and Playwright.',
-  cardvaultCommit: '518ffdb',
+  cardvaultCommit: '04625f8',
   cardvaultRepo: 'https://github.com/lemegetonV/cardvault',
 };
 
@@ -211,19 +211,19 @@ export const tracks = [
         title: 'Real tests',
         blurb: 'Whole customer journeys, on desktop and phone.',
         lessons: [
-          ['pw-journey-wallet', 'Journey: add a card to the wallet', false],
-          ['pw-journey-disputes', 'Journey: transactions and disputes', false],
-          ['pw-phones-browsers', 'Phones and other browsers', false],
+          ['pw-journey-wallet', 'Journey: add a card to the wallet', true],
+          ['pw-journey-disputes', 'Journey: transactions and disputes', true],
+          ['pw-phones-browsers', 'Phones and other browsers', true],
         ],
       },
       {
         title: 'CI and interview practice',
         blurb: 'Running in CI, then saying it out loud and writing it on the spot.',
         lessons: [
-          ['pw-ci', 'Running in CI', false],
-          ['pw-practice-framework', 'Tell me about your framework', false],
-          ['pw-practice-live-coding', 'Live coding', false],
-          ['pw-interview-questions', 'Playwright interview questions', false],
+          ['pw-ci', 'Running in CI', true],
+          ['pw-practice-framework', 'Tell me about your framework', true],
+          ['pw-practice-live-coding', 'Live coding', true],
+          ['pw-interview-questions', 'Playwright interview questions', true],
         ],
       },
     ],
