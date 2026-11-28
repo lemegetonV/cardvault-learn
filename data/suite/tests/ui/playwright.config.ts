@@ -41,5 +41,13 @@ export default defineConfig({
       use: { ...devices['Desktop Chrome'] },
       dependencies: ['setup'],
     },
+    {
+      // The journeys tagged @phone, again on a Pixel 7 phone (lesson: Phones and other browsers).
+      name: 'phone',
+      testDir: './tests',
+      grep: /@phone/,
+      use: { ...devices['Pixel 7'] },
+      dependencies: ['setup'],
+    },
   ],
 });

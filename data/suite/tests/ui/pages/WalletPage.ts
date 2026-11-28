@@ -20,4 +20,18 @@ export class WalletPage {
   card(last4: string): Locator {
     return this.cards.filter({ hasText: `•••• ${last4}` });
   }
+
+  // The card's wallet status label: NOT ADDED, PENDING, ENROLLED and so on.
+  status(last4: string): Locator {
+    return this.card(last4).getByTestId(/^enrollment-status-/);
+  }
+
+  // Start adding a card. The consent dialog opens next (components/ConsentDialog.ts).
+  async startAddingCard(last4: string) {
+    await this.card(last4).getByRole('button', { name: 'Add to wallet' }).click();
+  }
+
+  async removeCard(last4: string) {
+    await this.card(last4).getByRole('button', { name: 'Remove from wallet' }).click();
+  }
 }

@@ -46,21 +46,18 @@ export const test = base.extend<CardVaultFixtures>({
 ${code({ lang: 'typescript', title: 'tests/ui/fixtures.ts', src: `
   // A brand-new customer with one card in the wallet and one purchase on it,
   // already signed in. Only tests that ask for \`customer\` pay for this set-up.
-  customer: async ({ api, loginPage, page }, use) => {
+  customer: async ({ api, loginPage }, use) => {
     const customer = await api.createCustomer(true);
     await api.makePurchase(customer, PURCHASE.merchant, PURCHASE.amountInCents);
 
     // The purchase reaches the transaction list a moment later. Wait until it is there.
     await expect.poll(() => api.countTransactions(customer)).toBe(1);
 
-    await loginPage.open();
-    await loginPage.signIn(customer.username, customer.password);
-    await expect(page).toHaveURL('/wallet');
-
+    await signIn(loginPage, customer);
     await use(customer);
   },
 ` })}
-<p><code>customer</code> needs three other fixtures: <code>api</code> for the set-up, <code>loginPage</code> to sign in, and <code>page</code> to check where sign-in landed. The API part is the subject of <a href="/learn/pw-api-setup/">the next lesson</a>. What matters here is the order Playwright builds things in:</p>
+<p><code>customer</code> needs two other fixtures: <code>api</code> for the set-up and <code>loginPage</code> to sign in. <code>signIn</code> is a plain function near the top of the file: it opens the sign-in page, signs in, and waits for the wallet. A second fixture, <code>customerWithCard</code>, uses it too, for a customer whose card is not in the wallet yet. The API part is the subject of <a href="/learn/pw-api-setup/">the next lesson</a>. What matters here is the order Playwright builds things in:</p>
 ${figure({ svg: fixtureChain(), caption: 'Asking for one fixture pulls in everything it depends on. Each fixture is built once per test, so the test and customer share the same page.' })}
 <ul>
 <li><strong>On demand.</strong> A fixture is built only when a test, or another fixture, asks for it. The alice tests never name <code>customer</code>, so they never create one.</li>
@@ -92,7 +89,7 @@ ${interview({
   qa: [
     ['How do you create a custom fixture in Playwright?', '<p>Call <code>test.extend</code> with an object of fixture functions. Each takes the fixtures it depends on and a <code>use</code> function, builds its value, calls <code>await use(value)</code>, and does any teardown afterwards. Export the new <code>test</code> and import it in specs.</p>'],
     ['What is the difference between a fixture and beforeEach?', '<p>A hook runs for every test in its scope and passes values through outer variables. A fixture is on demand, reusable across files, passes its value directly, can depend on other fixtures, and keeps set-up and teardown together.</p>'],
-    ['Can fixtures depend on each other?', '<p>Yes. A fixture lists other fixtures as parameters, and Playwright builds them first, once per test. In our framework <code>customer</code> uses <code>api</code>, <code>loginPage</code> and <code>page</code>.</p>'],
+    ['Can fixtures depend on each other?', '<p>Yes. A fixture lists other fixtures as parameters, and Playwright builds them first, once per test. In our framework <code>customer</code> uses <code>api</code> and <code>loginPage</code>, and <code>loginPage</code> uses <code>page</code>.</p>'],
   ],
 })}
 `,

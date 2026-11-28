@@ -188,20 +188,18 @@ export function frameworkLayers() {
 
 /** One test asks for customer; Playwright builds the fixtures it depends on first. */
 export function fixtureChain() {
-  const W = 860, H = 280;
+  const W = 860, H = 240;
   let b = '';
-  b += box(20, 110, 170, 64, 'the test', { kind: 'plain', sub: 'asks for customer' });
-  b += arrow([[190, 142], [246, 142]]);
-  b += box(250, 110, 170, 64, 'customer', { kind: 'plain', sub: 'new, with a purchase' });
-  b += arrow([[420, 130], [490, 62]]);
-  b += arrow([[420, 142], [490, 142]]);
-  b += arrow([[420, 154], [490, 222]]);
+  b += box(20, 88, 170, 64, 'the test', { kind: 'plain', sub: 'asks for customer' });
+  b += arrow([[190, 120], [246, 120]]);
+  b += box(250, 88, 170, 64, 'customer', { kind: 'plain', sub: 'new, with a purchase' });
+  b += arrow([[420, 110], [490, 62]]);
+  b += arrow([[420, 130], [490, 178]]);
   b += box(494, 30, 160, 58, 'api', { kind: 'plain', cls: 't-md' });
-  b += box(494, 112, 160, 58, 'loginPage', { kind: 'plain', cls: 't-md' });
-  b += box(494, 194, 160, 58, 'page', { kind: 'plain', sub: 'built in', cls: 't-md' });
+  b += box(494, 150, 160, 58, 'loginPage', { kind: 'plain', cls: 't-md' });
   b += arrow([[654, 58], [700, 58]]);
-  b += arrow([[654, 140], [700, 140]]);
+  b += arrow([[654, 178], [700, 178]]);
   b += box(704, 30, 136, 58, 'request', { kind: 'plain', sub: 'built in', cls: 't-md' });
-  b += box(704, 112, 136, 58, 'page', { kind: 'plain', sub: 'the same one', cls: 't-md' });
-  return svg(W, H, 'The test asks only for customer. customer needs api, loginPage and page; api needs the built-in request fixture, and loginPage needs page. Playwright builds them from the right-hand side first, and gives the test the same page that customer signed in.', b);
+  b += box(704, 150, 136, 58, 'page', { kind: 'plain', sub: 'built in', cls: 't-md' });
+  return svg(W, H, 'The test asks only for customer. customer needs api and loginPage; api needs the built-in request fixture, and loginPage needs the built-in page. Playwright builds them from the right-hand side first, and the test gets the same page that customer signed in.', b);
 }
